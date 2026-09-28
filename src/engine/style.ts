@@ -61,9 +61,10 @@ function allNames(ws: Workspace): Set<string> {
 
 export function checkStyle(ws: Workspace, g: VerseGenerator): void {
   const taken = allNames(ws);
-  /** Adds a style notice, with a rename fix when the new name is free. */
+  /** Adds a style notice, with a rename fix when the new name is free. Renames only reach this
+   *  file, so names other files use (or define) are left for you to rename. */
   const notice = (b: Block, msg: string, from?: string, to?: string) => {
-    const fix = from && to && to !== from && !taken.has(to)
+    const fix = from && to && to !== from && !taken.has(to) && !g.project.references.has(from) && !g.project.definitions.has(to)
       ? { label: `Rename to ${to} everywhere`, kind: 'rename' as const, from, to } : null;
     g.warn(b, msg, 'style', fix);
   };
@@ -118,6 +119,8 @@ export function checkStyle(ws: Workspace, g: VerseGenerator): void {
   const usedOutside = (cls: Block, name: string) => {
     const subs = subclassesOf(cls);
     const word = new RegExp(`\\b${name}\\b`);
+    // Another file of the project might use it (checked loosely: any mention of the name counts).
+    if (g.project.references.has(name) || g.project.texts.some(t => word.test(t))) return true;
     return ws.getAllBlocks(false).some(b => {
       const root = b.getRootBlock();
       if (root === cls) return false;

@@ -46,6 +46,7 @@ dialog { max-height: calc(100dvh - 24px); overflow: auto; width: min(520px, calc
   #warnList button, .fix { min-height: 44px; }
   .checks label { min-height: 44px; align-items: center; }
   .panel-menu button { min-height: 44px; }
+  .file-tabs .ft, .file-tabs .ft-add, .file-tabs .ft-rename { min-height: 44px; min-width: 44px; }
   /* compact toolbox: stack the two header buttons */
   .panel.compact .panel-head { flex-direction: column; min-height: 0; padding: 4px; }
   /* easier-to-grab dividers */

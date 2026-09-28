@@ -9,6 +9,7 @@
  */
 import type { Block, Workspace } from '../blockly.ts';
 import { MODULE_PATHS } from '../data/modules.ts';
+import { DEFINING_BLOCKS, emptyProject, type ProjectContext } from '../project.ts';
 import type { GenerateResult, LineSpan } from '../types.ts';
 import { checkStyle } from '../style.ts';
 import { countLines, MARK_COUNT, MARK_START, verse } from './verse-generator.ts';
@@ -23,9 +24,11 @@ const usingPathOf = (u: Block): string =>
 const summarize = (names: string[]): string =>
   names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ');
 
-export function generate(ws: Workspace): GenerateResult {
+/** Writes one file. `project` describes the project's other files (see project.ts). */
+export function generate(ws: Workspace, project: ProjectContext = emptyProject()): GenerateResult {
   const g = verse;
   g.init();
+  g.project = project;
 
   // ---- 1. device classes ----
   const tops = ws.getTopBlocks(true).filter(b => b.isEnabled());
@@ -43,6 +46,12 @@ export function generate(ws: Workspace): GenerateResult {
     .forEach(b => g.warn(b, 'This block is not inside a device, so it is not part of the code.'));
   tops.filter(b => USING_BLOCKS.includes(b.type))
     .forEach(b => g.warn(b, 'using blocks go in the "using" slot at the top of a device.'));
+  // Files in a project share one module, so each name can only be defined once across them.
+  for (const b of tops.filter(t => DEFINING_BLOCKS.includes(t.type))) {
+    const name = String(b.getFieldValue('NAME') ?? '');
+    const other = project.definitions.get(name);
+    if (other) g.warn(b, `${name} is also defined in ${other}.verse. Files in a project share their names, so each name can only be made once. Rename one of them.`);
+  }
 
   // ---- 2. using lines (they belong to the whole file, shared by every device) ----
   const manual: Block[] = [];
@@ -110,6 +119,7 @@ export function generate(ws: Workspace): GenerateResult {
 export function snippetFor(block: Block): string {
   const g = verse;
   g.init();
+  g.project = emptyProject();
   const out = g.blockToCode(block, true);
   const code = Array.isArray(out) ? out[0] : out;
   return code.split('\n').filter(l => !l.includes(MARK_START)).join('\n').replace(/\n+$/, '');

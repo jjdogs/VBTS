@@ -4,6 +4,7 @@
  */
 import Blockly from '../blockly.ts';
 import type { Block } from '../blockly.ts';
+import { emptyProject, type ProjectContext } from '../project.ts';
 import type { Fix, Warning, WarningLevel } from '../types.ts';
 
 /**
@@ -31,6 +32,8 @@ export class VerseGenerator extends Blockly.CodeGenerator {
   /** Extra definitions the code needs, e.g. 'msg' for the MakeMessage helper. */
   helpers = new Set<string>();
   warnings: Warning[] = [];
+  /** The project's other files (what they define and use), for checks that look across files. */
+  project: ProjectContext = emptyProject();
 
   constructor() {
     super('Verse');

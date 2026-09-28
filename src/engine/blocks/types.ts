@@ -156,7 +156,7 @@ export function registerTypeBlocks(): void {
     },
     generate(b, g) {
       const type = f(b, 'TYPE');
-      const known = typesIn(b.workspace).get(type);
+      const known = typesIn(b.workspace).get(type) ?? g.project.types.get(type); // this file, or another one
       const given: string[] = [];
       const parts: string[] = [];
       for (let i = 1; i <= MAX_ITEMS; i++) {
@@ -238,7 +238,7 @@ export function registerTypeBlocks(): void {
       this.setOutput(true, null);
     },
     generate(b, g) {
-      const values = enumsIn(b.workspace).get(f(b, 'TYPE'));
+      const values = enumsIn(b.workspace).get(f(b, 'TYPE')) ?? g.project.enums.get(f(b, 'TYPE'));
       if (values && !values.includes(f(b, 'VALUE'))) g.warn(b, `${f(b, 'TYPE')} has no value ${f(b, 'VALUE')}. Its values: ${values.join(', ')}.`);
       return [`${f(b, 'TYPE')}.${f(b, 'VALUE')}`, Order.ATOMIC];
     },
