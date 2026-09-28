@@ -5,7 +5,7 @@
 #layout { position: relative; }
 
 /* Blockly's own category list is replaced by the Toolbox panel. */
-.blocklyToolboxDiv { display: none !important; }
+.blocklyToolbox { display: none !important; }
 
 /* ---------- activity bar (unpinned panels) ---------- */
 #activityBar {

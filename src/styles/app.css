@@ -117,7 +117,7 @@ dialog textarea { width: 100%; min-height: 110px; font: 12px/1.4 var(--mono); ba
 #toast.show { opacity: 1; transform: translateX(-50%); }
 #loadErr { display: none; padding: 24px; }
 
-.blocklyToolboxDiv { font-family: var(--ui) !important; }
+.blocklyToolbox { font-family: var(--ui) !important; }
 /* Blocks view controls (ui/workspace-controls.ts): zoom in/out, back to the start, trash */
 .ws-controls { position: absolute; right: 14px; bottom: 14px; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: calc(12px * var(--radius-scale, 1)); box-shadow: 0 2px 8px rgba(0,0,0,.10); backdrop-filter: blur(6px); }
 .wsc { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: calc(8px * var(--radius-scale, 1)); background: transparent; color: var(--muted); cursor: pointer; transition: background .12s, color .12s, transform .12s; }
@@ -128,7 +128,7 @@ button.wsc:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px
 .wsc-trash.hot { background: color-mix(in srgb, var(--bad, #e5484d) 18%, transparent); color: var(--bad, #e5484d); transform: scale(1.15); }
 .wsc-trash.gulp { transform: scale(.85); }
 body[data-view="text"] .ws-controls { display: none; }
-.blocklyTreeLabel { font-family: var(--ui) !important; font-size: calc(14px * var(--ui-scale, 1)) !important; }
+.blocklyToolboxCategoryLabel { font-family: var(--ui) !important; font-size: calc(14px * var(--ui-scale, 1)) !important; }
 
 body[data-view="split"][data-split="column"] #panes { flex-direction: column; }
 @media (max-width: 900px) {
