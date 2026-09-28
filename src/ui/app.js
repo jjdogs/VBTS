@@ -6,6 +6,7 @@
  * finding them as globals. It talks to the engine only through `V` (see src/engine/index.ts).
  */
 import { blankFile, createFiles, decodeProject, encodeProject, normalizeProject } from './files.ts';
+import { mountWorkspaceControls } from './workspace-controls.ts';
 
 export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }) {
   if (!Blockly) { document.querySelector('main').style.display = 'none'; document.getElementById('loadErr').style.display = 'block'; return; }
@@ -51,19 +52,22 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     m.addedNodes && m.addedNodes.forEach((n) => { if (n.nodeType !== 1) return; if (n.tagName === 'image') swapMedia(n); n.querySelectorAll && n.querySelectorAll('image').forEach(swapMedia); });
   })).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['href', 'xlink:href'] });
 
+  const startScale = () => window.innerWidth < 700 ? Math.min(0.7, appearance.settings().blockScale) : appearance.settings().blockScale;
   const ws = Blockly.inject('blocklyDiv', {
     media: 'vb-media/',
     sounds: false,
     // Like-text blocks use Blockly's compact, flat renderer so rows sit close to text line height.
     toolbox: V.TOOLBOX, renderer: appearance.settings().blockStyle === 'text' ? 'thrasos' : appearance.settings().renderer, theme: appearance.theme(Blockly),
     grid: { spacing: 28, length: 2, colour: isDark() ? '#2A2650' : '#DEDAF2', snap: true },
-    zoom: { controls: true, wheel: true, startScale: window.innerWidth < 700 ? Math.min(0.7, appearance.settings().blockScale) : appearance.settings().blockScale, maxScale: 2, minScale: 0.35 },
-    trashcan: true,
+    // Zoom buttons and the trash are our own small controls (ui/workspace-controls.ts).
+    zoom: { controls: false, wheel: true, startScale: startScale(), maxScale: 2, minScale: 0.35 },
+    trashcan: false,
     // "Like text" layout: no map-style dragging; the wheel scrolls (ui/unified.ts can switch these live)
     move: { scrollbars: true, drag: appearance.settings().layout !== 'document', wheel: appearance.settings().layout === 'document' },
   });
   document.querySelectorAll('image').forEach(swapMedia);
   new ResizeObserver(() => Blockly.svgResize(ws)).observe($('blocksPane'));
+  mountWorkspaceControls({ Blockly, ws, host: $('blocksPane'), startScale });
 
 
   let last = { code: '', lines: [], spans: {}, warnings: [] };
