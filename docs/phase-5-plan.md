@@ -1,6 +1,6 @@
 # Phase 5 plan: players & teams, UI widgets, positions and movement
 
-Status: planned (Phase 4.2 is done). This is the plan to build next, in the order below.
+Status: **5.0 foundations done**; 5.1–5.3 next, in the order below.
 
 ## Goal
 
@@ -35,7 +35,24 @@ raw Verse.
 
 ## Milestones
 
-### 5.0 Foundations (build first)
+### 5.0 Foundations — ✅ done
+
+What was built (tests in `tests/phase5.test.ts`):
+- `verse_local` (Variables): `Name := value`, `Name:type = value`, `var Name:type = value`, with
+  `set` checks and container reads for locals.
+- New value types (`team`, `fort_character`, `vector3`, `rotation`, `transform`, plus handler and
+  UI types) with their using lines, also inside containers and function inputs. Maps can hold
+  any value type.
+- `verse_cast` (Player): `player[Agent]`; "if it exists" makes the name (e.g. `Player`)
+  available inside.
+- Handlers receive agent, ?agent, nothing, player, elimination, damage, button click or AI result
+  (`data/handlers.ts`). Subscribed handlers of the new types are converted and their input renamed.
+- `verse_subscribe_event` + `verse_playspace` (Events): `GetPlayspace().PlayerAddedEvent()`,
+  `FortChar.EliminatedEvent()`, `Button.OnClick()`…, with the same handler checks and fix.
+- `verse_device_action` (Devices): 56 device actions with simple inputs from the regenerated
+  catalog (`extract-devices.py` now keeps them, and every event payload type).
+
+The original plan for 5.0:
 
 1. **Local value block**: `Name := value` and `var Name:type = value` as statements. It
    declares a name for the rest of its stack. It's a new block in `blocks/variables.ts`, and

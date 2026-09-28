@@ -35,15 +35,23 @@ export const TOOLBOX: Toolbox = {
       block('verse_editable', { fields: { NAME: 'MyTrigger', DTYPE: 'trigger_device' } }),
       block('verse_editable', { fields: { NAME: 'MyZone', DTYPE: 'mutator_zone_device' } }),
       block('verse_call_device'),
+      block('verse_device_action'),
       block('verse_hud_text', { inputs: { TEXT: { shadow: { type: 'verse_text', fields: { TEXT: 'Nice shot!' } } } } }),
     ]),
     category('Events', COLORS.events, [
       block('verse_subscribe'),
       block('verse_handler'),
       block('verse_handler', { fields: { NAME: 'OnTriggered', PARAM: 'maybe' } }),
+      label('Events of the game, a character or a button'),
+      block('verse_subscribe_event', { fields: { EVENT: 'PlayerAddedEvent', HANDLER: 'OnPlayerAdded' }, inputs: { SOURCE: { block: { type: 'verse_playspace' } } } }),
+      block('verse_handler', { fields: { NAME: 'OnPlayerAdded', PARAM: 'player' } }),
+      block('verse_handler', { fields: { NAME: 'OnEliminated', PARAM: 'elimination' } }),
     ]),
     category('Player', COLORS.player, [
       block('verse_unwrap_agent'), block('verse_fort_character'), block('verse_char_action'), block('verse_for_players'),
+      block('verse_if_bind', { fields: { VAR: 'Player' }, inputs: { VALUE: { block: { type: 'verse_cast', fields: { TYPE: 'player' }, inputs: { VALUE: { block: { type: 'verse_agent_value' } } } } } } }),
+      block('verse_cast', { inputs: { VALUE: { block: { type: 'verse_agent_value' } } } }),
+      block('verse_playspace'),
     ]),
     category('Logic', COLORS.logic, [
       block('verse_if'), block('verse_if_else'),
@@ -62,6 +70,9 @@ export const TOOLBOX: Toolbox = {
     ]),
     category('Variables', COLORS.vars, [
       block('verse_field'), block('verse_get'), block('verse_set', { inputs: { V: number(1) }, fields: { OP: '+=' } }),
+      label('Inside a function: values that exist from their line on'),
+      block('verse_local', { fields: { KIND: 'const', NAME: 'Bonus', TYPE: '' }, inputs: { VALUE: number(10) } }),
+      block('verse_local', { fields: { KIND: 'var', NAME: 'Count', TYPE: 'int' }, inputs: { VALUE: number(0) } }),
     ]),
     category('Lists & Maps', COLORS.data, [
       label('Arrays: lists of values'),

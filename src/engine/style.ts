@@ -40,6 +40,7 @@ const DECLARATIONS: Array<[type: string, fieldName: string, what: string]> = [
   ['verse_member_field', 'NAME', 'Field'],
   ['verse_editable_array', 'NAME', 'Device array'],
   ['verse_field', 'NAME', 'Variable'],
+  ['verse_local', 'NAME', 'Local value'],
   ['verse_array_field', 'NAME', 'Array'],
   ['verse_map_field', 'NAME', 'Map'],
   ['verse_option_field', 'NAME', 'Option'],

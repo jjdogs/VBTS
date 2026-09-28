@@ -33,9 +33,9 @@ test('unknown line with a body keeps converting inside', () => {
 });
 
 test('an unknown value inside a known line only keeps that value raw', () => {
-  const { report, code } = convert(wrap('if (P := player[Agent]):\n    Print("x")'));
-  assert.deepEqual(report.raw, ['player[Agent]']);
-  assert.match(code, /if \(P := player\[Agent\]\):\n {12}Print\("x"\)/);
+  const { report, code } = convert(wrap('if (P := Agent.GetFortCharacter[]):\n    Print("x")'));
+  assert.deepEqual(report.raw, ['Agent.GetFortCharacter[]']);
+  assert.match(code, /if \(P := Agent\.GetFortCharacter\[\]\):\n {12}Print\("x"\)/);
 });
 
 test('operator precedence and parentheses survive', () => {

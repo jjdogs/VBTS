@@ -5,7 +5,7 @@
 import Blockly from '../blockly.ts';
 import type { Block, BlockSvg, Field } from '../blockly.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
-import { moduleForType, parseParams, RETURN_TYPES } from '../data/verse-types.ts';
+import { moduleForType, parseParams, RETURN_TYPES, typeNamesIn } from '../data/verse-types.ts';
 import { looseDropdown, nameField, prime, rerender, type Option } from '../fields.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
@@ -95,9 +95,8 @@ export function registerFunctionBlocks(): void {
     },
     generate(b, g) {
       const params = parseParams(f(b, 'PARAMS')) ?? [];
-      params.forEach(p => { const m = moduleForType(p.type.replace(/^\?/, '')); if (m) g.need(m, p.type.replace(/^\?/, '')); });
       const ret = f(b, 'RET') || 'void';
-      const m = moduleForType(ret); if (m) g.need(m, ret);
+      for (const t of [...params.flatMap(p => typeNamesIn(p.type)), ret]) { const m = moduleForType(t); if (m) g.need(m, t); }
       const decides = f(b, 'DECIDES') === 'TRUE', suspends = f(b, 'SUSPENDS') === 'TRUE';
       if (decides && suspends) g.warn(b, 'A function can\'t be both <decides> and <suspends> in Verse. Untick one.');
       const effects = (decides ? '<decides><transacts>' : '') + (suspends ? '<suspends>' : '');

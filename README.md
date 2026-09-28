@@ -80,7 +80,7 @@ src/
       lessons.ts        the guided lessons
       templates/        one file per game-mode template
     data/
-      devices.json      115 Creative devices' events and actions (from Epic's docs)
+      devices.json      117 Creative devices' events and actions (from Epic's docs)
       modules.ts        using-modules, doc links, category colors
       verse-types.ts    value types, literals, parameter lists
 tests/                  automated tests + fixtures
@@ -100,7 +100,7 @@ rebuilt (for example in Svelte) without touching the engine.
 3.6. ✅ Edit Mode (Appearance panel) and the one-window editor
 4.1. ✅ Your own classes, structs and enums; access specifiers; style rule 6.2
 4.2. ✅ Multiple files: file tabs, classes and enums shared across files, whole-project share codes
-5. Players & teams, UI widgets, positions and movement (next; plan in `docs/phase-5-plan.md`)
+5. Players & teams, UI widgets, positions and movement (5.0 foundations ✅; 5.1–5.3 next, see `docs/phase-5-plan.md`)
 6. ✅ Text ⇄ blocks: type directly in the Text view
 7. VS Code extension (on hold: web-only for now)
 8. Game-mode templates (first one done: pop-up target gallery)
@@ -264,6 +264,8 @@ checks that every template converts into real blocks.
 - `tests/project.test.ts` covers projects with several files: classes and enums across files,
   duplicate names, and the cross-file style rules. `tests/files.test.ts` covers share codes,
   older saves and file names.
+- `tests/phase5.test.ts` covers the Phase 5.0 foundations: local values, new types, casts,
+  handlers that receive other types, value events and device actions with inputs.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to

@@ -5,7 +5,7 @@
  * If none match, the line is kept as raw Verse (with its indented lines still converted inside).
  * To support a new kind of line, add a rule.
  */
-import { deviceInfo } from '../catalog.ts';
+import { deviceInfo, parseAction } from '../catalog.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder, NextLink } from './builder.ts';
 import type { ExpressionParser } from './expressions.ts';
@@ -154,6 +154,13 @@ export class StatementParser {
       return m && this.knownDevice(m[1]) ? this.b.make('verse_subscribe', { DEVICE: m[1], EVENT: m[2], HANDLER: m[3] }) : null;
     },
 
+    // GetPlayspace().PlayerAddedEvent().Subscribe(OnPlayerAdded) — an event that belongs to a value
+    ({ text }) => {
+      const m = text.match(/^(.+)\.(\w+)\(\)\.Subscribe\((\w+)\)$/);
+      if (!m) return null;
+      return this.b.make('verse_subscribe_event', { EVENT: m[2], HANDLER: m[3] }, this.value('SOURCE', this.expr.parse(m[1])));
+    },
+
     // Hud.SetText(MakeMessage(...))
     ({ text }) => {
       const m = text.match(/^(\w+)\.SetText\(MakeMessage\((.*)\)\)$/);
@@ -169,6 +176,19 @@ export class StatementParser {
       const signature = m[2] + (m[3] ? '(Agent)' : '()');
       if (!(deviceInfo(type)?.methods ?? []).includes(signature)) return null;
       return this.b.make('verse_call_device', { DEVICE: m[1], METHOD: signature, WHO: m[3] || 'Agent' });
+    },
+
+    // Device.Action(values) — a device action with inputs, matched by its number of inputs
+    ({ text }) => {
+      const m = text.match(/^(\w+)\.(\w+)\((.+)\)$/);
+      const type = m ? this.knownDevice(m[1]) : undefined;
+      if (!m || !type) return null;
+      const parts = splitArgs(m[3]);
+      const sig = (deviceInfo(type)?.actions ?? []).find(a => { const p = parseAction(a); return p.name === m[2] && p.params.length === parts.length; });
+      if (!sig) return null;
+      const inputs: NonNullable<BlockState['inputs']> = {};
+      parts.forEach((part, i) => { const v = this.expr.parse(part); if (v) inputs[`A${i + 1}`] = { block: v }; });
+      return this.b.make('verse_device_action', { DEVICE: m[1], ACTION: sig }, inputs);
     },
 
     // FortChar.Damage(25.0)
@@ -290,6 +310,15 @@ export class StatementParser {
       if (!m || kids.length !== 2 || !kids.every(k => stripComment(k.text) === 'block:')) return null;
       const a = body(kids[0].children), b = body(kids[1].children);
       return this.b.make('verse_race', { KIND: m[1] }, { A: a!, B: b! });
+    },
+
+    // Local values: Name := value   /   Name:type = value   /   var Name:type = value
+    ({ text }) => {
+      const m = text.match(/^(var\s+)?([A-Za-z_]\w*)\s*(?::\s*(\??(?:\[\w*\])*[A-Za-z_]\w*)\s*=|:=)\s*(.+)$/);
+      if (!m || (m[1] && !m[3])) return null;
+      const [, isVar, name, type = '', value] = m;
+      this.expr.learnLocal(name, type);
+      return this.b.make('verse_local', { KIND: isVar ? 'var' : 'const', NAME: name, TYPE: type }, this.value('VALUE', this.expr.parse(value)));
     },
 
     // MyFunction() / MyFunction(a, b) — only functions defined in this device

@@ -3,6 +3,7 @@
  */
 import Blockly from '../blockly.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
+import { moduleForType, typeNamesIn } from '../data/verse-types.ts';
 import { nameField } from '../fields.ts';
 import { escapeString, formatFloat, Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
@@ -69,6 +70,35 @@ export function registerVariableBlocks(): void {
       if (!declared) g.warn(b, `No variable named ${name}. Add a "var" block under linked devices & variables.`);
       else if (!declared.mutable) g.warn(b, `${name} is a constant. Change it to var so it can be set.`);
       return `set ${name} ${f(b, 'OP')} ${g.valueToCode(b, 'V', Order.NONE) || '0'}\n`;
+    },
+  });
+
+  // Phase 5.0: a value that only exists inside a function, from its line to the end of its block.
+  defineBlock({
+    type: 'verse_local',
+    colour: COLORS.vars,
+    explain: {
+      title: 'Local value', doc: DOCS.quick,
+      tip: 'Names a value inside a function: Position := Char.GetTransform().Translation.',
+      text: 'Name := value makes a constant that only exists inside this function, from this line on. Its type comes from the value. Tick var to make one you can change with set; a var needs its type written out: var Count:int = 0. You can also write the type of a constant: Speed:float = 2.0.',
+    },
+    init() {
+      this.appendValueInput('VALUE')
+        .appendField(new Blockly.FieldDropdown([['constant', 'const'], ['var', 'var']]), 'KIND')
+        .appendField(nameField('Position'), 'NAME').appendField(':')
+        .appendField(new Blockly.FieldTextInput('', (s: string) => (s === '' || /^\??(\[\w*\])*[A-Za-z_]\w*$/.test(s) ? s : null)), 'TYPE')
+        .appendField('=');
+      this.setInputsInline(true);
+      asStatement(this);
+    },
+    generate(b, g) {
+      const name = f(b, 'NAME'), type = f(b, 'TYPE').trim(), isVar = f(b, 'KIND') === 'var';
+      for (const t of typeNamesIn(type)) { const m = moduleForType(t); if (m) g.need(m, t); }
+      const value = g.valueToCode(b, 'VALUE', Order.NONE);
+      if (!value) g.warn(b, `Plug in the value ${name} starts with.`);
+      if (isVar && !type) g.warn(b, `A var needs its type written out, like var ${name}:int = 0. Type it in the box after ${name}.`);
+      if (!isVar && !type) return `${name} := ${value || '0'}\n`;
+      return `${isVar ? 'var ' : ''}${name}:${type || 'int'} = ${value || '0'}\n`;
     },
   });
 }

@@ -9,7 +9,7 @@ import { EXPLAIN } from './registry.ts';
 import type { ExplainView } from './types.ts';
 import { deviceTypeFor } from './workspace.ts';
 
-const DEVICE_BLOCKS = ['verse_editable', 'verse_call_device', 'verse_subscribe'];
+const DEVICE_BLOCKS = ['verse_editable', 'verse_call_device', 'verse_device_action', 'verse_subscribe'];
 
 export function explainFor(block: Block): ExplainView | null {
   const base = EXPLAIN[block.type];
@@ -34,6 +34,7 @@ export function explainFor(block: Block): ExplainView | null {
       const events = Object.entries(info.events).map(([name, sends]) => `${name} (sends ${sends === 'none' ? 'nothing' : sends})`);
       view.extra.push([`${type} events`, events.length ? events.join(', ') : 'none']);
       view.extra.push([`${type} actions`, info.methods.length ? info.methods.join(', ') : 'none without extra inputs']);
+      if (info.actions.length) view.extra.push([`${type} actions with inputs`, info.actions.join(', ')]);
     }
   }
   return view;
