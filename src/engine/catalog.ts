@@ -12,6 +12,10 @@ for (const [name, entry] of Object.entries(raw as Record<string, RawEntry>)) {
   CATALOG[name] = { events: (entry.e ?? {}) as Record<string, EventPayload>, methods: entry.m ?? [], actions: entry.a ?? [] };
 }
 
+// Props you place and link like devices (not in the device digest): creative_prop can be shown,
+// hidden, moved (MoveTo) and teleported (TeleportTo); see blocks/movement.ts.
+CATALOG.creative_prop ??= { events: {}, methods: ['Show()', 'Hide()', 'Dispose()'], actions: [] };
+
 /** Devices most maps use, shown first in the device dropdown. */
 const COMMON = [
   'button_device', 'trigger_device', 'item_granter_device', 'timer_device', 'hud_message_device', 'score_manager_device',

@@ -5,6 +5,8 @@
  * (as in Verse, `not` binds tighter than * and comparisons: not A = B means (not A) = B)
  * Anything without a block yet (calls, indexing, division…) becomes a raw value block.
  */
+import { TEAM_OPS } from '../data/teams.ts';
+import { matchCanvas } from '../data/ui.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
 import { unescapeString } from './tree.ts';
@@ -119,6 +121,9 @@ export class ExpressionParser {
 
   private parseStrict(text: string): BlockState {
     const b = this.b;
+    // A canvas with one widget at a preset position (Phase 5.3): read as a whole, widget inside.
+    const canvas = matchCanvas(text);
+    if (canvas) return b.make('verse_canvas', { POS: canvas.position }, { WIDGET: { block: this.parseStrict(canvas.widget) } });
     const tokens = tokenize(text);
     let p = 0;
     const is = (t: string, at = p) => tokens[at]?.text === t;
@@ -128,6 +133,51 @@ export class ExpressionParser {
       const tk = tokens[p++];
       if (!tk || tk.kind !== 'num' || tk.text.includes('.')) throw new NoBlocksFor('expected a whole number');
       return (negative ? -1 : 1) * Number(tk.text);
+    };
+
+    /** A call that can follow a value: .GetAgent[], .GetTeams(), or a team question like .GetTeam[Agent]. */
+    const hasPostfix = (): boolean => {
+      if (!is('.')) return false;
+      const m = tokens[p + 1]?.text ?? '';
+      return (m === 'GetAgent' && is('[', p + 2) && is(']', p + 3)) || (m === 'GetTeams' && is('(', p + 2) && is(')', p + 3))
+        || (m in TEAM_OPS && is('[', p + 2))
+        || (m === 'GetTransform' && is('(', p + 2) && is(')', p + 3)) || (m === 'TeleportTo' && is('[', p + 2));
+    };
+    /** Wraps a value in the calls that follow it: Eliminator.GetAgent[], Teams.GetTeam[Agent]… */
+    const postfix = (block: BlockState): BlockState => {
+      while (hasPostfix()) {
+        const m = tokens[p + 1].text;
+        if (m === 'GetAgent') { p += 4; block = b.make('verse_char_agent', null, { CHAR: { block } }); continue; }
+        if (m === 'GetTeams') { p += 4; block = b.make('verse_all_teams', null, { TEAMS: { block } }); continue; }
+        if (m === 'GetTransform') {
+          p += 4;
+          // .Translation / .Rotation / .Scale, then maybe .X / .Y / .Z of the position
+          const part = is('.') && ['Translation', 'Rotation', 'Scale'].includes(tokens[p + 1]?.text) ? tokens[p + 1].text : '';
+          if (part) p += 2;
+          block = b.make('verse_transform_of', { PART: part }, { THING: { block } });
+          if (part && part !== 'Rotation' && is('.') && ['X', 'Y', 'Z'].includes(tokens[p + 1]?.text)) {
+            const axis = tokens[p + 1].text; p += 2;
+            block = b.make('verse_vector_part', { AXIS: axis }, { VEC: { block } });
+          }
+          continue;
+        }
+        if (m === 'TeleportTo') {
+          p += 3;
+          const pos = or(); expect(','); const rot = or(); expect(']');
+          block = b.make('verse_teleport', null, { THING: { block }, POS: { block: pos }, ROT: { block: rot } });
+          continue;
+        }
+        p += 3;
+        const values: BlockState[] = [];
+        while (!is(']')) { if (values.length) expect(','); values.push(or()); }
+        expect(']');
+        const wanted = TEAM_OPS[m].inputs;
+        if (values.length !== wanted.length) throw new NoBlocksFor('wrong number of team inputs');
+        const inputs: NonNullable<BlockState['inputs']> = { TEAMS: { block } };
+        wanted.forEach((input, i) => { inputs[input] = { block: values[i] }; });
+        block = b.make('verse_team_op', { OP: m }, inputs);
+      }
+      return block;
     };
 
     const or = (): BlockState => {
@@ -178,7 +228,52 @@ export class ExpressionParser {
       if (tk.text === '(') { p++; const inner = or(); expect(')'); return inner; }
       if (tk.kind === 'id') {
         if (tk.text === 'true' || tk.text === 'false') { p++; return b.make('verse_bool', { V: tk.text }); }
-        if (tk.text === 'GetPlayspace' && is('(', p + 1) && is(')', p + 2)) { p += 3; return b.make('verse_playspace'); }
+        if (tk.text === 'GetPlayspace' && is('(', p + 1) && is(')', p + 2)) {
+          p += 3;
+          const call = (method: string) => is('.') && tokens[p + 1]?.text === method && is('(', p + 2) && is(')', p + 3);
+          if (call('GetPlayers')) { p += 4; return b.make('verse_players'); }
+          if (call('GetTeamCollection')) { p += 4; return postfix(b.make('verse_team_collection')); }
+          return b.make('verse_playspace');
+        }
+        // Phase 5.3: a player's UI, text and button widgets
+        if (tk.text === 'GetPlayerUI' && is('[', p + 1)) {
+          p += 2; const player = or(); expect(']');
+          return b.make('verse_player_ui', null, { PLAYER: { block: player } });
+        }
+        if (['text_block', 'button_loud', 'button_regular', 'button_quiet'].includes(tk.text) && is('{', p + 1)) {
+          const kind = tk.text; p += 2;
+          expect('DefaultText'); expect(':='); expect('MakeMessage'); expect('(');
+          const value = or(); expect(')'); expect('}');
+          return kind === 'text_block'
+            ? b.make('verse_text_widget', null, { TEXT: { block: value } })
+            : b.make('verse_button_widget', { KIND: kind }, { TEXT: { block: value } });
+        }
+        if (tk.text === 'Message' && is('.', p + 1) && tokens[p + 2]?.text === 'Player' && !is('.', p + 3)) { p += 3; return b.make('verse_message_player'); }
+        // Phase 5.2: positions, rotations and distances
+        if (tk.text === 'vector3' && is('{', p + 1)) {
+          p += 2;
+          const parts: Record<string, { block: BlockState }> = {};
+          for (const axis of ['X', 'Y', 'Z']) {
+            if (axis !== 'X') expect(',');
+            expect(axis); expect(':=');
+            parts[axis] = { block: or() };
+          }
+          expect('}');
+          return postfix(b.make('verse_vector', null, parts));
+        }
+        if (tk.text === 'IdentityRotation' && is('(', p + 1) && is(')', p + 2)) { p += 3; return b.make('verse_identity_rotation'); }
+        if ((tk.text === 'MakeRotationFromYawPitchRollDegrees' || tk.text === 'Distance' || tk.text === 'DistanceXY') && is('(', p + 1)) {
+          const fn = tk.text; p += 2;
+          const values: BlockState[] = [];
+          while (!is(')')) { if (values.length) expect(','); values.push(or()); }
+          expect(')');
+          if (fn === 'MakeRotationFromYawPitchRollDegrees') {
+            if (values.length !== 3) throw new NoBlocksFor('a rotation takes three angles');
+            return b.make('verse_rotation', null, { YAW: { block: values[0] }, PITCH: { block: values[1] }, ROLL: { block: values[2] } });
+          }
+          if (values.length !== 2) throw new NoBlocksFor('a distance takes two positions');
+          return b.make('verse_distance', { KIND: fn }, { A: { block: values[0] }, B: { block: values[1] } });
+        }
         if (tk.text === 'GetRandomInt' && is('(', p + 1)) {
           p += 2;
           const start = p;
@@ -202,6 +297,14 @@ export class ExpressionParser {
         }
         p++;
         const name = tk.text;
+        // Phase 5.1: elimination results, a character's health, and calls that follow a value
+        if (name === 'Result' && is('.') && tokens[p + 1]?.text === 'EliminatingCharacter' && is('?', p + 2)) { p += 3; return b.make('verse_eliminator'); }
+        if (name === 'Result' && is('.') && tokens[p + 1]?.text === 'EliminatedCharacter') { p += 2; return postfix(b.make('verse_eliminated')); }
+        if (name === 'FortChar' && is('.') && ['GetHealth', 'GetShield'].includes(tokens[p + 1]?.text) && is('(', p + 2) && is(')', p + 3)) {
+          const stat = tokens[p + 1].text; p += 4;
+          return b.make('verse_char_stat', { STAT: stat });
+        }
+        if (hasPostfix()) return postfix(b.make('verse_get', { NAME: name }));
         /** Arguments up to the closing bracket, as A1, A2, A3 inputs. */
         const args = (close: string, max = MAX_ARGS): NonNullable<BlockState['inputs']> => {
           const inputs: NonNullable<BlockState['inputs']> = {};

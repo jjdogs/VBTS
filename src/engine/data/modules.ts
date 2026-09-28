@@ -23,6 +23,7 @@ export const COLORS = {
   structure: '#7B61FF', devices: '#2E9BD6', events: '#E9A23B', logic: '#3DAE72',
   loops: '#D9536F', math: '#2FA6A0', text: '#B46CD3', vars: '#E67A3A',
   player: '#D65446', funcs: '#8A63D2', time: '#6C7A93', comment: '#5b5870', raw: '#6E6A86', data: '#C0862B', types: '#C2579A',
+  teams: '#8A9A2B', movement: '#3A8FB7', ui: '#B8629E',
 } as const;
 
 /** Modules offered in the "using" dropdown, in the order using lines are written. */

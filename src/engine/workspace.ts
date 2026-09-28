@@ -168,9 +168,22 @@ export function inSuspends(block: Block): boolean {
 }
 
 /** Names a block can use because an enclosing block provides them. */
-export type ScopeName = 'Agent' | 'MaybeAgent' | 'Player' | 'FortChar';
+export type ScopeName = 'Agent' | 'MaybeAgent' | 'Player' | 'FortChar' | 'Result' | 'Message';
+
+/** A local value with this name above the block in its function (Player := Message.Player). */
+function localAbove(block: Block, name: string): boolean {
+  let cur: Block | null = block;
+  while (cur && cur.outputConnection) cur = cur.getParent(); // from a value up to its statement
+  // Previous statements, then the block holding them, then its previous statements…
+  for (let b = cur?.getPreviousBlock() ?? null; b; b = b.getPreviousBlock()) {
+    if (b.type === 'verse_function' || b.type === 'verse_handler' || b.type === 'verse_device') return false;
+    if (b.type === 'verse_local' && field(b, 'NAME') === name) return true;
+  }
+  return false;
+}
 
 export function hasInScope(block: Block, name: ScopeName): boolean {
+  if (localAbove(block, name)) return true;
   for (const e of enclosing(block)) {
     const t = e.block.type;
     if (name === 'Agent' && t === 'verse_handler' && field(e.block, 'PARAM') === 'agent') return true;
@@ -181,6 +194,10 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
     // if (Player := player[Agent]):  — any "if it exists" that names the value
     if (t === 'verse_if_bind' && e.input === 'DO' && field(e.block, 'VAR') === name) return true;
     if (name === 'FortChar' && t === 'verse_fort_character') return true;
+    if (name === 'Result' && t === 'verse_handler' && ['elimination', 'damage', 'ai'].includes(field(e.block, 'PARAM'))) return true;
+    if (name === 'Message' && t === 'verse_handler' && field(e.block, 'PARAM') === 'widget') return true;
+    // A function input with that name: WatchPlayer(Player:player), AddPoint(Agent:agent, Team:team)
+    if (t === 'verse_function' && new RegExp(`(^|,)\\s*${name}\\s*:`).test(field(e.block, 'PARAMS'))) return true;
   }
   return false;
 }

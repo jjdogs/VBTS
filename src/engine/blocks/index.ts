@@ -11,6 +11,9 @@ import { registerMathBlocks } from './math.ts';
 import { registerPlayerBlocks } from './player.ts';
 import { registerRawBlocks } from './raw.ts';
 import { registerStructureBlocks } from './structure.ts';
+import { registerTeamBlocks } from './teams.ts';
+import { registerMovementBlocks } from './movement.ts';
+import { registerUiBlocks } from './ui.ts';
 import { registerTextBlocks } from './text.ts';
 import { registerTimeBlocks } from './time.ts';
 import { registerTypeBlocks } from './types.ts';
@@ -34,5 +37,8 @@ export function registerAllBlocks(): void {
   registerFunctionBlocks();
   registerTimeBlocks();
   registerTypeBlocks();
+  registerTeamBlocks();
+  registerMovementBlocks();
+  registerUiBlocks();
   registerRawBlocks();
 }
