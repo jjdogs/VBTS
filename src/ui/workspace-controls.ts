@@ -56,8 +56,9 @@ export function mountWorkspaceControls(opts: { Blockly: BlocklyNS; ws: Workspace
       // A little larger than the icon, so a block doesn't have to land exactly on it.
       return new B.utils.Rect(r.top - 8, r.bottom + 8, r.left - 8, r.right + 8);
     }
-    // Blockly asks whether the dragged block would be deleted while it is over the trash.
-    protected override updateWouldDelete_(would: boolean) { super.updateWouldDelete_(would); trashEl.classList.toggle('hot', would); }
+    // On each move Blockly first asks whether the block would be deleted, then calls onDragOver.
+    // (It asks once more after the drop, so the colour is set here, not in updateWouldDelete_.)
+    override onDragOver(el: IDraggable) { super.onDragOver(el); trashEl.classList.toggle('hot', this.wouldDelete_); }
     override onDragExit(el: IDraggable) { super.onDragExit(el); trashEl.classList.remove('hot'); }
     override onDrop(el: IDraggable) {
       super.onDrop(el);
