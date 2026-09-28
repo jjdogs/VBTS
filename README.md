@@ -219,6 +219,23 @@ for members nothing outside the class uses, with a one-click fix.
 Each has a toolbox category (Teams, Movement, UI, plus additions to Player and Events), lessons
 18–26 and a template (team elimination, moving-platform parkour, shop menu).
 
+## What text → blocks understands
+
+Besides one block per Verse feature above, the converter keeps these shapes as blocks (and writes
+them back exactly as typed):
+
+- **Text with values anywhere**: `"You have {Coins} coins"`, up to three values (Text: "text with
+  values"). `"Score: {Score}"` keeps its original block.
+- **Several parts in one if**: `if (Player := player[Agent], UI := GetPlayerUI[Player]):` (Logic:
+  "all of" with "name := value" parts). A name made in the condition can be used in later parts
+  and in the then part.
+- **else if chains**: `else if (…):` stays a chain; in blocks it is an if inside the else, and any
+  lone if inside an else is written as `else if`.
+- **Chains on any value**: `.Field`, `.Call(…)` and `.Try[…]` after a value (Functions: "part of a
+  value"), and a call chain as its own line ("do"), e.g. `Platform.GetTransform().Rotation`.
+
+Anything else is kept word for word in a raw Verse block, so nothing is lost.
+
 ## Several files
 
 A project can hold several `.verse` files, shown as tabs in the file bar (`ui/files.ts`). Click a
@@ -294,6 +311,8 @@ checks that every template converts into real blocks.
   health and shield, lessons 18–20 and the team elimination template.
 - `tests/movement-ui.test.ts` covers Phases 5.2 and 5.3: positions, teleporting and MoveTo; UI
   widgets, canvases, clicks; lessons 21–26 and the parkour and shop templates.
+- `tests/converter-gaps.test.ts` covers text with values anywhere, several parts in one if,
+  else if chains and general chains: each round-trips exactly.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to

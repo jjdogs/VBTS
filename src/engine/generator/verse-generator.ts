@@ -14,7 +14,9 @@ import type { Fix, Warning, WarningLevel } from '../types.ts';
  * `not A = B` means `(not A) = B`, so a comparison inside not needs parentheses.
  */
 export const Order = {
-  ATOMIC: 0, UNARY: 2, NOT: 2, MUL: 3, ADD: 4, CMP: 5, AND: 7, OR: 8, NONE: 99,
+  ATOMIC: 0, UNARY: 2, NOT: 2, MUL: 3, ADD: 4, CMP: 5, AND: 7, OR: 8,
+  /** A, B, C in an if: every part must succeed (looser than or). */
+  ALL: 9, NONE: 99,
 } as const;
 
 /** Marks the start of a block's code so the UI can map lines back to blocks. See generate.ts. */

@@ -38,18 +38,37 @@ function splitArgs(text: string): string[] {
   return out;
 }
 
+/** True if every bracket in the text closes in order (strings aside). */
+function balanced(text: string): boolean {
+  let depth = 0, inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '\\' && inString) { i++; continue; }
+    if (c === '"') inString = !inString;
+    if (inString) continue;
+    if ('([{'.includes(c)) depth++;
+    if (')]}'.includes(c) && --depth < 0) return false;
+  }
+  return depth === 0 && !inString;
+}
+
+/** True if the next line is else: or else if (…): (without converting anything). */
+const hasElse = (rest: LineNode[]): boolean => !!rest[0] && /^else(\s+if\s*\(.*\))?\s*:$/.test(stripComment(rest[0].text));
+
 interface RuleInput {
   /** The line with any trailing comment removed. */
   text: string;
   node: LineNode;
   /** The line after this one at the same indent, if any (for else:). */
   next: LineNode | undefined;
+  /** Every line after this one at the same indent (for else if chains). */
+  rest: LineNode[];
   /** Converts indented lines (this line's children by default) into a stack. */
   body: (lines?: LineNode[]) => NextLink | undefined;
 }
 
-/** A rule returns the block it made (and whether it also used the next line), or null to pass. */
-type Rule = (input: RuleInput) => { block: BlockState; usedNext?: boolean } | BlockState | null;
+/** A rule returns the block it made (and how many following lines it also used), or null to pass. */
+type Rule = (input: RuleInput) => { block: BlockState; usedNext?: boolean | number } | BlockState | null;
 
 export class StatementParser {
   private readonly b: BlockBuilder;
@@ -78,6 +97,7 @@ export class StatementParser {
         text: stripComment(node.text),
         node,
         next: nodes[i + 1],
+        rest: nodes.slice(i + 1),
         body: (lines = node.children) => this.b.chain(this.parse(lines)),
       };
       let made: ReturnType<Rule> = null;
@@ -87,15 +107,32 @@ export class StatementParser {
       }
       if (!made) made = this.keepRaw(input);
       if ('block' in made && typeof made.block === 'object') {
-        this.b.track(made.block, node.line - 1, lastLineOf(made.usedNext ? nodes[i + 1] : node) - 1);
+        const used = made.usedNext === true ? 1 : made.usedNext || 0;
+        this.b.track(made.block, node.line - 1, lastLineOf(nodes[i + used]) - 1);
         out.push(made.block);
-        if (made.usedNext) i++;
+        i += used;
       } else {
         this.b.track(made as BlockState, node.line - 1, lastLineOf(node) - 1);
         out.push(made as BlockState);
       }
     }
     return out;
+  }
+
+  /**
+   * The else part after an if: `else:` (its lines), or `else if (…):` (another if, which takes
+   * the rest of the chain). Returns the stack and how many lines it used, or null.
+   */
+  private elseOf(rest: LineNode[]): { stack: NextLink | undefined; used: number } | null {
+    const first = rest[0] ? stripComment(rest[0].text) : '';
+    if (first === 'else:') return { stack: this.b.chain(this.parse(rest[0].children)), used: 1 };
+    if (!/^else\s+if\s*\(.*\)\s*:$/.test(first)) return null;
+    // The chain: this else if, then any further else if lines, ending at an else:
+    let used = 1;
+    while (rest[used] && /^else\s+if\s*\(.*\)\s*:$/.test(stripComment(rest[used].text))) used++;
+    if (rest[used] && stripComment(rest[used].text) === 'else:') used++;
+    const chain = [{ ...rest[0], text: rest[0].text.replace(/^else\s+/, '') }, ...rest.slice(1, used)];
+    return { stack: this.b.chain(this.parse(chain)), used };
   }
 
   /** A parser for a body where `name` holds one device of `type` (loop variable, bound item). */
@@ -255,18 +292,37 @@ export class StatementParser {
       return this.b.make('verse_set', { NAME: m[1], OP: m[2] }, this.value('V', this.expr.parse(m[3])));
     },
 
-    // if (Agent := MaybeAgent?):
-    ({ text, body }) =>
-      /^if\s*\(\s*Agent\s*:=\s*MaybeAgent\?\s*\)\s*:$/.test(text) ? this.b.make('verse_unwrap_agent', null, { DO: body()! }) : null,
+    // if (Agent := MaybeAgent?):  (these two blocks have no else; with one, "if it exists" takes the line)
+    ({ text, body, rest }) =>
+      /^if\s*\(\s*Agent\s*:=\s*MaybeAgent\?\s*\)\s*:$/.test(text) && !hasElse(rest) ? this.b.make('verse_unwrap_agent', null, { DO: body()! }) : null,
 
     // if (FortChar := Agent.GetFortCharacter[]):
-    ({ text, body }) => {
+    ({ text, body, rest }) => {
       const m = text.match(/^if\s*\(\s*FortChar\s*:=\s*(Agent|Player)\.GetFortCharacter\[\]\s*\)\s*:$/);
-      return m ? this.b.make('verse_fort_character', { WHO: m[1] }, { DO: body()! }) : null;
+      return m && !hasElse(rest) ? this.b.make('verse_fort_character', { WHO: m[1] }, { DO: body()! }) : null;
     },
 
-    // if (Name := something that can fail): … with an optional else:
-    ({ text, next, node }) => {
+    // if (A := X, B := Y, …): several parts that must all succeed — "all of" with bindings
+    ({ text, node, rest }) => {
+      const m = text.match(/^if\s*\((.*)\)\s*:$/);
+      const parts = m ? splitArgs(m[1]) : [];
+      if (parts.length < 2 || parts.length > 4) return null;
+      const inputs: NonNullable<BlockState['inputs']> = {};
+      parts.forEach((part, i) => {
+        const bind = part.match(/^([A-Za-z_]\w*)\s*:=\s*(.+)$/);
+        inputs['ABCD'[i]] = { block: bind
+          ? this.b.make('verse_bind', { VAR: bind[1] }, { VALUE: { block: this.expr.parse(bind[2])! } })
+          : this.expr.parse(part)! };
+      });
+      const all = this.b.make('verse_all', null, inputs);
+      const thenPart = this.b.chain(this.parse(node.children));
+      const otherwise = this.elseOf(rest);
+      if (otherwise) return { block: this.b.make('verse_if_else', null, { COND: { block: all }, DO: thenPart!, ELSE: otherwise.stack! }), usedNext: otherwise.used };
+      return this.b.make('verse_if', null, { COND: { block: all }, DO: thenPart! });
+    },
+
+    // if (Name := something that can fail): … with an optional else: (or else if)
+    ({ text, node, rest }) => {
       const m = text.match(/^if\s*\(\s*(\w+)\s*:=\s*(.+)\)\s*:$/);
       if (!m) return null;
       const value = this.expr.parse(m[2]);
@@ -274,23 +330,22 @@ export class StatementParser {
       const item = m[2].match(/^(\w+)\[/);
       const inner = this.scoped(m[1], item ? this.ctx.deviceArrays[item[1]] : undefined);
       const thenPart = this.b.chain(inner.parse(node.children));
-      if (next && stripComment(next.text) === 'else:') {
-        const elsePart = this.b.chain(this.parse(next.children));
-        return { block: this.b.make('verse_if_bind', { VAR: m[1] }, { VALUE: { block: value! }, DO: thenPart!, ELSE: elsePart! }), usedNext: true };
+      const otherwise = this.elseOf(rest);
+      if (otherwise) {
+        return { block: this.b.make('verse_if_bind', { VAR: m[1] }, { VALUE: { block: value! }, DO: thenPart!, ELSE: otherwise.stack! }), usedNext: otherwise.used };
       }
       return this.b.make('verse_if_bind', { VAR: m[1] }, { VALUE: { block: value! }, DO: thenPart! });
     },
 
-    // if (condition): … with an optional else: on the next line
-    ({ text, next, body }) => {
+    // if (condition): … with an optional else: (or else if) after it
+    ({ text, rest, body }) => {
       const m = text.match(/^if\s*\((.*)\)\s*:$/);
       // if (X := …) is "if it exists" (the rule above); := elsewhere, like vector3{X := 1.0…}, is fine.
       if (!m || /^\s*\w+\s*:=/.test(m[1])) return null;
       const cond = this.expr.parse(m[1]);
-      if (next && stripComment(next.text) === 'else:') {
-        const thenPart = body();
-        const elsePart = body(next.children);
-        return { block: this.b.make('verse_if_else', null, { COND: { block: cond! }, DO: thenPart!, ELSE: elsePart! }), usedNext: true };
+      const otherwise = this.elseOf(rest);
+      if (otherwise) {
+        return { block: this.b.make('verse_if_else', null, { COND: { block: cond! }, DO: body()!, ELSE: otherwise.stack! }), usedNext: otherwise.used };
       }
       return this.b.make('verse_if', null, { COND: { block: cond! }, DO: body()! });
     },
@@ -363,12 +418,21 @@ export class StatementParser {
     // OldCat.Meow() / Obj.Method(a, b) — any method that isn't a known device action
     ({ text }) => {
       const m = text.match(/^(\w+)\.(\w+)\((.*)\)$/);
-      if (!m) return null;
+      if (!m || !balanced(m[3])) return null; // A.B().C() is a chain (below), not one call
       const parts = splitArgs(m[3]);
       if (parts.length > 4) return null;
       const inputs: NonNullable<BlockState['inputs']> = {};
       parts.forEach((part, i) => { const v = this.expr.parse(part); if (v) inputs[`A${i + 1}`] = { block: v }; });
       return this.b.make('verse_method_call', { OBJ: m[1], METHOD: m[2] }, Object.keys(inputs).length ? inputs : undefined);
+    },
+
+    // A.B().C(…) — a chain that ends in a call, as a line of its own: "do"
+    ({ text }) => {
+      const before = this.b.report.blocks, rawBefore = this.b.report.raw.length;
+      const value = this.expr.tryParse(text);
+      if (value?.type === 'verse_chain' && value.fields?.KIND !== 'field') return this.b.make('verse_do', null, { VALUE: { block: value } });
+      this.b.report.blocks = before; this.b.report.raw.length = rawBefore; // not one: leave no trace
+      return null;
     },
 
     // A line that is just a value, inside a <decides> function or one with a result: check / result

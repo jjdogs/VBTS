@@ -112,11 +112,25 @@ export class ExpressionParser {
       if (inner[i] === '{' || inner[i] === '}') braces.push(i);
     }
     if (!braces.length) return this.b.make('verse_text', { TEXT: unescapeString(inner) });
-    if (braces.length === 2 && inner[braces[0]] === '{' && braces[1] === inner.length - 1) {
+    // Pairs of { } (not nested): up to three values, with text before, between and after.
+    if (braces.length % 2 || braces.length > 6 || braces.some((at, k) => inner[at] !== (k % 2 ? '}' : '{'))) {
+      throw new NoBlocksFor('complex interpolation');
+    }
+    if (braces.length === 2 && braces[1] === inner.length - 1) { // "Label{Value}": the original block
       const value = this.parse(inner.slice(braces[0] + 1, braces[1]));
       return this.b.make('verse_text_join', { LABEL: unescapeString(inner.slice(0, braces[0])) }, value ? { V: { block: value } } : undefined);
     }
-    throw new NoBlocksFor('complex interpolation');
+    const fields: Record<string, string> = { COUNT: String(braces.length / 2), T0: unescapeString(inner.slice(0, braces[0])) };
+    const inputs: NonNullable<BlockState['inputs']> = {};
+    for (let k = 0; k < braces.length; k += 2) {
+      const n = k / 2 + 1;
+      const code = inner.slice(braces[k] + 1, braces[k + 1]);
+      if (!code.trim() || code.includes('"')) throw new NoBlocksFor('empty or nested value');
+      inputs[`V${n}`] = { block: this.parse(code)! }; // a value with no block stays raw inside the text
+      const after = unescapeString(inner.slice(braces[k + 1] + 1, braces[k + 2] ?? inner.length));
+      fields[k + 2 < braces.length ? `T${n}` : 'TEND'] = after;
+    }
+    return this.b.make('verse_text_multi', fields, inputs);
   }
 
   private parseStrict(text: string): BlockState {
@@ -145,7 +159,26 @@ export class ExpressionParser {
     };
     /** Wraps a value in the calls that follow it: Eliminator.GetAgent[], Teams.GetTeam[Agent]… */
     const postfix = (block: BlockState): BlockState => {
-      while (hasPostfix()) {
+      for (;;) {
+        if (!hasPostfix()) {
+          // Any other .Name, .Name(…) or .Name[…]: the general chain block
+          if (!(is('.') && tokens[p + 1]?.kind === 'id')) return block;
+          const member = tokens[p + 1].text; p += 2;
+          const close = is('(') ? ')' : is('[') ? ']' : '';
+          const inputs: NonNullable<BlockState['inputs']> = { OBJ: { block } };
+          if (close) {
+            p++;
+            let n = 0;
+            while (!is(close)) {
+              if (n) expect(',');
+              if (++n > 3) throw new NoBlocksFor('too many inputs');
+              inputs[`A${n}`] = { block: or() };
+            }
+            expect(close);
+          }
+          block = b.make('verse_chain', { MEMBER: member, KIND: close === ')' ? 'call' : close === ']' ? 'try' : 'field' }, inputs);
+          continue;
+        }
         const m = tokens[p + 1].text;
         if (m === 'GetAgent') { p += 4; block = b.make('verse_char_agent', null, { CHAR: { block } }); continue; }
         if (m === 'GetTeams') { p += 4; block = b.make('verse_all_teams', null, { TEAMS: { block } }); continue; }
@@ -177,7 +210,6 @@ export class ExpressionParser {
         wanted.forEach((input, i) => { inputs[input] = { block: values[i] }; });
         block = b.make('verse_team_op', { OP: m }, inputs);
       }
-      return block;
     };
 
     const or = (): BlockState => {
@@ -353,11 +385,15 @@ export class ExpressionParser {
         if (is('.') && tokens[p + 1]?.kind === 'id') {
           const member = tokens[p + 1].text;
           if (this.enums.has(name)) { p += 2; return b.make('verse_enum_value', { TYPE: name, VALUE: member }); }
-          if (is('(', p + 2)) { p += 3; return b.make('verse_method_value', { OBJ: name, METHOD: member }, args(')', MAX_METHOD_ARGS)); }
+          if (is('(', p + 2)) { p += 3; return postfix(b.make('verse_method_value', { OBJ: name, METHOD: member }, args(')', MAX_METHOD_ARGS))); }
           if (!is('.', p + 2) && !is('[', p + 2)) { p += 2; return b.make('verse_member_get', { OBJ: name, MEMBER: member }); }
         }
         if (name === 'Self') return b.make('verse_self');
         if (is('?')) { p++; return b.make(ctx.options.has(name) ? 'verse_option_value' : 'verse_is_true', { NAME: name }); }
+        // Name.Member.More, Agent.GetFortCharacter[]…: the general chain, starting from the name
+        if (is('.') && tokens[p + 1]?.kind === 'id') {
+          return postfix(name === 'Agent' || name === 'Player' ? b.make('verse_agent_value', { WHO: name }) : b.make('verse_get', { NAME: name }));
+        }
         if (is('(') || is('.') || is('[')) throw new NoBlocksFor('calls have no value block yet');
         if (name === 'Agent' || name === 'Player') return b.make('verse_agent_value', { WHO: name });
         return b.make('verse_get', { NAME: name });

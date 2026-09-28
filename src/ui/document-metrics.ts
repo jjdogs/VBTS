@@ -5,6 +5,9 @@
  * canvas). In the document layout the blocks should scroll like text: the first block can't
  * move below the top margin, blocks can't slide away from the line-number gutter, and you can
  * only scroll a little past the last block. The free canvas layout keeps Blockly's behaviour.
+ *
+ * The Toolbox palette is a list, not a canvas, in every layout: it starts at its first block and
+ * only scrolls sideways when a block is wider than the panel.
  */
 import Blockly from '../engine/blockly.ts';
 
@@ -15,6 +18,8 @@ const TOP_MARGIN = 12;
 const GUTTER_GAP = 6;
 /** How far past the last block you can scroll (like the editor's bottom padding). */
 const END_MARGIN = 40;
+/** Space around the palette's blocks (its blocks start this far in; see toolbox-panel.ts). */
+const PALETTE_MARGIN = 14;
 
 const isDocument = () => document.body.dataset.blocksLayout === 'document';
 
@@ -37,7 +42,17 @@ export class DocumentMetricsManager extends Blockly.MetricsManager {
   }
 
   private compute(view: Region, content: Region) {
-    const main = (this as unknown as { workspace_: { verseMain?: boolean } }).workspace_?.verseMain;
+    const ws = (this as unknown as { workspace_?: { verseMain?: boolean; versePalette?: boolean } }).workspace_;
+    if (ws?.versePalette) {
+      const m = PALETTE_MARGIN;
+      const top = Math.min(0, content.top - m), left = Math.min(0, content.left - m);
+      return {
+        top, left,
+        bottom: Math.max(content.top + content.height + m, top + view.height),
+        right: Math.max(content.left + content.width + m, left + view.width),
+      };
+    }
+    const main = ws?.verseMain;
     if (!isDocument() || !main) return super.getPaddedContent_(view, content);
     const gutter = document.getElementById('blockGutter')?.getBoundingClientRect().width || 44;
     const top = content.top - TOP_MARGIN;

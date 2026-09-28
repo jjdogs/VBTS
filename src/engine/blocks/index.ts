@@ -14,6 +14,7 @@ import { registerStructureBlocks } from './structure.ts';
 import { registerTeamBlocks } from './teams.ts';
 import { registerMovementBlocks } from './movement.ts';
 import { registerUiBlocks } from './ui.ts';
+import { registerChainBlocks } from './chain.ts';
 import { registerTextBlocks } from './text.ts';
 import { registerTimeBlocks } from './time.ts';
 import { registerTypeBlocks } from './types.ts';
@@ -40,5 +41,6 @@ export function registerAllBlocks(): void {
   registerTeamBlocks();
   registerMovementBlocks();
   registerUiBlocks();
+  registerChainBlocks();
   registerRawBlocks();
 }

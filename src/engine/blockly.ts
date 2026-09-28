@@ -15,5 +15,5 @@ const Blockly: BlocklyNamespace =
 export default Blockly;
 export type {
   Block, BlockSvg, Workspace, WorkspaceSvg, Field, CodeGenerator,
-  FieldDropdownValidator, MenuOption, MenuGeneratorFunction,
+  FieldDropdownValidator, MenuOption, MenuGeneratorFunction, IDraggable,
 } from 'blockly/core';

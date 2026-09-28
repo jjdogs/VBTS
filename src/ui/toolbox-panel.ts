@@ -60,6 +60,8 @@ export function mountToolboxPanel(opts: {
     move: { scrollbars: { vertical: true, horizontal: true }, drag: false, wheel: true },
     zoom: { controls: false, wheel: false, startScale: ws.scale },
   }) as WorkspaceSvg;
+  // A list, not a canvas: no scrolling above the first block or sideways past the blocks (document-metrics.ts).
+  (palette as WorkspaceSvg & { versePalette?: boolean }).versePalette = true;
   new ResizeObserver(() => B.svgResize(palette)).observe(paletteDiv);
   // Injecting makes the newest workspace Blockly's "main" one (used for keyboard shortcuts and
   // more). The real workspace stays main; the palette never takes focus (see pointerdown below).

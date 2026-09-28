@@ -3,14 +3,30 @@
  * Verse ifs run on success/failure, which is why comparisons are "Cond" values.
  */
 import Blockly from '../blockly.ts';
+import type { Block, BlockSvg } from '../blockly.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
-import { nameField } from '../fields.ts';
+import { nameField, rerender } from '../fields.ts';
 import { Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { asStatement, body, f, Slot } from './shared.ts';
+import { asStatement, body, elseCode, f, Slot } from './shared.ts';
 
 /** Output type for anything that can go inside if ( ). */
 export const COND = 'Cond';
+
+const PARTS = ['A', 'B', 'C', 'D'];
+/** "all of": shows the filled parts plus one empty slot (at least two). */
+function showParts(block: Block): void {
+  if (!(block as BlockSvg).rendered) return;
+  let last = 0;
+  PARTS.forEach((p, i) => { if (block.getInputTargetBlock(p)) last = i + 1; });
+  let changed = false;
+  PARTS.forEach((p, i) => {
+    const input = block.getInput(p);
+    const show = i < Math.max(2, last + 1);
+    if (input && input.isVisible() !== show) { input.setVisible(show); changed = true; }
+  });
+  if (changed) rerender(block);
+}
 
 export function registerLogicBlocks(): void {
   defineBlock({
@@ -46,7 +62,7 @@ export function registerLogicBlocks(): void {
     generate(b, g) {
       const cond = g.valueToCode(b, 'COND', Order.NONE);
       if (!cond) g.warn(b, 'if needs a condition.');
-      return `if (${cond || 'true?'}):\n${body(g, b, 'DO')}else:\n${body(g, b, 'ELSE')}`;
+      return `if (${cond || 'true?'}):\n${body(g, b, 'DO')}${elseCode(g, b, true)}`;
     },
   });
 
@@ -99,6 +115,52 @@ export function registerLogicBlocks(): void {
     },
     // not binds tightly (see Order), so anything but a simple value gets parentheses: not (A = B).
     generate: (b, g) => [`not ${g.valueToCode(b, 'A', Order.NOT) || 'true?'}`, Order.NOT],
+  });
+
+  // if (A := X, B := Y): several things that must all succeed, and names for their results.
+  defineBlock({
+    type: 'verse_all',
+    colour: COLORS.logic,
+    explain: {
+      title: 'All of these', doc: DOCS.failure,
+      tip: 'A, B, C inside an if: runs the inside only if every part succeeds, in order.',
+      text: 'In Verse, an if can hold several things separated by commas: if (Player := player[Agent], UI := GetPlayerUI[Player]):. Each must succeed, one after another; a name made by one part can be used by the next. If any part fails, the else runs.',
+    },
+    init() {
+      this.appendValueInput('A').appendField('all of');
+      this.appendValueInput('B').appendField(',');
+      this.appendValueInput('C').appendField(',');
+      this.appendValueInput('D').appendField(',');
+      this.setInputsInline(true);
+      this.setOutput(true, COND);
+      showParts(this);
+      this.setOnChange(function (this: Block) { if (this.workspace && !this.isDeadOrDying()) showParts(this); });
+    },
+    generate(b, g) {
+      const parts = PARTS.map(p => g.valueToCode(b, p, Order.NONE)).filter(Boolean); // commas bind loosest: no parentheses needed
+      if (parts.length < 2) g.warn(b, '"all of" needs at least two parts. Plug in conditions or "name := value" blocks.');
+      return [parts.join(', ') || 'true?', Order.ALL];
+    },
+  });
+
+  defineBlock({
+    type: 'verse_bind',
+    colour: COLORS.logic,
+    explain: {
+      title: 'Name := value (in an if)', doc: DOCS.failure,
+      tip: 'Inside an if: tries a value that can fail and names its result, like Player := player[Agent].',
+      text: 'Name := value inside an if condition tries the value; if it succeeds, the result gets that name for the rest of the condition and the then part. Use it in "all of" to try several things at once.',
+    },
+    init() {
+      this.appendValueInput('VALUE').appendField(nameField('Player'), 'VAR').appendField(':=');
+      this.setInputsInline(true);
+      this.setOutput(true, COND);
+    },
+    generate(b, g) {
+      const value = g.valueToCode(b, 'VALUE', Order.NONE);
+      if (!value) g.warn(b, `Plug in the value to name ${f(b, 'VAR')}.`);
+      return [`${f(b, 'VAR')} := ${value || 'false?'}`, Order.ALL];
+    },
   });
 
   defineBlock({
