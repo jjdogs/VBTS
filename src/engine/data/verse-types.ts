@@ -7,6 +7,7 @@ import { escapeString, formatFloat } from '../generator/verse-generator.ts';
 export const VALUE_TYPES = [
   'int', 'float', 'logic', 'string', 'agent', 'player',
   'team', 'fort_character', 'vector3', 'rotation', 'transform',
+  'canvas', 'text_block', 'button_loud', 'button_regular', 'button_quiet', 'player_ui',
 ] as const;
 /** Types that work as map keys (they must be comparable). */
 export const KEY_TYPES = ['agent', 'player', 'team', 'string', 'int'] as const;
@@ -29,7 +30,8 @@ const TYPE_MODULES: Record<string, string> = {
   widget: '/UnrealEngine.com/Temporary/UI', canvas: '/UnrealEngine.com/Temporary/UI',
   canvas_slot: '/UnrealEngine.com/Temporary/UI', player_ui: '/UnrealEngine.com/Temporary/UI',
   widget_message: '/UnrealEngine.com/Temporary/UI',
-  text_block: '/Fortnite.com/UI', button_loud: '/Fortnite.com/UI', button_regular: '/Fortnite.com/UI',
+  text_block: '/Fortnite.com/UI', button_loud: '/Fortnite.com/UI', button_regular: '/Fortnite.com/UI', button_quiet: '/Fortnite.com/UI',
+  vector2: '/UnrealEngine.com/Temporary/SpatialMath', anchors: '/UnrealEngine.com/Temporary/UI',
 };
 
 /** The module a type needs, or null. */

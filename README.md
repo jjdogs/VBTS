@@ -107,10 +107,10 @@ rebuilt (for example in Svelte) without touching the engine.
 3.6. ✅ Edit Mode (Appearance panel) and the one-window editor
 4.1. ✅ Your own classes, structs and enums; access specifiers; style rule 6.2
 4.2. ✅ Multiple files: file tabs, classes and enums shared across files, whole-project share codes
-5. Players & teams, UI widgets, positions and movement (5.0 foundations ✅, 5.1 players & teams ✅; 5.2–5.3 next, see `docs/phase-5-plan.md`)
+5. ✅ Players & teams, UI widgets, positions and movement (see `docs/phase-5-plan.md`)
 6. ✅ Text ⇄ blocks: type directly in the Text view
 7. VS Code extension (on hold: web-only for now)
-8. Game-mode templates (done so far: pop-up target gallery, team elimination)
+8. Game-mode templates (done so far: pop-up target gallery, team elimination, moving-platform parkour, shop menu)
 
 ## One editor, two views
 
@@ -202,6 +202,23 @@ call methods, use enum values (`game_state.Playing`) and `Self`. Members and fun
 `<private>`, `<protected>`, `<internal>` or `<public>`. Style rule 6.2 suggests `<private>` only
 for members nothing outside the class uses, with a one-click fix.
 
+## Players, movement and UI (Phase 5)
+
+- **Events of values**: a player joining (`GetPlayspace().PlayerAddedEvent()`), a character being
+  eliminated (`FortChar.EliminatedEvent()`), a button clicked (`Button.OnClick()`); handlers can
+  receive a player, an elimination Result, damage, a button click Message or an AI result.
+- **Local values** in functions (`Name := value`, `var Name:type = value`), casts
+  (`player[Agent]`), and device actions with inputs (`Score.SetScoreAward(10)`).
+- **Teams**: the team collection's GetTeam / GetAgents / IsOnTeam / AddToTeam (failable), every
+  player, elimination results and a character's agent, health and shield.
+- **Movement**: positions (`vector3`), rotations, where things are (`GetTransform()`), distances,
+  teleporting and moving props over time; `creative_prop` can be linked.
+- **UI**: a player's UI, text and button widgets on a canvas at a preset position, clickable
+  widgets, changing text, hiding, and who clicked.
+
+Each has a toolbox category (Teams, Movement, UI, plus additions to Player and Events), lessons
+18–26 and a template (team elimination, moving-platform parkour, shop menu).
+
 ## Several files
 
 A project can hold several `.verse` files, shown as tabs in the file bar (`ui/files.ts`). Click a
@@ -275,6 +292,8 @@ checks that every template converts into real blocks.
   handlers that receive other types, value events and device actions with inputs.
 - `tests/teams.test.ts` covers Phase 5.1: team questions, elimination results, a character's agent,
   health and shield, lessons 18–20 and the team elimination template.
+- `tests/movement-ui.test.ts` covers Phases 5.2 and 5.3: positions, teleporting and MoveTo; UI
+  widgets, canvases, clicks; lessons 21–26 and the parkour and shop templates.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to

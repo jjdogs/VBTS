@@ -5,5 +5,7 @@
 import type { Template } from '../../types.ts';
 import { targetGallery } from './target-gallery.ts';
 import { teamElimination } from './team-elimination.ts';
+import { platformParkour } from './platform-parkour.ts';
+import { shopMenu } from './shop-menu.ts';
 
-export const TEMPLATES: Template[] = [targetGallery, teamElimination];
+export const TEMPLATES: Template[] = [targetGallery, teamElimination, platformParkour, shopMenu];

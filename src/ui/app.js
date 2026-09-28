@@ -365,10 +365,10 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     ['done', 'Phase 3.6: Edit Mode (Appearance), one-window editor, type directly in Text view'],
     ['done', 'Phase 4.1: Your own classes, structs and enums; <private> (style 6.2)'],
     ['done', 'Phase 4.2: Multiple files — tabs, classes shared across files, whole-project share codes'],
-    ['next', 'Phase 5: Players & teams, UI widgets, positions and movement (5.0 foundations and 5.1 players & teams done; movement and UI next)'],
+    ['done', 'Phase 5: Players & teams, UI widgets, positions and movement'],
     ['done', 'Phase 6: Text ⇄ blocks — type directly in the Text view'],
     ['next', 'Phase 7: VS Code extension (on hold: web-only for now)'],
-    ['next', 'Phase 8: Game-mode templates (pop-up target gallery, team elimination)'],
+    ['next', 'Phase 8: Game-mode templates (target gallery, team elimination, parkour, shop menu)'],
   ];
   $('roadmap').innerHTML = PHASES.map(([st, t], i) => {
     const cls = st === 'done' ? 'done' : (PHASES.findIndex(p => p[0] !== 'done') === i ? 'now' : '');

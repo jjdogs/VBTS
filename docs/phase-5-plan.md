@@ -1,6 +1,6 @@
 # Phase 5 plan: players & teams, UI widgets, positions and movement
 
-Status: **5.0 foundations and 5.1 players & teams done**; 5.2 and 5.3 next.
+Status: **Phase 5 is done**: 5.0 foundations, 5.1 players & teams, 5.2 positions & movement and 5.3 UI widgets.
 
 ## Goal
 
@@ -129,7 +129,18 @@ a `[team]int` map", "Knockout counter using EliminatedEvent".
 Template: **Team elimination**. Two teams; each elimination scores for the eliminator's team;
 the first team to N wins (end_game_device).
 
-### 5.2 Positions & movement
+### 5.2 Positions & movement — ✅ done
+
+What was built (tests in `tests/movement-ui.test.ts`): `blocks/movement.ts` (Movement category):
+position (`vector3{X := …}`), rotation from degrees and "no rotation" (`IdentityRotation()`),
+"where is it" (`GetTransform()` → Translation / Rotation / Scale), X/Y/Z of a position, distance
+(`Distance` / `DistanceXY`), teleport (`TeleportTo[…]`, failable) and move over time (`MoveTo`,
+`<suspends>`). `creative_prop` can be linked like a device. Checks: MoveTo outside suspending code,
+TeleportTo outside an if, ints where Verse needs floats; a loop of MoveTo counts as waiting.
+Lessons 21–23 (Back to the start · Moving platform · Close enough) and the **Moving-platform
+parkour** template (checkpoints in a `[player]vector3` map, falling teleports you back).
+
+The original plan for 5.2:
 
 | Block | Verse | Notes |
 |---|---|---|
@@ -150,7 +161,22 @@ Lesson ideas: "Teleport to the start pad" (position from a linked device's trans
 Template: **Moving-platform parkour**: props that move on loops, checkpoints that save each
 player's position in a `[player]vector3` map, and falling below a Z height teleports you back.
 
-### 5.3 UI widgets
+### 5.3 UI widgets — ✅ done
+
+What was built (tests in `tests/movement-ui.test.ts`): `blocks/ui.ts` (UI category): a player's UI
+(`GetPlayerUI[Player]`, failable), text and button widgets (`text_block`, `button_loud` /
+`regular` / `quiet`, text via the MakeMessage helper), a canvas at one of nine **preset
+positions** (the chosen answer to the layout question), show / "show and let them click"
+(`player_ui_slot{InputMode := ui_input_mode.All}`) / hide, set widget text, and who clicked
+(`Message.Player`). Checks: GetPlayerUI with an agent instead of a player, Message outside a click
+handler. A local value declared above (e.g. `Player := Message.Player`) now counts for the
+Agent/Player checks. Lessons 24–26 (Your own HUD · Click me · Reward the clicker) and the **Shop
+menu** template (per-player coins and menus).
+
+Open-question answers used: canvas **presets** rather than raw anchors; SpatialMath from
+`/UnrealEngine.com/Temporary/SpatialMath` (the digest's module); movement before UI.
+
+The original plan for 5.3:
 
 UI is per player: `GetPlayerUI[Player]` is failable and needs a `player`, not an `agent`. That's
 why the cast block from 5.0 comes first.

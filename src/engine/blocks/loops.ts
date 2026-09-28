@@ -23,7 +23,8 @@ export function registerLoopBlocks(): void {
     },
     generate(b, g) {
       const code = body(g, b, 'DO');
-      if (!/Sleep\(|break/.test(code)) g.warn(b, 'This loop never waits or breaks — it would freeze the game. Add a wait block.');
+      // Sleep and MoveTo wait; break leaves the loop.
+      if (!/Sleep\(|\.MoveTo\(|break/.test(code)) g.warn(b, 'This loop never waits or breaks — it would freeze the game. Add a wait block.');
       return `loop:\n${code}`;
     },
   });

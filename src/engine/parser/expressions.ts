@@ -6,6 +6,7 @@
  * Anything without a block yet (calls, indexing, division…) becomes a raw value block.
  */
 import { TEAM_OPS } from '../data/teams.ts';
+import { matchCanvas } from '../data/ui.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
 import { unescapeString } from './tree.ts';
@@ -120,6 +121,9 @@ export class ExpressionParser {
 
   private parseStrict(text: string): BlockState {
     const b = this.b;
+    // A canvas with one widget at a preset position (Phase 5.3): read as a whole, widget inside.
+    const canvas = matchCanvas(text);
+    if (canvas) return b.make('verse_canvas', { POS: canvas.position }, { WIDGET: { block: this.parseStrict(canvas.widget) } });
     const tokens = tokenize(text);
     let p = 0;
     const is = (t: string, at = p) => tokens[at]?.text === t;
@@ -136,7 +140,8 @@ export class ExpressionParser {
       if (!is('.')) return false;
       const m = tokens[p + 1]?.text ?? '';
       return (m === 'GetAgent' && is('[', p + 2) && is(']', p + 3)) || (m === 'GetTeams' && is('(', p + 2) && is(')', p + 3))
-        || (m in TEAM_OPS && is('[', p + 2));
+        || (m in TEAM_OPS && is('[', p + 2))
+        || (m === 'GetTransform' && is('(', p + 2) && is(')', p + 3)) || (m === 'TeleportTo' && is('[', p + 2));
     };
     /** Wraps a value in the calls that follow it: Eliminator.GetAgent[], Teams.GetTeam[Agent]… */
     const postfix = (block: BlockState): BlockState => {
@@ -144,6 +149,24 @@ export class ExpressionParser {
         const m = tokens[p + 1].text;
         if (m === 'GetAgent') { p += 4; block = b.make('verse_char_agent', null, { CHAR: { block } }); continue; }
         if (m === 'GetTeams') { p += 4; block = b.make('verse_all_teams', null, { TEAMS: { block } }); continue; }
+        if (m === 'GetTransform') {
+          p += 4;
+          // .Translation / .Rotation / .Scale, then maybe .X / .Y / .Z of the position
+          const part = is('.') && ['Translation', 'Rotation', 'Scale'].includes(tokens[p + 1]?.text) ? tokens[p + 1].text : '';
+          if (part) p += 2;
+          block = b.make('verse_transform_of', { PART: part }, { THING: { block } });
+          if (part && part !== 'Rotation' && is('.') && ['X', 'Y', 'Z'].includes(tokens[p + 1]?.text)) {
+            const axis = tokens[p + 1].text; p += 2;
+            block = b.make('verse_vector_part', { AXIS: axis }, { VEC: { block } });
+          }
+          continue;
+        }
+        if (m === 'TeleportTo') {
+          p += 3;
+          const pos = or(); expect(','); const rot = or(); expect(']');
+          block = b.make('verse_teleport', null, { THING: { block }, POS: { block: pos }, ROT: { block: rot } });
+          continue;
+        }
         p += 3;
         const values: BlockState[] = [];
         while (!is(']')) { if (values.length) expect(','); values.push(or()); }
@@ -211,6 +234,45 @@ export class ExpressionParser {
           if (call('GetPlayers')) { p += 4; return b.make('verse_players'); }
           if (call('GetTeamCollection')) { p += 4; return postfix(b.make('verse_team_collection')); }
           return b.make('verse_playspace');
+        }
+        // Phase 5.3: a player's UI, text and button widgets
+        if (tk.text === 'GetPlayerUI' && is('[', p + 1)) {
+          p += 2; const player = or(); expect(']');
+          return b.make('verse_player_ui', null, { PLAYER: { block: player } });
+        }
+        if (['text_block', 'button_loud', 'button_regular', 'button_quiet'].includes(tk.text) && is('{', p + 1)) {
+          const kind = tk.text; p += 2;
+          expect('DefaultText'); expect(':='); expect('MakeMessage'); expect('(');
+          const value = or(); expect(')'); expect('}');
+          return kind === 'text_block'
+            ? b.make('verse_text_widget', null, { TEXT: { block: value } })
+            : b.make('verse_button_widget', { KIND: kind }, { TEXT: { block: value } });
+        }
+        if (tk.text === 'Message' && is('.', p + 1) && tokens[p + 2]?.text === 'Player' && !is('.', p + 3)) { p += 3; return b.make('verse_message_player'); }
+        // Phase 5.2: positions, rotations and distances
+        if (tk.text === 'vector3' && is('{', p + 1)) {
+          p += 2;
+          const parts: Record<string, { block: BlockState }> = {};
+          for (const axis of ['X', 'Y', 'Z']) {
+            if (axis !== 'X') expect(',');
+            expect(axis); expect(':=');
+            parts[axis] = { block: or() };
+          }
+          expect('}');
+          return postfix(b.make('verse_vector', null, parts));
+        }
+        if (tk.text === 'IdentityRotation' && is('(', p + 1) && is(')', p + 2)) { p += 3; return b.make('verse_identity_rotation'); }
+        if ((tk.text === 'MakeRotationFromYawPitchRollDegrees' || tk.text === 'Distance' || tk.text === 'DistanceXY') && is('(', p + 1)) {
+          const fn = tk.text; p += 2;
+          const values: BlockState[] = [];
+          while (!is(')')) { if (values.length) expect(','); values.push(or()); }
+          expect(')');
+          if (fn === 'MakeRotationFromYawPitchRollDegrees') {
+            if (values.length !== 3) throw new NoBlocksFor('a rotation takes three angles');
+            return b.make('verse_rotation', null, { YAW: { block: values[0] }, PITCH: { block: values[1] }, ROLL: { block: values[2] } });
+          }
+          if (values.length !== 2) throw new NoBlocksFor('a distance takes two positions');
+          return b.make('verse_distance', { KIND: fn }, { A: { block: values[0] }, B: { block: values[1] } });
         }
         if (tk.text === 'GetRandomInt' && is('(', p + 1)) {
           p += 2;

@@ -178,6 +178,34 @@ export class StatementParser {
       return this.b.make('verse_call_device', { DEVICE: m[1], METHOD: signature, WHO: m[3] || 'Agent' });
     },
 
+    // UI.AddWidget(Canvas) / UI.RemoveWidget(Canvas) — Phase 5.3
+    ({ text }) => {
+      const m = text.match(/^(.+?)\.(AddWidget|RemoveWidget)\((.+)\)$/);
+      if (!m) return null;
+      const args = splitArgs(m[3]);
+      const clickable = m[2] === 'AddWidget' && args.length === 2 && /^player_ui_slot\s*\{\s*InputMode\s*:=\s*ui_input_mode\.All\s*\}$/.test(args[1]);
+      if (args.length !== 1 && !clickable) return null;
+      return this.b.make('verse_ui_widget', { ACTION: clickable ? 'AddWidgetClick' : m[2] },
+        { UI: { block: this.expr.parse(m[1])! }, WIDGET: { block: this.expr.parse(args[0])! } });
+    },
+
+    // Widget.SetText(MakeMessage(…)) on something that isn't a linked device (a text widget or button)
+    ({ text }) => {
+      const m = text.match(/^(.+?)\.SetText\(MakeMessage\((.*)\)\)$/);
+      if (!m || this.knownDevice(m[1])) return null;
+      return this.b.make('verse_widget_text', null, { WIDGET: { block: this.expr.parse(m[1])! }, TEXT: { block: this.expr.parse(m[2])! } });
+    },
+
+    // Prop.MoveTo(Position, Rotation, Seconds) — moving over time (Phase 5.2)
+    ({ text }) => {
+      const m = text.match(/^(.+)\.MoveTo\((.+)\)$/);
+      if (!m) return null;
+      const parts = splitArgs(m[2]);
+      if (parts.length !== 3) return null;
+      const [thing, pos, rot, time] = [m[1], ...parts].map(t => this.expr.parse(t));
+      return this.b.make('verse_move_to', null, { THING: { block: thing! }, POS: { block: pos! }, ROT: { block: rot! }, TIME: { block: time! } });
+    },
+
     // Device.Action(values) — a device action with inputs, matched by its number of inputs
     ({ text }) => {
       const m = text.match(/^(\w+)\.(\w+)\((.+)\)$/);
@@ -256,7 +284,8 @@ export class StatementParser {
     // if (condition): … with an optional else: on the next line
     ({ text, next, body }) => {
       const m = text.match(/^if\s*\((.*)\)\s*:$/);
-      if (!m || /:=/.test(m[1])) return null;
+      // if (X := …) is "if it exists" (the rule above); := elsewhere, like vector3{X := 1.0…}, is fine.
+      if (!m || /^\s*\w+\s*:=/.test(m[1])) return null;
       const cond = this.expr.parse(m[1]);
       if (next && stripComment(next.text) === 'else:') {
         const thenPart = body();
