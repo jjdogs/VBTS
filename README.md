@@ -36,6 +36,13 @@ published. Watch a deploy in the repository's **Actions** tab.
 One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. On a free
 GitHub plan, Pages needs the repository to be public.
 
+**Branches.** Work happens on `dev`; `main` is what's live. `.github/workflows/ci.yml` type-checks,
+tests and builds every push to `dev` (and every pull request), so the Actions tab shows whether
+`dev` is healthy. To release, open a pull request from `dev` into `main` and merge it with
+**Create a merge commit** (not squash, so the branches stay in step); the site then rebuilds.
+A preview of `dev` can be published to the older claude.ai artifact
+(https://claude.ai/artifact/8fhKrUyeQKGS67sYM1JnDC) to try changes before a release.
+
 ## How it's organized
 
 ```
