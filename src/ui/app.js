@@ -365,7 +365,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     ['done', 'Phase 3.6: Edit Mode (Appearance), one-window editor, type directly in Text view'],
     ['done', 'Phase 4.1: Your own classes, structs and enums; <private> (style 6.2)'],
     ['done', 'Phase 4.2: Multiple files — tabs, classes shared across files, whole-project share codes'],
-    ['next', 'Phase 5: Players & teams, UI widgets, positions and movement'],
+    ['next', 'Phase 5: Players & teams, UI widgets, positions and movement (planned: local values, typed events, then teams, movement and UI)'],
     ['done', 'Phase 6: Text ⇄ blocks — type directly in the Text view'],
     ['next', 'Phase 7: VS Code extension (on hold: web-only for now)'],
     ['next', 'Phase 8: Game-mode templates (first one: pop-up target gallery)'],
