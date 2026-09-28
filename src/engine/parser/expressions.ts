@@ -49,6 +49,8 @@ export interface ExpressionContext {
 }
 const emptyContext = (): ExpressionContext => ({ arrays: new Set(), maps: new Set(), options: new Set(), functions: new Map() });
 const MAX_ARGS = 3;
+/** Method blocks have one more slot than function call blocks. */
+const MAX_METHOD_ARGS = 4;
 
 export class ExpressionParser {
   private readonly b: BlockBuilder;
@@ -89,7 +91,12 @@ export class ExpressionParser {
     const inner = literal.slice(1, -1);
     const braces: number[] = [];
     for (let i = 0; i < inner.length; i++) {
-      if (inner[i] === '\\') { i++; continue; }
+      if (inner[i] === '\\') {
+        // Blocks write back only these escapes; any other (\n, \t, \<…) is kept word for word.
+        if (!'\\"{}'.includes(inner[i + 1])) throw new NoBlocksFor('escape kept as written');
+        i++;
+        continue;
+      }
       if (inner[i] === '{' || inner[i] === '}') braces.push(i);
     }
     if (!braces.length) return this.b.make('verse_text', { TEXT: unescapeString(inner) });
@@ -185,12 +192,12 @@ export class ExpressionParser {
         p++;
         const name = tk.text;
         /** Arguments up to the closing bracket, as A1, A2, A3 inputs. */
-        const args = (close: string): NonNullable<BlockState['inputs']> => {
+        const args = (close: string, max = MAX_ARGS): NonNullable<BlockState['inputs']> => {
           const inputs: NonNullable<BlockState['inputs']> = {};
           let n = 0;
           while (!is(close)) {
             if (n > 0) expect(',');
-            if (++n > (close === ')' && tokens[p - 1]?.text === '(' ? 4 : MAX_ARGS)) throw new NoBlocksFor('too many arguments');
+            if (++n > max) throw new NoBlocksFor('too many arguments');
             inputs[`A${n}`] = { block: or() };
           }
           expect(close);
@@ -227,7 +234,7 @@ export class ExpressionParser {
         if (is('.') && tokens[p + 1]?.kind === 'id') {
           const member = tokens[p + 1].text;
           if (this.enums.has(name)) { p += 2; return b.make('verse_enum_value', { TYPE: name, VALUE: member }); }
-          if (is('(', p + 2)) { p += 3; return b.make('verse_method_value', { OBJ: name, METHOD: member }, args(')')); }
+          if (is('(', p + 2)) { p += 3; return b.make('verse_method_value', { OBJ: name, METHOD: member }, args(')', MAX_METHOD_ARGS)); }
           if (!is('.', p + 2) && !is('[', p + 2)) { p += 2; return b.make('verse_member_get', { OBJ: name, MEMBER: member }); }
         }
         if (name === 'Self') return b.make('verse_self');

@@ -27,7 +27,7 @@ export function registerTextBlocks(): void {
       if (!value) {
         g.warn(b, 'print needs something to print.');
         value = '""';
-      } else if (target && !(target.outputConnection?.getCheck() ?? []).includes(STRING)) {
+      } else if (target && !(target.outputConnection?.getCheck() ?? []).includes(STRING) && !(target.type === 'verse_raw_expr' && /^".*"$/.test(value))) {
         value = `"{${value}}"`; // Print takes a string, so wrap non-text values
       }
       g.need('/UnrealEngine.com/Temporary/Diagnostics', 'Print');

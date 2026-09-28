@@ -103,16 +103,38 @@ export function checkStyle(ws: Workspace, g: VerseGenerator): void {
 
   // 6.2 — class members should be <private> in most cases. Only suggested for members that
   // nothing outside the class uses (a private field read from outside would not compile).
-  const usedOutside = (cls: Block, name: string) => ws.getAllBlocks(false).some(b => {
-    if (b.getRootBlock() === cls) return false;
-    if (['verse_member_get', 'verse_member_set'].includes(b.type) && field(b, 'MEMBER') === name) return true;
-    if (['verse_method_call', 'verse_method_value'].includes(b.type) && field(b, 'METHOD') === name) return true;
-    if (b.type === 'verse_construct') return [1, 2, 3, 4].some(i => field(b, `F${i}`) === name);
-    // Starting values and raw Verse are text: look for Name := … or .Name in them.
-    const text = b.type === 'verse_member_field' ? field(b, 'DEFAULT') : b.type.startsWith('verse_raw') ? field(b, 'CODE') : '';
-    return !!text && new RegExp(`(\\.${name}\\b|\\b${name}\\s*:=)`).test(text);
-  });
-  for (const cls of ws.getBlocksByType('verse_class', false)) {
+  const classes = ws.getBlocksByType('verse_class', false);
+  /** Classes that inherit from cls, directly or further down (private members aren't visible there). */
+  const subclassesOf = (cls: Block): Block[] => {
+    const out: Block[] = [];
+    const walk = (parent: string) => {
+      for (const c of classes) {
+        if (field(c, 'PARENT') === parent && !out.includes(c)) { out.push(c); walk(field(c, 'NAME')); }
+      }
+    };
+    walk(field(cls, 'NAME'));
+    return out;
+  };
+  const usedOutside = (cls: Block, name: string) => {
+    const subs = subclassesOf(cls);
+    const word = new RegExp(`\\b${name}\\b`);
+    return ws.getAllBlocks(false).some(b => {
+      const root = b.getRootBlock();
+      if (root === cls) return false;
+      // Inside a subclass, any reference by name counts: a plain get or call, or an override.
+      if (subs.includes(root)) {
+        if (['NAME', 'VAR', 'MEMBER', 'METHOD', 'HANDLER'].some(n => b.getField(n) && field(b, n) === name)) return true;
+        if (b.type.startsWith('verse_raw') && word.test(field(b, 'CODE'))) return true;
+      }
+      if (['verse_member_get', 'verse_member_set'].includes(b.type) && field(b, 'MEMBER') === name) return true;
+      if (['verse_method_call', 'verse_method_value'].includes(b.type) && field(b, 'METHOD') === name) return true;
+      if (b.type === 'verse_construct') return [1, 2, 3, 4].some(i => field(b, `F${i}`) === name);
+      // Starting values and raw Verse are text: look for Name := … or .Name in them.
+      const text = b.type === 'verse_member_field' ? field(b, 'DEFAULT') : b.type.startsWith('verse_raw') ? field(b, 'CODE') : '';
+      return !!text && new RegExp(`(\\.${name}\\b|\\b${name}\\s*:=)`).test(text);
+    });
+  };
+  for (const cls of classes) {
     for (let m = cls.getInputTargetBlock('MEMBERS'); m; m = m.getNextBlock()) {
       if (!['verse_member_field', 'verse_function'].includes(m.type) || field(m, 'VIS') !== 'none') continue;
       const name = field(m, 'NAME');

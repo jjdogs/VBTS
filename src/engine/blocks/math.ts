@@ -42,8 +42,9 @@ export function registerMathBlocks(): void {
     generate(b, g) {
       const op = f(b, 'OP');
       const order = op === '*' ? Order.MUL : Order.ADD;
-      // The right side binds slightly tighter, so a - (b - c) keeps its parentheses.
-      return [`${g.valueToCode(b, 'A', order) || '0'} ${op} ${g.valueToCode(b, 'B', order + 0.1) || '0'}`, order];
+      // Blockly adds parentheses when the inner order is not lower than the outer one. The left side
+      // allows its own level (a - b - c needs none); the right side doesn't, so a - (b - c) keeps them.
+      return [`${g.valueToCode(b, 'A', order + 1) || '0'} ${op} ${g.valueToCode(b, 'B', order) || '0'}`, order];
     },
   });
 

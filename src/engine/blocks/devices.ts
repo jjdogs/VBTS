@@ -110,9 +110,13 @@ export function registerDeviceBlocks(): void {
       prime(this, ['DEVICE']);
     },
     generate(b, g) {
+      const dev = f(b, 'DEVICE');
+      const type = deviceTypeFor(b, dev);
+      if (!type) g.warn(b, `No @editable device named ${dev}. Add a hud_message_device in "linked devices".`);
+      else if (type !== 'hud_message_device') g.warn(b, `${dev} is a ${type}, which has no text to set. Pick a hud_message_device.`);
       g.helpers.add('msg');
       const value = g.valueToCode(b, 'TEXT', Order.NONE) || '""';
-      return `${f(b, 'DEVICE')}.SetText(MakeMessage(${value}))\n`;
+      return `${dev}.SetText(MakeMessage(${value}))\n`;
     },
   });
 }
