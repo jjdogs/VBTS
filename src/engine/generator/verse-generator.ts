@@ -10,9 +10,11 @@ import type { Fix, Warning, WarningLevel } from '../types.ts';
 /**
  * Operator precedence for value blocks, lowest number binds tightest.
  * Blockly adds parentheses when an inner value binds looser than where it is used.
+ * As in Verse, `not` is a prefix operator that binds tighter than * and comparisons:
+ * `not A = B` means `(not A) = B`, so a comparison inside not needs parentheses.
  */
 export const Order = {
-  ATOMIC: 0, UNARY: 2, MUL: 3, ADD: 4, CMP: 5, NOT: 6, AND: 7, OR: 8, NONE: 99,
+  ATOMIC: 0, UNARY: 2, NOT: 2, MUL: 3, ADD: 4, CMP: 5, AND: 7, OR: 8, NONE: 99,
 } as const;
 
 /** Marks the start of a block's code so the UI can map lines back to blocks. See generate.ts. */

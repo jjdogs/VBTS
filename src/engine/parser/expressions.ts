@@ -1,7 +1,8 @@
 /**
  * Converts Verse values (right-hand sides, conditions, strings) into value blocks.
  *
- * Precedence, loosest first:  or  →  and  →  not  →  comparisons  →  + -  →  *  →  atoms
+ * Precedence, loosest first:  or  →  and  →  comparisons  →  + -  →  *  →  not  →  atoms
+ * (as in Verse, `not` binds tighter than * and comparisons: not A = B means (not A) = B)
  * Anything without a block yet (calls, indexing, division…) becomes a raw value block.
  */
 import type { BlockState } from '../types.ts';
@@ -126,13 +127,13 @@ export class ExpressionParser {
       return left;
     };
     const and = (): BlockState => {
-      let left = not();
-      while (is('and')) { p++; left = b.make('verse_logic_op', { OP: 'and' }, { A: { block: left }, B: { block: not() } }); }
+      let left = compare();
+      while (is('and')) { p++; left = b.make('verse_logic_op', { OP: 'and' }, { A: { block: left }, B: { block: compare() } }); }
       return left;
     };
     const not = (): BlockState => {
       if (is('not')) { p++; return b.make('verse_not', null, { A: { block: not() } }); }
-      return compare();
+      return atom();
     };
     const compare = (): BlockState => {
       const left = add();
@@ -151,8 +152,8 @@ export class ExpressionParser {
       return left;
     };
     const multiply = (): BlockState => {
-      let left = atom();
-      while (is('*')) { p++; left = b.make('verse_arith', { OP: '*' }, { A: { block: left }, B: { block: atom() } }); }
+      let left = not();
+      while (is('*')) { p++; left = b.make('verse_arith', { OP: '*' }, { A: { block: left }, B: { block: not() } }); }
       return left;
     };
     const atom = (): BlockState => {
