@@ -107,10 +107,10 @@ rebuilt (for example in Svelte) without touching the engine.
 3.6. ✅ Edit Mode (Appearance panel) and the one-window editor
 4.1. ✅ Your own classes, structs and enums; access specifiers; style rule 6.2
 4.2. ✅ Multiple files: file tabs, classes and enums shared across files, whole-project share codes
-5. Players & teams, UI widgets, positions and movement (5.0 foundations ✅; 5.1–5.3 next, see `docs/phase-5-plan.md`)
+5. Players & teams, UI widgets, positions and movement (5.0 foundations ✅, 5.1 players & teams ✅; 5.2–5.3 next, see `docs/phase-5-plan.md`)
 6. ✅ Text ⇄ blocks: type directly in the Text view
 7. VS Code extension (on hold: web-only for now)
-8. Game-mode templates (first one done: pop-up target gallery)
+8. Game-mode templates (done so far: pop-up target gallery, team elimination)
 
 ## One editor, two views
 
@@ -273,6 +273,8 @@ checks that every template converts into real blocks.
   older saves and file names.
 - `tests/phase5.test.ts` covers the Phase 5.0 foundations: local values, new types, casts,
   handlers that receive other types, value events and device actions with inputs.
+- `tests/teams.test.ts` covers Phase 5.1: team questions, elimination results, a character's agent,
+  health and shield, lessons 18–20 and the team elimination template.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to

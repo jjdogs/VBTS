@@ -1,6 +1,6 @@
 # Phase 5 plan: players & teams, UI widgets, positions and movement
 
-Status: **5.0 foundations done**; 5.1–5.3 next, in the order below.
+Status: **5.0 foundations and 5.1 players & teams done**; 5.2 and 5.3 next.
 
 ## Goal
 
@@ -88,7 +88,22 @@ The original plan for 5.0:
 Tests: each foundation gets a round-trip test (text → blocks → text unchanged) and a
 warnings test. Golden output for existing projects must not change.
 
-### 5.1 Players & teams
+### 5.1 Players & teams — ✅ done
+
+What was built (tests in `tests/teams.test.ts`):
+- `blocks/teams.ts`: every player (`GetPlayspace().GetPlayers()`), the teams
+  (`GetTeamCollection()`), one "ask about teams" block for GetTeam / GetAgents / IsOnTeam /
+  AddToTeam (failable, showing only the inputs each takes), all teams (`GetTeams()`), who was
+  eliminated / who eliminated them (`Result.EliminatedCharacter`, `Result.EliminatingCharacter?`),
+  a character's agent (`GetAgent[]`) and health / shield; SetShield joins the damage / heal block.
+- The converter reads these, including chains like `GetPlayspace().GetTeamCollection().GetTeam[A]`
+  and `Result.EliminatedCharacter.GetAgent[]`.
+- Checks: team questions and GetAgent outside a failure context; Result outside an elimination
+  handler. A function input named Agent or Player now counts as that name (`Watch(Player:player)`).
+- A **Teams** toolbox category and block colour; lessons 18–20 (Welcome, everyone · Pick a side ·
+  Knockouts); the **Team elimination** template (converts with no raw blocks and no warnings).
+
+The original plan for 5.1:
 
 | Block | Verse | Notes |
 |---|---|---|

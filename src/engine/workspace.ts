@@ -168,7 +168,7 @@ export function inSuspends(block: Block): boolean {
 }
 
 /** Names a block can use because an enclosing block provides them. */
-export type ScopeName = 'Agent' | 'MaybeAgent' | 'Player' | 'FortChar';
+export type ScopeName = 'Agent' | 'MaybeAgent' | 'Player' | 'FortChar' | 'Result';
 
 export function hasInScope(block: Block, name: ScopeName): boolean {
   for (const e of enclosing(block)) {
@@ -181,6 +181,9 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
     // if (Player := player[Agent]):  — any "if it exists" that names the value
     if (t === 'verse_if_bind' && e.input === 'DO' && field(e.block, 'VAR') === name) return true;
     if (name === 'FortChar' && t === 'verse_fort_character') return true;
+    if (name === 'Result' && t === 'verse_handler' && ['elimination', 'damage', 'ai'].includes(field(e.block, 'PARAM'))) return true;
+    // A function input with that name: WatchPlayer(Player:player), AddPoint(Agent:agent, Team:team)
+    if (t === 'verse_function' && new RegExp(`(^|,)\\s*${name}\\s*:`).test(field(e.block, 'PARAMS'))) return true;
   }
   return false;
 }

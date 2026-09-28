@@ -1326,6 +1326,39 @@
     ]
    },
    "spanCount": 1
+  },
+  "L18": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L19": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L20": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
   }
  },
  "sources": {

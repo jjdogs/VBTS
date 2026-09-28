@@ -193,7 +193,7 @@ export class StatementParser {
 
     // FortChar.Damage(25.0)
     ({ text }) => {
-      const m = text.match(/^FortChar\.(Damage|Heal|SetHealth)\((\d+(?:\.\d+)?)\)$/);
+      const m = text.match(/^FortChar\.(Damage|Heal|SetHealth|SetShield)\((\d+(?:\.\d+)?)\)$/);
       return m ? this.b.make('verse_char_action', { ACTION: m[1], AMOUNT: Number(m[2]) }) : null;
     },
 

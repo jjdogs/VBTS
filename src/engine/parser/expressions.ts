@@ -5,6 +5,7 @@
  * (as in Verse, `not` binds tighter than * and comparisons: not A = B means (not A) = B)
  * Anything without a block yet (calls, indexing, division…) becomes a raw value block.
  */
+import { TEAM_OPS } from '../data/teams.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
 import { unescapeString } from './tree.ts';
@@ -130,6 +131,32 @@ export class ExpressionParser {
       return (negative ? -1 : 1) * Number(tk.text);
     };
 
+    /** A call that can follow a value: .GetAgent[], .GetTeams(), or a team question like .GetTeam[Agent]. */
+    const hasPostfix = (): boolean => {
+      if (!is('.')) return false;
+      const m = tokens[p + 1]?.text ?? '';
+      return (m === 'GetAgent' && is('[', p + 2) && is(']', p + 3)) || (m === 'GetTeams' && is('(', p + 2) && is(')', p + 3))
+        || (m in TEAM_OPS && is('[', p + 2));
+    };
+    /** Wraps a value in the calls that follow it: Eliminator.GetAgent[], Teams.GetTeam[Agent]… */
+    const postfix = (block: BlockState): BlockState => {
+      while (hasPostfix()) {
+        const m = tokens[p + 1].text;
+        if (m === 'GetAgent') { p += 4; block = b.make('verse_char_agent', null, { CHAR: { block } }); continue; }
+        if (m === 'GetTeams') { p += 4; block = b.make('verse_all_teams', null, { TEAMS: { block } }); continue; }
+        p += 3;
+        const values: BlockState[] = [];
+        while (!is(']')) { if (values.length) expect(','); values.push(or()); }
+        expect(']');
+        const wanted = TEAM_OPS[m].inputs;
+        if (values.length !== wanted.length) throw new NoBlocksFor('wrong number of team inputs');
+        const inputs: NonNullable<BlockState['inputs']> = { TEAMS: { block } };
+        wanted.forEach((input, i) => { inputs[input] = { block: values[i] }; });
+        block = b.make('verse_team_op', { OP: m }, inputs);
+      }
+      return block;
+    };
+
     const or = (): BlockState => {
       let left = and();
       while (is('or')) { p++; left = b.make('verse_logic_op', { OP: 'or' }, { A: { block: left }, B: { block: and() } }); }
@@ -178,7 +205,13 @@ export class ExpressionParser {
       if (tk.text === '(') { p++; const inner = or(); expect(')'); return inner; }
       if (tk.kind === 'id') {
         if (tk.text === 'true' || tk.text === 'false') { p++; return b.make('verse_bool', { V: tk.text }); }
-        if (tk.text === 'GetPlayspace' && is('(', p + 1) && is(')', p + 2)) { p += 3; return b.make('verse_playspace'); }
+        if (tk.text === 'GetPlayspace' && is('(', p + 1) && is(')', p + 2)) {
+          p += 3;
+          const call = (method: string) => is('.') && tokens[p + 1]?.text === method && is('(', p + 2) && is(')', p + 3);
+          if (call('GetPlayers')) { p += 4; return b.make('verse_players'); }
+          if (call('GetTeamCollection')) { p += 4; return postfix(b.make('verse_team_collection')); }
+          return b.make('verse_playspace');
+        }
         if (tk.text === 'GetRandomInt' && is('(', p + 1)) {
           p += 2;
           const start = p;
@@ -202,6 +235,14 @@ export class ExpressionParser {
         }
         p++;
         const name = tk.text;
+        // Phase 5.1: elimination results, a character's health, and calls that follow a value
+        if (name === 'Result' && is('.') && tokens[p + 1]?.text === 'EliminatingCharacter' && is('?', p + 2)) { p += 3; return b.make('verse_eliminator'); }
+        if (name === 'Result' && is('.') && tokens[p + 1]?.text === 'EliminatedCharacter') { p += 2; return postfix(b.make('verse_eliminated')); }
+        if (name === 'FortChar' && is('.') && ['GetHealth', 'GetShield'].includes(tokens[p + 1]?.text) && is('(', p + 2) && is(')', p + 3)) {
+          const stat = tokens[p + 1].text; p += 4;
+          return b.make('verse_char_stat', { STAT: stat });
+        }
+        if (hasPostfix()) return postfix(b.make('verse_get', { NAME: name }));
         /** Arguments up to the closing bracket, as A1, A2, A3 inputs. */
         const args = (close: string, max = MAX_ARGS): NonNullable<BlockState['inputs']> => {
           const inputs: NonNullable<BlockState['inputs']> = {};

@@ -4,5 +4,6 @@
  */
 import type { Template } from '../../types.ts';
 import { targetGallery } from './target-gallery.ts';
+import { teamElimination } from './team-elimination.ts';
 
-export const TEMPLATES: Template[] = [targetGallery];
+export const TEMPLATES: Template[] = [targetGallery, teamElimination];

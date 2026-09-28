@@ -110,7 +110,7 @@ const codeStack = (f: string) => (f === 'System' ? '' : `'${f}', `) + 'ui-monosp
 export const BLOCK_CATEGORIES: Array<[key: string, label: string]> = [
   ['structure', 'Device & using'], ['devices', 'Devices'], ['events', 'Events'], ['player', 'Player'],
   ['logic', 'Logic'], ['loops', 'Loops'], ['math', 'Math'], ['text', 'Text'], ['vars', 'Variables'],
-  ['data', 'Lists & Maps'], ['types', 'Types'], ['funcs', 'Functions'], ['time', 'Time'], ['comment', 'Comments'], ['raw', 'Raw Verse'],
+  ['data', 'Lists & Maps'], ['types', 'Types'], ['teams', 'Teams'], ['funcs', 'Functions'], ['time', 'Time'], ['comment', 'Comments'], ['raw', 'Raw Verse'],
 ];
 const UI_LABELS: Record<UiColour, string> = {
   bg: 'Page background', panel: 'Panels', panel2: 'Soft fill', line: 'Borders', ink: 'Text', muted: 'Secondary text',

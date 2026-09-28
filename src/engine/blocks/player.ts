@@ -60,11 +60,11 @@ export function registerPlayerBlocks(): void {
     explain: {
       title: 'Damage / heal character', doc: DOCS.api,
       tip: 'Changes health on FortChar. Place inside "has a character".',
-      text: 'fort_character has Damage(Amount:float), Heal(Amount:float) and SetHealth(Health:float). Amounts are floats.',
+      text: 'fort_character has Damage(Amount:float), Heal(Amount:float), SetHealth(Health:float) and SetShield(Shield:float). Amounts are floats. Read them back with the health / shield block.',
     },
     init() {
       this.appendDummyInput().appendField('FortChar.')
-        .appendField(new Blockly.FieldDropdown([['Damage', 'Damage'], ['Heal', 'Heal'], ['SetHealth', 'SetHealth']]), 'ACTION')
+        .appendField(new Blockly.FieldDropdown([['Damage', 'Damage'], ['Heal', 'Heal'], ['SetHealth', 'SetHealth'], ['SetShield', 'SetShield']]), 'ACTION')
         .appendField(new Blockly.FieldNumber(25, 0), 'AMOUNT');
       asStatement(this);
     },
