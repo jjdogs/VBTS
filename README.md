@@ -53,12 +53,14 @@ src/
   ui/appearance.ts      Edit Mode: appearance settings, presets, the Appearance panel
   ui/unified.ts         one editor: "like text" blocks layout, keeping your place between views
   ui/text-editor.ts     the Text view editor: Verse highlighting, typing → blocks, blocks → text
+  ui/files.ts           several files per project: file tabs, switching, share codes (VB3)
   engine/code-labels.ts optional Verse wording on blocks (Appearance → Block words)
   styles/appearance.css appearance variables and the Appearance panel
   styles/responsive.css size- and touch-based styles
   ui/blockly-media/     Blockly's control icons, embedded so they work on published pages
   engine/               everything about Verse and blocks — no UI code in here
     index.ts            the engine's front door: the only thing the UI imports
+    project.ts          what a project's other files define and use (for checks across files)
     types.ts            shared data shapes (warnings, lessons, templates…)
     blockly.ts          one Blockly import that works in the browser and in tests
     catalog.ts          device lookups
@@ -97,8 +99,8 @@ rebuilt (for example in Svelte) without touching the engine.
 3.5. ✅ Responsive UI: phones, tablets, laptops, big screens, touch
 3.6. ✅ Edit Mode (Appearance panel) and the one-window editor
 4.1. ✅ Your own classes, structs and enums; access specifiers; style rule 6.2
-4.2. Multiple files (next)
-5. Players & teams, UI widgets, positions and movement
+4.2. ✅ Multiple files: file tabs, classes and enums shared across files, whole-project share codes
+5. Players & teams, UI widgets, positions and movement (next; plan in `docs/phase-5-plan.md`)
 6. ✅ Text ⇄ blocks: type directly in the Text view
 7. VS Code extension (on hold: web-only for now)
 8. Game-mode templates (first one done: pop-up target gallery)
@@ -193,13 +195,34 @@ call methods, use enum values (`game_state.Playing`) and `Self`. Members and fun
 `<private>`, `<protected>`, `<internal>` or `<public>`. Style rule 6.2 suggests `<private>` only
 for members nothing outside the class uses, with a one-click fix.
 
+## Several files
+
+A project can hold several `.verse` files, shown as tabs in the file bar (`ui/files.ts`). Click a
+tab to open that file, click the open tab (or double-click it) to rename or delete it, and **+**
+adds a file that starts with a device named after it. Renaming a file also renames a device
+still named after it.
+
+All files are in the same Verse module, like `.verse` files in one UEFN folder: a class, struct
+or enum made in one file can be used in another without a `using` line. Only the open file is on
+the workspace; the engine gets a summary of the others (`engine/project.ts`, `projectContext`), so:
+
+- `pet{…}` and `game_state.Playing` from another file become blocks and are checked;
+- a name defined in two files is an error (they share one module);
+- style rule 6.2 doesn't suggest `<private>` for members another file uses, and
+  "Rename everywhere" isn't offered for names other files use (it would only reach this file).
+
+Leaving a file works like leaving the Text view: typed text is turned into blocks first, and if
+it can't be, you're asked before it is replaced. Undo history is per visit to a file. Templates
+open as their own file. **Project** share codes (`VB3:…`) hold every file; older `VB2:` codes
+still load as a one-file project, and older saved work becomes the project's first file.
+
 ## Layout
 
 Like Code.org's App Lab: the **Toolbox** on the left has a two-column category grid and, below
 it, the chosen category's blocks, always visible. In Blocks view, drag a block from there into
 the workspace (it snaps like any block); in Text view the Toolbox shows each block's Verse, which
 you can drag into the editor or click to insert at the cursor. The **Workspace** header has the
-file name in the middle and the view and save buttons on the right, and **Learn** sits on the
+file tabs on the left and the view and save buttons on the right, and **Learn** sits on the
 right. Collapsing the Toolbox (☰) leaves just the colour chips, which open Blockly's tray.
 
 The **Learn** and **Toolbox** panels can each be pinned (a column on the left or right) or
@@ -238,6 +261,10 @@ checks that every template converts into real blocks.
   fields are checked, and the naming and 6.2 style rules.
 - `tests/phase3.test.ts` covers arrays, maps, options and functions: the Verse each program
   writes, its warnings, the lesson checks, and that every toolbox block loads.
+- `tests/project.test.ts` covers projects with several files: classes and enums across files,
+  duplicate names, and the cross-file style rules. `tests/files.test.ts` covers share codes,
+  older saves and file names.
+- `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to
 `golden.json` (e.g. `git diff`) before committing. Tests use Node's built-in test runner,

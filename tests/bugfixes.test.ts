@@ -82,11 +82,19 @@ test('math only adds the parentheses it needs', () => {
   assert.match(r.code, /set Score = A \* B \* C$/m);
 });
 
-test('not around a comparison is written with parentheses', () => {
-  const r = reconvert(device(['if (not A = B):', '    Print("x")', 'if (not IsReady?):', '    Print("y")']));
+test('not follows Verse precedence: it binds tighter than a comparison', () => {
+  // Verse reads `not A = B` as `(not A) = B`, so the converter keeps that meaning…
+  const r = reconvert(device(['if (not A = B):', '    Print("x")', 'if (not (A = B)):', '    Print("y")', 'if (not IsReady?):', '    Print("z")']));
+  assert.match(r.code, /if \(not A = B\):/);
   assert.match(r.code, /if \(not \(A = B\)\):/);
   assert.match(r.code, /if \(not IsReady\?\):/);
   assert.equal(reconvert(r.code).code, r.code);
+  // …and "not" around a comparison block is written with the parentheses it needs.
+  const cmp = B('verse_compare', { OP: '=' }, { A: v(B('verse_get', { NAME: 'A' })), B: v(B('verse_get', { NAME: 'B' })) });
+  const blocks = generateFrom(workspace(B('verse_device', { NAME: 'my_device' }, {
+    ONBEGIN: v(B('verse_if', {}, { COND: v(B('verse_not', {}, { A: v(cmp) })), DO: v(B('verse_print', {}, { TEXT: v(B('verse_text', { TEXT: 'x' })) })) })),
+  })));
+  assert.match(blocks.code, /if \(not \(A = B\)\):/);
 });
 
 test('a method result with four inputs becomes blocks', () => {

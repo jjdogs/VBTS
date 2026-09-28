@@ -5,6 +5,8 @@
  * it now receives Blockly, the engine and the embedded icons from main.ts instead of
  * finding them as globals. It talks to the engine only through `V` (see src/engine/index.ts).
  */
+import { blankFile, createFiles, decodeProject, encodeProject, normalizeProject } from './files.ts';
+
 export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }) {
   if (!Blockly) { document.querySelector('main').style.display = 'none'; document.getElementById('loadErr').style.display = 'block'; return; }
   const KEY = 'verse-blocks:v1';
@@ -12,7 +14,10 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     get() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } },
     set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} },
   };
-  let state = Object.assign({ lesson: 0, done: [], view: null, ws: null }, store.get());
+  let state = Object.assign({ lesson: 0, done: [], view: null, ws: null, project: null }, store.get());
+  // Phase 4.2: a project of files. Older saves held one workspace (state.ws); it becomes the first file.
+  if (!state.project) { state.project = normalizeProject(state.ws); delete state.ws; }
+  else state.project = normalizeProject(state.project);
   const $ = (id) => document.getElementById(id);
   const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1800); };
 
@@ -79,13 +84,19 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
       statusEl.setAttribute('role', 'button'); statusEl.tabIndex = 0;
       statusEl.onclick = () => { showReport(lastReport); layout.show('learn'); $('coach').scrollTop = 0; };
     }
+    statusEl.title = statusEl.textContent; // readable on hover when the bar is crowded
   }
-  const textView = makeTextView(ws, () => last, setStatus);
+  const textView = makeTextView(ws, () => last, setStatus, () => files.context());
+  const files = createFiles({
+    B: Blockly, ws, V, host: $('fileTabs'), initial: state.project, toast,
+    persist: (p) => { state.project = p; store.set(state); },
+    // Leaving a file: typed text must become blocks first (or be replaced), as when leaving the Text view.
+    beforeLeave: (then) => { if (textView.tidy()) then(); else askToDiscard(then); },
+    onOpened: () => { ws.scrollCenter(); renderSetup(); },
+  });
   function render() {
-    last = V.generate(ws);
-    const dev0 = ws.getBlocksByType('verse_device')[0];
-    last.fileName = (dev0 ? dev0.getFieldValue('NAME') : 'my_device') + '.verse';
-    $('fileName').textContent = last.fileName;
+    last = V.generate(ws, files.context()); // the other files' classes and names are known too
+    last.fileName = files.current().name + '.verse';
     if (typeof renderSetup === 'function' && render.ready) renderSetup();
     textView.showGenerated(last);
     const wl = $('warnList');
@@ -157,12 +168,13 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     if (ev.isUiEvent) return;
     render();
     if (selectedId && ev.blockId === selectedId) explain(selectedId);
-    clearTimeout(saveT); saveT = setTimeout(() => { state.ws = Blockly.serialization.workspaces.save(ws); store.set(state); }, 400);
+    clearTimeout(saveT); saveT = setTimeout(() => files.saveCurrent(), 400);
   });
 
   // ---- lessons ----
   function loadStarter(i) {
     const L = V.LESSONS[i]; if (!L.start) return;
+    textView.discardTyped(); // the text is about to be replaced by the lesson's
     ws.clear(); Blockly.serialization.workspaces.load(L.start, ws); ws.scrollCenter();
   }
   function renderLesson() {
@@ -213,7 +225,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   function setView(v) {
     // Leaving the Text view: convert anything typed, and tidy the text into the standard format.
     // If the text can't become blocks, stay here and explain (switching would leave the two apart).
-    if (document.body.dataset.view === 'text' && v !== 'text' && !textView.tidy()) { askToDiscard(v); return; }
+    if (document.body.dataset.view === 'text' && v !== 'text' && !textView.tidy()) { askToDiscard(() => setView(v)); return; }
     document.body.dataset.view = v; state.view = v; store.set(state);
     const toggle = $('viewToggle');
     toggle.textContent = v === 'text' ? 'Show Blocks' : 'Show Text';
@@ -221,10 +233,10 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
     setTimeout(() => { Blockly.svgResize(ws); paintHL(); }, 30);
   }
-  /** Text can't become blocks: keep editing, or switch and replace the text with the blocks' code. */
-  let switchTo = null;
-  function askToDiscard(v) {
-    switchTo = v;
+  /** Text can't become blocks: keep editing, or go on (then) and replace the text with the blocks' code. */
+  let afterDiscard = null;
+  function askToDiscard(then) {
+    afterDiscard = then;
     $('syncWhy').textContent = textView.pendingError() || 'The text has a problem Verse Blocks can\'t read yet.';
     $('syncDlg').showModal();
   }
@@ -233,7 +245,8 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     $('syncDlg').close();
     textView.discardTyped();
     toast('Text replaced with the code from your blocks');
-    setView(switchTo);
+    const then = afterDiscard; afterDiscard = null;
+    if (then) then();
   };
   document.querySelectorAll('.seg button').forEach((b) => (b.onclick = () => setView(b.dataset.view)));
   $('viewToggle').onclick = () => {
@@ -258,29 +271,27 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   }
 
   // ---- project: share codes ----
-  const enc = (o) => 'VB2:' + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
-  const dec = (s) => JSON.parse(decodeURIComponent(escape(atob(s.trim().replace(/^VB\d:/, '')))));
-  $('projBtn').onclick = () => { $('shareOut').value = enc(Blockly.serialization.workspaces.save(ws)); $('shareIn').value = ''; $('projDlg').showModal(); };
+  // VB3 codes hold every file of the project; older VB2 codes (one workspace) still load.
+  $('projBtn').onclick = () => { files.saveCurrent(); $('shareOut').value = encodeProject(files.project()); $('shareIn').value = ''; $('projDlg').showModal(); };
   $('projClose').onclick = () => $('projDlg').close();
   $('shareCopy').onclick = async () => {
     const t = $('shareOut'); try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); try { document.execCommand('copy'); } catch (e2) {} }
     toast('Share code copied');
   };
   $('shareLoad').onclick = () => {
-    let data; try { data = dec($('shareIn').value); } catch (e) { toast('That share code is incomplete or damaged'); return; }
-    // Keep the current blocks: loading clears the workspace first, so a bad code would lose them.
-    const before = Blockly.serialization.workspaces.save(ws);
-    try { ws.clear(); Blockly.serialization.workspaces.load(data, ws); ws.scrollCenter(); $('projDlg').close(); toast('Project loaded'); }
-    catch (e) {
-      ws.clear(); Blockly.serialization.workspaces.load(before, ws);
-      toast('Those blocks could not be loaded. Your blocks were kept.');
-    }
+    let data; try { data = decodeProject($('shareIn').value); } catch (e) { toast('That share code is incomplete or damaged'); return; }
+    // replaceAll puts the old project back if the new one can't load, so a bad code loses nothing.
+    files.saveCurrent();
+    textView.discardTyped();
+    try { files.replaceAll(data); $('projDlg').close(); toast(data.files.length > 1 ? `Project loaded (${data.files.length} files)` : 'Project loaded'); }
+    catch (e) { toast('Those blocks could not be loaded. Your blocks were kept.'); }
   };
   $('newProj').onclick = () => {
     const b = $('newProj');
     if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Replace my blocks?'; return; }
     delete b.dataset.armed; b.textContent = 'Start a blank project';
-    ws.clear(); Blockly.serialization.workspaces.load({ blocks: { languageVersion: 0, blocks: [{ type: 'verse_device', x: 30, y: 30 }] } }, ws);
+    textView.discardTyped();
+    files.replaceAll({ files: [{ name: 'my_device', ws: blankFile('my_device') }], current: 0 });
     $('projDlg').close(); toast('Blank project ready');
   };
 
@@ -296,26 +307,30 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     h += '<button class="btn" id="reportClose">Dismiss</button>';
     box.innerHTML = h; $('reportClose').onclick = () => { box.hidden = true; };
   }
-  function loadVerse(text, opts) {
-    const res = V.parseVerse(text);
-    if (!res.ok) { toast(res.error); return false; }
-    ws.clear(); Blockly.serialization.workspaces.load(res.state, ws); ws.scrollCenter();
-    if (!(opts && opts.quiet)) showReport(res.report);
-    return res;
+  /** Opens a template as its own file (named after it), replacing that file if it already exists. */
+  function openTemplate(t) {
+    const res = V.parseVerse(t.verse);
+    if (!res.ok) { toast(res.error); return; }
+    const done = () => {
+      state.setup = { id: t.id, done: [] }; store.set(state); renderSetup();
+      toast(`${t.title} opened in ${t.id}.verse`);
+      layout.show('learn');
+      $('coach').scrollTop = 0;
+    };
+    const at = files.indexOf(t.id);
+    if (at < 0) files.add(t.id, res.state, done);
+    else files.load(at, res.state, done);
   }
   // ---- templates + map setup checklist ----
   function renderTemplates() {
-    $('tmplList').innerHTML = V.TEMPLATES.map((t) => `<div class="tcard"><h3>${escT(t.title)}</h3><p class="kind">${escT(t.kind)}</p><p>${escT(t.summary)}</p><p><b>Teaches:</b> ${escT(t.teaches)}</p><div class="dlg-actions"><button class="btn btn-primary" data-t="${t.id}">Load template</button></div></div>`).join('');
+    $('tmplList').innerHTML = V.TEMPLATES.map((t) => `<div class="tcard"><h3>${escT(t.title)}</h3><p class="kind">${escT(t.kind)}</p><p>${escT(t.summary)}</p><p><b>Teaches:</b> ${escT(t.teaches)}</p><div class="dlg-actions"><button class="btn btn-primary" data-t="${t.id}">${files.indexOf(t.id) < 0 ? `Open as ${escT(t.id)}.verse` : 'Load template'}</button></div></div>`).join('');
     $('tmplList').querySelectorAll('button[data-t]').forEach((b) => {
       b.onclick = () => {
-        if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Replace my blocks?'; return; }
         const t = V.TEMPLATES.find(x => x.id === b.dataset.t);
-        if (loadVerse(t.verse, { quiet: true })) {
-          state.setup = { id: t.id, done: [] }; store.set(state); renderSetup();
-          $('tmplDlg').close(); toast(`${t.title} loaded`);
-          layout.show('learn');
-          $('coach').scrollTop = 0;
-        }
+        // A new file needs no confirmation; replacing the template's existing file does.
+        if (files.indexOf(t.id) >= 0 && !b.dataset.armed) { b.dataset.armed = '1'; b.textContent = `Replace ${t.id}.verse?`; return; }
+        $('tmplDlg').close();
+        openTemplate(t);
       };
     });
   }
@@ -349,8 +364,8 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     ['done', 'Phase 3.5: Responsive UI — phones, tablets, laptops, big screens, touch'],
     ['done', 'Phase 3.6: Edit Mode (Appearance), one-window editor, type directly in Text view'],
     ['done', 'Phase 4.1: Your own classes, structs and enums; <private> (style 6.2)'],
-    ['next', 'Phase 4.2: Multiple files'],
-    ['next', 'Phase 5: Players & teams, UI widgets, positions and movement'],
+    ['done', 'Phase 4.2: Multiple files — tabs, classes shared across files, whole-project share codes'],
+    ['next', 'Phase 5: Players & teams, UI widgets, positions and movement (planned: local values, typed events, then teams, movement and UI)'],
     ['done', 'Phase 6: Text ⇄ blocks — type directly in the Text view'],
     ['next', 'Phase 7: VS Code extension (on hold: web-only for now)'],
     ['next', 'Phase 8: Game-mode templates (first one: pop-up target gallery)'],
@@ -361,11 +376,13 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   }).join('');
 
   // ---- boot ----
-  if (state.ws) { try { Blockly.serialization.workspaces.load(state.ws, ws); } catch (e) { loadStarter(0); } }
+  const saved = files.current().ws;
+  if (saved) { try { Blockly.serialization.workspaces.load(saved, ws); ws.clearUndo(); } catch (e) { loadStarter(0); } }
   else loadStarter(0);
+  files.render();
   setView(state.view || 'blocks'); // one main window by default; Split is an option
   render.ready = true;
   renderLesson(); render(); renderSetup();
 
-  return { ws, current: () => last, textView };
+  return { ws, current: () => last, textView, files };
 }

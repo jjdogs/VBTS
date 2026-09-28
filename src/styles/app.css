@@ -107,7 +107,6 @@ dialog textarea { width: 100%; min-height: 110px; font: 12px/1.4 var(--mono); ba
 
 /* code */
 .code-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
-.code-bar strong { font-size: calc(14px * var(--ui-scale, 1)); }
 
 .k { color: var(--t-kw); font-weight: 600; } .v { color: var(--t-var); font-weight: 600; } .s { color: var(--t-str); }
 .num { color: var(--t-num); } .sp { color: var(--t-spec); } .ty { color: var(--t-type); } .fn { color: var(--t-fn); } .c { color: var(--t-com); font-style: italic; }

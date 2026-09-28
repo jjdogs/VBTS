@@ -58,9 +58,9 @@ V.setLabelStyle(appearance.settings().blockWords);
 V.setColourOverrides(blockOverrides(appearance));
 registerDocumentMetrics(); // text-like scroll limits in the "like text" blocks layout
 const layout = createLayout();
-const { ws, current, textView } = startApp({
+const { ws, current, textView, files } = startApp({
   Blockly, V, MEDIA, layout, appearance,
-  makeTextView: (w, cur, onStatus) => createTextView({ parent: document.getElementById('code')!, B: Blockly, ws: w, V, current: cur, onStatus }),
+  makeTextView: (w, cur, onStatus, context) => createTextView({ parent: document.getElementById('code')!, B: Blockly, ws: w, V, current: cur, onStatus, context }),
 });
 (ws as unknown as { verseMain: boolean }).verseMain = true; // document scroll limits apply to the main workspace only
 mountToolboxPanel({ Blockly, ws, V, layout, appearance, textView, renderer: appearance.settings().blockStyle === 'text' ? 'thrasos' : appearance.settings().renderer });
@@ -71,6 +71,7 @@ setupUnifiedEditor({ B: Blockly, ws, appearance, current, textView });
 (window as unknown as { VerseBlocks: object }).VerseBlocks = {
   text: () => textView.text(), type: (t: string) => textView.typeText(t), flush: () => textView.flush(), generated: () => current().code,
   topLine: () => textView.topLine(), showLine: (n: number) => textView.showLineAtTop(n),
+  project: () => files.project(),
 };
 document.getElementById('lookBtn')!.addEventListener('click', () => layout.show('appearance'));
 setupResponsive();

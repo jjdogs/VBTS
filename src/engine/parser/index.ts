@@ -8,6 +8,7 @@
  *   members.ts      what's inside a device class
  */
 import { MODULE_PATHS } from '../data/modules.ts';
+import { emptyProject, type ProjectContext } from '../project.ts';
 import type { BlockState, ParseResult } from '../types.ts';
 import { BlockBuilder } from './builder.ts';
 import { ExpressionParser } from './expressions.ts';
@@ -20,7 +21,8 @@ const TYPE_DECL = /^(\w+)\s*:=\s*(class|struct)(?:<(concrete|unique|final|abstra
 const ENUM_DECL = /^(\w+)\s*:=\s*enum\s*\{\s*([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*\}$/;
 const USING_LINE = /^using\s*\{\s*([^\s{}]+)\s*\}$/;
 
-export function parseVerse(src: string): ParseResult {
+/** `project` describes the project's other files, so their classes and enums are recognised here too. */
+export function parseVerse(src: string, project: ProjectContext = emptyProject()): ParseResult {
   const b = new BlockBuilder();
   const expr = new ExpressionParser(b);
   const lines = splitLines(src);
@@ -34,8 +36,8 @@ export function parseVerse(src: string): ParseResult {
 
   // First pass: your own types, so obj{…} and type.Value can become blocks anywhere in the file.
   const tree = buildTree(lines);
-  const typeNames = new Set<string>();
-  const enums = new Map<string, string[]>();
+  const typeNames = new Set<string>(project.types.keys());
+  const enums = new Map<string, string[]>(project.enums);
   for (const node of tree) {
     const t = stripComment(node.text);
     if (DEVICE_CLASS.test(t)) continue;

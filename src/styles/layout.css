@@ -127,7 +127,6 @@ body[data-split="column"] #codePane { border-top: 0 !important; }
 /* ---------- code bar adapts to a narrow code pane ---------- */
 #codePane, #stage { container-type: inline-size; }
 .code-bar { flex-wrap: wrap; row-gap: 6px; }
-.code-bar strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .code-bar > .sync { flex: 1 1 0; }
 
 /* Long module paths in explanations wrap instead of running off the panel. */
@@ -163,7 +162,19 @@ body[data-split="column"] #codePane { border-top: 0 !important; }
 .panel.compact .tb .cats { grid-template-columns: 1fr; border-bottom: 0; }
 .panel.compact .tb .palette, .panel.compact .tb .snippets, .panel.compact .tb-note { display: none; }
 
-/* ---------- Workspace header, like App Lab's: title centred, buttons right ---------- */
+/* ---------- File tabs (Phase 4.2): one tab per file, like an editor ---------- */
 #stage > .code-bar { position: relative; }
-#stage > .code-bar > #fileName { position: absolute; left: 50%; transform: translateX(-50%); max-width: 36%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
-@container (max-width: 560px) { #stage > .code-bar > #fileName { position: static; transform: none; max-width: none; } }
+.file-tabs { display: flex; align-items: center; gap: 4px; min-width: 0; max-width: 60%; flex: 0 1 auto; }
+/* The tabs scroll sideways when there are many; + always stays in view. */
+.file-tabs .ft-list { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.file-tabs .ft, .file-tabs .ft-add {
+  flex: none; border: 1px solid transparent; background: transparent; color: var(--muted); white-space: nowrap;
+  padding: 5px 10px; border-radius: calc(8px * var(--radius-scale, 1)); font-size: calc(13.5px * var(--ui-scale, 1)); font-weight: 500;
+}
+.file-tabs .ft .ext { opacity: .6; font-weight: 400; }
+.file-tabs .ft:hover, .file-tabs .ft-add:hover { background: var(--panel2); color: var(--ink); }
+.file-tabs .ft[aria-selected="true"] { color: var(--ink); font-weight: 600; background: var(--panel2); border-color: var(--line); }
+.file-tabs .ft-add { font-size: calc(16px * var(--ui-scale, 1)); line-height: 1; padding: 4px 9px; }
+.file-tabs .ft-rename { flex: none; width: 14ch; font: inherit; font-size: calc(13.5px * var(--ui-scale, 1)); padding: 4px 8px; color: var(--ink); background: var(--code-bg); border: 1px solid var(--accent); border-radius: calc(8px * var(--radius-scale, 1)); }
+/* A narrow workspace: the tabs get their own row */
+@container (max-width: 560px) { .file-tabs { max-width: none; flex: 1 1 100%; order: -1; } }

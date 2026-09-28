@@ -15,7 +15,7 @@ import { Decoration, type DecorationSet, drawSelection, EditorView, highlightAct
 import { tags } from '@lezer/highlight';
 import type Blockly from '../engine/blockly.ts';
 import type { WorkspaceSvg } from '../engine/blockly.ts';
-import type { Engine, GenerateResult, LineSpan, ParseReport } from '../engine/index.ts';
+import type { Engine, GenerateResult, LineSpan, ParseReport, ProjectContext } from '../engine/index.ts';
 
 type BlocklyNS = typeof Blockly;
 /** How long after you stop typing the text is converted into blocks. */
@@ -138,6 +138,8 @@ export function createTextView(opts: {
   V: Engine;
   current: () => GenerateResult;
   onStatus: (s: SyncStatus) => void;
+  /** The project's other files, so their classes and enums are recognised in typed text. */
+  context?: () => ProjectContext;
   /** Called after typed text became blocks (to save, update lessons…). */
   onConverted?: (report: ParseReport) => void;
 }): TextView {
@@ -203,7 +205,7 @@ export function createTextView(opts: {
   function convert() {
     clearTimeout(timer);
     if (!dirty) return;
-    const res = V.parseVerse(text());
+    const res = V.parseVerse(text(), opts.context?.());
     if (!res.ok) { lastError = res.error; onStatus({ kind: 'error', message: res.error }); return; }
     lastError = null;
     document.body.dataset.textSync = '1'; // tells the layout not to jump to the top
@@ -213,7 +215,7 @@ export function createTextView(opts: {
       B.serialization.workspaces.load(res.state as never, ws);
     } finally { B.Events.setGroup(false); }
     ws.clearUndo();
-    echo = V.generate(ws).code;
+    echo = V.generate(ws, opts.context?.()).code;
     sourceText = text();
     sourceSpans = res.sourceSpans;
     dirty = false;

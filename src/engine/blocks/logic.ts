@@ -97,9 +97,8 @@ export function registerLogicBlocks(): void {
       this.appendValueInput('A').setCheck(COND).appendField('not');
       this.setOutput(true, COND);
     },
-    // UNARY: anything but a simple value gets parentheses, so it reads not (A = B) whatever
-    // precedence the reader assumes.
-    generate: (b, g) => [`not ${g.valueToCode(b, 'A', Order.UNARY) || 'true?'}`, Order.NOT],
+    // not binds tightly (see Order), so anything but a simple value gets parentheses: not (A = B).
+    generate: (b, g) => [`not ${g.valueToCode(b, 'A', Order.NOT) || 'true?'}`, Order.NOT],
   });
 
   defineBlock({

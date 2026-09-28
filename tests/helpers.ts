@@ -1,16 +1,17 @@
 /** Shared setup for tests: a headless Blockly workspace and the engine. */
 import Blockly from '../src/engine/blockly.ts';
 import { createEngine } from '../src/engine/index.ts';
+import type { ProjectContext } from '../src/engine/project.ts';
 import type { GenerateResult, WorkspaceState } from '../src/engine/types.ts';
 
 export const engine = createEngine();
 export const workspace = () => new Blockly.Workspace();
 
-/** Loads saved blocks into a workspace and generates its Verse. */
-export function generateFrom(state: WorkspaceState, ws = workspace()): GenerateResult {
+/** Loads saved blocks into a workspace and generates its Verse (with the project's other files, if given). */
+export function generateFrom(state: WorkspaceState, ws = workspace(), project?: ProjectContext): GenerateResult {
   ws.clear();
   Blockly.serialization.workspaces.load(state as never, ws);
-  return engine.generate(ws);
+  return engine.generate(ws, project);
 }
 
 /** The parts of a result the golden file records. */
