@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verse Blocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body data-view="blocks">
+<header>
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:#7B61FF"></i><i style="background:#E9A23B"></i><i style="background:#2E9BD6"></i><i style="background:#3DAE72"></i></span><span class="brand-name">Verse Blocks</span></div>
+  <div class="seg" role="group" aria-label="View">
+    <button data-view="blocks" aria-pressed="true">Blocks</button>
+    <button data-view="text" aria-pressed="false">Text</button>
+    <button data-view="split" aria-pressed="false" title="Blocks and text side by side">Split</button>
+  </div>
+  <button class="btn" id="lookBtn" title="Change colours, fonts, sizes and layout">Customize</button>
+  <button class="btn" id="tmplBtn">Templates</button>
+  <button class="btn" id="projBtn">Project</button>
+  <button class="btn" id="moreBtn" aria-haspopup="menu" aria-expanded="false">More</button>
+  <button class="btn btn-primary" id="copyBtn">Copy<span class="long"> Verse</span></button>
+</header>
+<main id="layout">
+  <nav id="activityBar" aria-label="Side panels"></nav>
+  <div class="dock" id="dockLeft"></div>
+  <!-- Panels start here; the layout manager moves them into docks or the slide-out host. -->
+  <section class="panel" id="panel-learn" data-panel="learn" aria-label="Learn">
+    <header class="panel-head"></header>
+    <div class="panel-body" id="coach" tabindex="-1">
+    <section class="setup" id="setup" hidden></section>
+    <section class="import-report" id="importReport" hidden></section>
+    <section>
+      <p class="coach-h">Lessons</p>
+      <div class="lesson-nav" id="lessonNav"></div>
+    </section>
+    <section class="lesson" id="lesson" aria-live="polite"></section>
+    <section class="explain" id="explain">
+      <p class="coach-h">Selected block</p>
+      <p class="empty">Click any block to see what it does in Verse.</p>
+    </section>
+    <section>
+      <p class="coach-h" id="warnHead">Needs fixing</p>
+      <ul id="warnList"></ul>
+    </section>
+    <section>
+      <p class="coach-h">Roadmap</p>
+      <ul class="roadmap" id="roadmap"></ul>
+    </section>
+    </div>
+  </section>
+  <section class="panel" id="panel-appearance" data-panel="appearance" aria-label="Appearance">
+    <header class="panel-head"></header>
+    <div class="panel-body" tabindex="-1"></div>
+  </section>
+  <section class="panel" id="panel-toolbox" data-panel="toolbox" aria-label="Toolbox">
+    <header class="panel-head"></header>
+    <div class="panel-body" tabindex="-1"></div>
+  </section>
+  <div id="stage">
+    <!-- One file bar for both views, like an editor tab -->
+    <div class="code-bar"><strong id="fileName">my_device.verse</strong><span id="syncStatus" class="sync synced" aria-live="polite">In sync with blocks</span><button class="btn" id="viewToggle">Show Text</button><button class="btn" id="dlBtn" hidden>Save<span class="long"> .verse</span></button></div>
+    <div id="panes">
+    <div id="blocksPane"><div id="blocklyDiv"></div></div>
+    <div id="codeSplit" class="splitter" role="separator" tabindex="0" aria-label="Resize blocks and code. Use arrow keys; double-click to reset."></div>
+    <section id="codePane" aria-label="Verse code">
+
+      <div id="code" aria-label="Verse code editor"></div>
+      <div class="legend"><span>Colors match block groups:</span><b style="color:var(--t-kw)">control</b><b style="color:var(--t-var)">variables</b><b style="color:var(--t-type)">devices &amp; types</b><b style="color:var(--t-fn)">functions</b><b style="color:var(--t-str)">text</b><b style="color:var(--t-num)">numbers</b></div>
+    </section>
+    </div>
+  </div>
+  <div class="dock" id="dockRight"></div>
+  <div id="overlayHost" hidden></div>
+</main>
+<div id="loadErr"><h2>The block engine didn't load</h2><p>Verse Blocks needs Blockly from cdn.jsdelivr.net. Check your connection and reload.</p></div>
+<div id="toast" role="status"></div>
+<dialog id="tmplDlg" aria-labelledby="tmplTitle">
+  <h2 id="tmplTitle">Game-mode templates</h2>
+  <p>A template is a working game mode in blocks, plus a checklist for setting up the map in UEFN.</p>
+  <div id="tmplList"></div>
+  <div class="dlg-actions"><button class="btn" id="tmplClose">Close</button></div>
+</dialog>
+<dialog id="projDlg" aria-labelledby="projTitle">
+  <h2 id="projTitle">Project</h2>
+  <p>Share code: copy it to back up your blocks or send them to someone. They paste it under Load.</p>
+  <textarea id="shareOut" readonly aria-label="Your share code"></textarea>
+  <div class="dlg-actions"><button class="btn btn-primary" id="shareCopy">Copy share code</button></div>
+  <hr class="dlg-sep">
+  <p>Load: paste a share code. This replaces your current blocks.</p>
+  <textarea id="shareIn" aria-label="Paste a share code" placeholder="VB2:…"></textarea>
+  <div class="dlg-actions">
+    <button class="btn" id="newProj">Start a blank project</button>
+    <button class="btn" id="projClose">Close</button>
+    <button class="btn btn-primary" id="shareLoad">Load share code</button>
+  </div>
+</dialog>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

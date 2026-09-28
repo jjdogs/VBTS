@@ -1,0 +1,67 @@
+/* ============================================================
+   Responsive rules (Phase 3.5). Layout decisions that depend on
+   the space available (making room, split direction) live in
+   ui/layout.ts; these are the size- and input-based styles.
+   ============================================================ */
+
+/* ---------- tablets and phones: one-row header, extras under More ---------- */
+#moreBtn { display: none; }
+@media (max-width: 900px) {
+  header { flex-wrap: nowrap; }
+  .brand { margin-right: auto; }
+  #lookBtn, #tmplBtn, #projBtn { display: none; }
+  #moreBtn { display: inline-flex; align-items: center; }
+}
+@media (max-width: 640px) {
+  header { gap: 6px; padding: 8px 10px; }
+  .brand-name, #copyBtn .long { display: none; }
+  .seg button { padding: 6px 10px; }
+  header .btn { padding: 7px 11px; }
+}
+@media (max-width: 360px) {
+  .seg button { padding: 6px 7px; }
+  header .btn { padding: 7px 8px; }
+}
+
+/* ---------- short screens (phone landscape, zoomed-in desktop) ---------- */
+@media (max-height: 500px) {
+  header { padding-top: 4px; padding-bottom: 4px; }
+  .legend { display: none; }
+  .code-bar { padding-top: 5px; padding-bottom: 5px; }
+  .panel-head { min-height: 38px; }
+  #coach { padding-top: 10px; gap: 16px; }
+}
+
+/* ---------- dialogs always fit and scroll inside ---------- */
+dialog { max-height: calc(100dvh - 24px); overflow: auto; width: min(520px, calc(100vw - 24px)); }
+
+/* ---------- touch screens: targets at least 44 px ---------- */
+@media (pointer: coarse) {
+  header .btn, .seg button, .code-bar .btn, dialog .btn, .lesson-actions .btn, .import-report .btn, .setup .btn { min-height: 44px; }
+  .seg { padding: 2px; }
+  .lesson-dot { width: 44px; height: 44px; }
+  .pb { width: 44px; height: 44px; }
+  .cat { min-height: 44px; }
+  .ab { min-height: 58px; width: 50px; }
+  #warnList button, .fix { min-height: 44px; }
+  .checks label { min-height: 44px; align-items: center; }
+  .panel-menu button { min-height: 44px; }
+  /* compact toolbox: stack the two header buttons */
+  .panel.compact .panel-head { flex-direction: column; min-height: 0; padding: 4px; }
+  /* easier-to-grab dividers */
+  .resizer { width: 20px; right: -10px; }
+  .panel[data-state="pinned"][data-side="right"] > .resizer { left: -10px; }
+  .splitter { width: 21px; margin: 0 -10px; }
+  .splitter::after { left: 10px; }
+  body[data-view="split"][data-split="column"] .splitter { height: 21px; margin: -10px 0; }
+  body[data-view="split"][data-split="column"] .splitter::after { top: 10px; }
+}
+
+/* the activity bar's labels stay readable */
+.ab span { font-size: calc(11px * var(--ui-scale, 1)); }
+
+/* ---------- narrow code pane (any screen): shorter labels, no legend ---------- */
+@container (max-width: 420px) {
+  .code-bar .long { display: none; }
+  .legend { display: none; }
+}

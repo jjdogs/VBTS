@@ -1,0 +1,169 @@
+/* ============================================================
+   Layout: activity bar, docks, panels, slide-out, dividers.
+   See src/ui/layout.ts for the behavior.
+   ============================================================ */
+#layout { position: relative; }
+
+/* Blockly's own category list is replaced by the Toolbox panel. */
+.blocklyToolboxDiv { display: none !important; }
+
+/* ---------- activity bar (unpinned panels) ---------- */
+#activityBar {
+  flex: none; width: 56px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 0; border-right: 1px solid var(--line); background: var(--panel); z-index: 65;
+}
+#activityBar[hidden] { display: none; }
+.ab {
+  width: 46px; border: 0; background: transparent; border-radius: calc(10px * var(--radius-scale, 1)); padding: 7px 0 5px;
+  color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: calc(10.5px * var(--ui-scale, 1)); font-weight: 500;
+}
+.ab svg, .pb svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ab svg { width: 22px; height: 22px; }
+.ab:hover { background: var(--panel2); color: var(--ink); }
+.ab[aria-expanded="true"] { background: var(--hl); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
+#activityBar.drop-here { background: var(--hl); }
+
+/* ---------- docks and panels ---------- */
+.dock { display: flex; flex: none; min-width: 0; min-height: 0; }
+.dock[hidden] { display: none; }
+.panel { position: relative; display: flex; flex-direction: column; flex: none; min-height: 0; background: var(--panel); }
+.panel[hidden] { display: none; }
+.dock[data-side="left"] > .panel { border-right: 1px solid var(--line); }
+.dock[data-side="right"] > .panel { border-left: 1px solid var(--line); }
+
+.panel-head {
+  display: flex; align-items: center; gap: 2px; min-height: 44px; padding: 6px 6px 6px 12px;
+  border-bottom: 1px solid var(--line); cursor: grab; user-select: none; -webkit-user-select: none;
+}
+body.narrow .panel-head { cursor: default; }
+.panel-title { margin: 0 auto 0 0; font-size: calc(13.5px * var(--ui-scale, 1)); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb {
+  flex: none; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: calc(8px * var(--radius-scale, 1));
+  background: transparent; color: var(--muted);
+}
+.pb svg { width: 18px; height: 18px; }
+.pb svg circle { fill: currentColor; stroke: none; }
+.pb:hover { background: var(--panel2); color: var(--ink); }
+.pb[hidden] { display: none; }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; outline: none; }
+
+/* Drag handle on each panel's inner edge */
+.resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; z-index: 6; cursor: col-resize; touch-action: none; }
+.panel[data-state="pinned"][data-side="right"] > .resizer { right: auto; left: -4px; }
+.resizer:hover, .resizer:active { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.panel.compact > .resizer { display: none; }
+body.resizing, body.resizing * { cursor: col-resize !important; user-select: none !important; }
+
+/* ---------- slide-out (unpinned panel opened from the activity bar) ---------- */
+#overlayHost {
+  position: absolute; top: 0; bottom: 0; left: 56px; z-index: 60; display: flex;
+  box-shadow: 12px 0 32px rgba(10, 8, 30, .28);
+}
+#overlayHost[hidden] { display: none; }
+#overlayHost > .panel { border-right: 1px solid var(--line); max-width: calc(100vw - 64px); }
+body.narrow #overlayHost > .panel:not(.compact) { width: min(340px, calc(100vw - 64px)) !important; }
+
+/* ---------- dragging panels ---------- */
+body.dragging-panel .dock { min-width: 64px; background: color-mix(in srgb, var(--accent) 7%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+body.dragging-panel #activityBar { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+body.dragging-panel .panel-head { cursor: grabbing; }
+.drop-marker { flex: none; width: 4px; margin: 8px 2px; border-radius: calc(2px * var(--radius-scale, 1)); background: var(--accent); }
+
+/* ---------- ⋯ panel menu ---------- */
+.panel-menu {
+  position: fixed; z-index: 300; min-width: 210px; padding: 5px; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: calc(12px * var(--radius-scale, 1)); box-shadow: 0 12px 32px rgba(10, 8, 30, .3);
+}
+.panel-menu button { border: 0; background: transparent; text-align: left; padding: 8px 12px; border-radius: calc(8px * var(--radius-scale, 1)); font-size: calc(14px * var(--ui-scale, 1)); }
+.panel-menu button:hover, .panel-menu button:focus-visible { background: var(--panel2); outline: none; }
+
+/* ---------- Toolbox panel ---------- */
+.cats { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+/* position: relative keeps the visually hidden name (compact mode) inside the scrolling list */
+.cat {
+  position: relative; width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: calc(9px * var(--radius-scale, 1));
+  background: transparent; font-size: calc(14px * var(--ui-scale, 1)); font-weight: 500; text-align: left;
+}
+.cat:hover { background: var(--panel2); }
+.cat[aria-pressed="true"] { background: var(--hl); box-shadow: inset 3px 0 0 var(--accent); }
+.chip { flex: none; width: 14px; height: 14px; border-radius: calc(4px * var(--radius-scale, 1)); background: var(--chip); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+.cat-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Compact toolbox (hamburger): color chips only */
+.panel.compact .panel-head { justify-content: center; padding: 6px 4px; gap: 2px; }
+.panel.compact .panel-title, .panel.compact .pb[data-act="pin"] { display: none; }
+.panel.compact .cats { padding: 8px 6px; gap: 4px; }
+.panel.compact .cat { justify-content: center; padding: 9px 0; }
+.panel.compact .chip { width: 22px; height: 22px; border-radius: calc(7px * var(--radius-scale, 1)); }
+.panel.compact .cat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- blocks ↔ code divider ---------- */
+.splitter { flex: none; position: relative; z-index: 5; width: 9px; margin: 0 -4px; cursor: col-resize; touch-action: none; outline: none; }
+.splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--line); }
+.splitter:hover::after, .splitter:focus-visible::after, body.resizing .splitter::after { left: 3px; width: 3px; background: var(--accent); }
+body[data-view="blocks"] .splitter, body[data-view="text"] .splitter { display: none; }
+#codePane { border-left: 0 !important; }
+body[data-view="text"] #codePane { flex: 1 1 auto !important; }
+
+/* Stacked split (narrow, tall workspace): the divider runs across */
+body[data-view="split"][data-split="column"] .splitter { width: auto; height: 9px; margin: -4px 0; cursor: row-resize; }
+body[data-view="split"][data-split="column"] .splitter::after { top: 4px; bottom: auto; left: 0; right: 0; width: auto; height: 1px; }
+body[data-view="split"][data-split="column"] .splitter:hover::after, body[data-view="split"][data-split="column"] .splitter:focus-visible::after { top: 3px; left: 0; width: auto; height: 3px; }
+body[data-split="column"] #codePane { border-top: 0 !important; }
+
+/* Tucked-to-make-room marker on the side bar */
+.ab.tucked { position: relative; }
+.ab.tucked::after { content: ''; position: absolute; top: 6px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.panel-menu button.note { color: var(--muted); font-size: calc(13px * var(--ui-scale, 1)); cursor: default; white-space: normal; max-width: 260px; }
+.panel-menu button.note:hover { background: transparent; }
+.pb:disabled { opacity: .45; cursor: default; }
+.pb:disabled:hover { background: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  #overlayHost:not([hidden]) > .panel { animation: slide-in .16s ease-out; }
+  @keyframes slide-in { from { transform: translateX(-12px); opacity: .6; } }
+}
+
+/* ---------- code bar adapts to a narrow code pane ---------- */
+#codePane, #stage { container-type: inline-size; }
+.code-bar { flex-wrap: wrap; row-gap: 6px; }
+.code-bar strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-bar > .sync { flex: 1 1 0; }
+
+/* Long module paths in explanations wrap instead of running off the panel. */
+.explain p, #warnList button, .import-report { overflow-wrap: anywhere; }
+
+/* Style-guide notices: calmer than errors and tips */
+#warnList li.style > button { border-color: var(--line); border-left-color: var(--t-com); color: var(--muted); }
+
+/* ============================================================
+   App Lab-style Toolbox (ui/toolbox-panel.ts): category grid on
+   top, the chosen category's blocks always visible below.
+   ============================================================ */
+#panel-toolbox > .panel-body { overflow: hidden; display: flex; flex-direction: column; }
+.tb { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.tb .cats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; padding: 8px; border-bottom: 1px solid var(--line); flex: none; }
+.tb .cat { padding: 6px 8px; gap: 8px; }
+.tb .cat .chip { width: 6px; height: 18px; border-radius: 2px; }
+.tb .cat[aria-pressed="true"] { background: color-mix(in srgb, var(--cat, var(--accent)) 26%, transparent); box-shadow: inset 3px 0 0 var(--cat, var(--accent)); }
+.tb-note { margin: 0; padding: 8px 12px 0; font-size: calc(12px * var(--ui-scale, 1)); color: var(--muted); flex: none; }
+.tb .palette { flex: 1; min-height: 0; position: relative; }
+.tb .palette[hidden], .tb .snippets[hidden] { display: none; }
+.tb .snippets { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.tb .snippets li { max-width: 100%; }
+.snip {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: pre; text-align: left; cursor: grab;
+  font: var(--code-size, 13.5px)/1.45 var(--mono); font-variant-ligatures: none; color: var(--ink);
+  padding: 5px 10px; border: 1px solid var(--chip); border-radius: calc(6px * var(--radius-scale, 1));
+  background: color-mix(in srgb, var(--chip) 16%, var(--code-bg));
+}
+.snip:hover { background: color-mix(in srgb, var(--chip) 28%, var(--code-bg)); }
+.snip:active { cursor: grabbing; }
+/* Collapsed (☰): a single column of chips; no room for the palette */
+.panel.compact .tb .cats { grid-template-columns: 1fr; border-bottom: 0; }
+.panel.compact .tb .palette, .panel.compact .tb .snippets, .panel.compact .tb-note { display: none; }
+
+/* ---------- Workspace header, like App Lab's: title centred, buttons right ---------- */
+#stage > .code-bar { position: relative; }
+#stage > .code-bar > #fileName { position: absolute; left: 50%; transform: translateX(-50%); max-width: 36%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+@container (max-width: 560px) { #stage > .code-bar > #fileName { position: static; transform: none; max-width: none; } }

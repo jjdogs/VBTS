@@ -1,0 +1,1336 @@
+{
+ "solutions": {
+  "L1": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_print",
+      "fields": {},
+      "inputs": {
+       "TEXT": {
+        "block": {
+         "type": "verse_text",
+         "fields": {
+          "TEXT": "Hello, world!"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L2": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_print",
+      "fields": {},
+      "inputs": {
+       "TEXT": {
+        "block": {
+         "type": "verse_text",
+         "fields": {
+          "TEXT": "Ready"
+         }
+        }
+       }
+      },
+      "next": {
+       "block": {
+        "type": "verse_sleep",
+        "fields": {
+         "SECS": 3
+        },
+        "next": {
+         "block": {
+          "type": "verse_print",
+          "fields": {},
+          "inputs": {
+           "TEXT": {
+            "block": {
+             "type": "verse_text",
+             "fields": {
+              "TEXT": "Go!"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L3": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_for_range",
+      "fields": {
+       "VAR": "I",
+       "FROM": 1,
+       "TO": 5
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_print",
+         "fields": {},
+         "inputs": {
+          "TEXT": {
+           "block": {
+            "type": "verse_text_join",
+            "fields": {
+             "LABEL": "Round "
+            },
+            "inputs": {
+             "V": {
+              "block": {
+               "type": "verse_get",
+               "fields": {
+                "NAME": "I"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L4": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyButton",
+       "DTYPE": "button_device"
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyButton",
+       "EVENT": "InteractedWithEvent",
+       "HANDLER": "OnButtonPressed"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnButtonPressed",
+       "PARAM": "agent"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_print",
+         "fields": {},
+         "inputs": {
+          "TEXT": {
+           "block": {
+            "type": "verse_text",
+            "fields": {
+             "TEXT": "Pressed!"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L5": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyButton",
+       "DTYPE": "button_device"
+      },
+      "next": {
+       "block": {
+        "type": "verse_editable",
+        "fields": {
+         "NAME": "MyGranter",
+         "DTYPE": "item_granter_device"
+        }
+       }
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyButton",
+       "EVENT": "InteractedWithEvent",
+       "HANDLER": "OnButtonPressed"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnButtonPressed",
+       "PARAM": "agent"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_call_device",
+         "fields": {
+          "DEVICE": "MyGranter",
+          "METHOD": "GrantItem(Agent)",
+          "WHO": "Agent"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L6": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyButton",
+       "DTYPE": "button_device"
+      },
+      "next": {
+       "block": {
+        "type": "verse_editable",
+        "fields": {
+         "NAME": "MyGranter",
+         "DTYPE": "item_granter_device"
+        },
+        "next": {
+         "block": {
+          "type": "verse_field",
+          "fields": {
+           "KIND": "var",
+           "NAME": "Presses",
+           "TYPE": "int",
+           "VALUE": "0"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyButton",
+       "EVENT": "InteractedWithEvent",
+       "HANDLER": "OnButtonPressed"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnButtonPressed",
+       "PARAM": "agent"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_set",
+         "fields": {
+          "NAME": "Presses",
+          "OP": "+="
+         },
+         "inputs": {
+          "V": {
+           "block": {
+            "type": "verse_number",
+            "fields": {
+             "NUM": 1,
+             "TYPE": "int"
+            }
+           }
+          }
+         },
+         "next": {
+          "block": {
+           "type": "verse_if",
+           "fields": {},
+           "inputs": {
+            "COND": {
+             "block": {
+              "type": "verse_compare",
+              "fields": {
+               "OP": ">="
+              },
+              "inputs": {
+               "A": {
+                "block": {
+                 "type": "verse_get",
+                 "fields": {
+                  "NAME": "Presses"
+                 }
+                }
+               },
+               "B": {
+                "block": {
+                 "type": "verse_number",
+                 "fields": {
+                  "NUM": 3,
+                  "TYPE": "int"
+                 }
+                }
+               }
+              }
+             }
+            },
+            "DO": {
+             "block": {
+              "type": "verse_call_device",
+              "fields": {
+               "DEVICE": "MyGranter",
+               "METHOD": "GrantItem(Agent)",
+               "WHO": "Agent"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L7": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyZone",
+       "DTYPE": "mutator_zone_device"
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyZone",
+       "EVENT": "AgentEntersEvent",
+       "HANDLER": "OnEnter"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnEnter",
+       "PARAM": "agent"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_fort_character",
+         "fields": {
+          "WHO": "Agent"
+         },
+         "inputs": {
+          "DO": {
+           "block": {
+            "type": "verse_char_action",
+            "fields": {
+             "ACTION": "Damage",
+             "AMOUNT": 25
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L8": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyTrigger",
+       "DTYPE": "trigger_device"
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyTrigger",
+       "EVENT": "TriggeredEvent",
+       "HANDLER": "OnTriggered"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnTriggered",
+       "PARAM": "maybe"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_unwrap_agent",
+         "fields": {},
+         "inputs": {
+          "DO": {
+           "block": {
+            "type": "verse_print",
+            "fields": {},
+            "inputs": {
+             "TEXT": {
+              "block": {
+               "type": "verse_text",
+               "fields": {
+                "TEXT": "Triggered by a player"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L9": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_spawn",
+      "fields": {
+       "NAME": "SpawnTargets"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_function",
+      "fields": {
+       "NAME": "SpawnTargets",
+       "SUSPENDS": "TRUE"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_loop",
+         "fields": {},
+         "inputs": {
+          "DO": {
+           "block": {
+            "type": "verse_print",
+            "fields": {},
+            "inputs": {
+             "TEXT": {
+              "block": {
+               "type": "verse_text_join",
+               "fields": {
+                "LABEL": "Target "
+               },
+               "inputs": {
+                "V": {
+                 "block": {
+                  "type": "verse_random",
+                  "fields": {
+                   "LO": 1,
+                   "HI": 8
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "next": {
+             "block": {
+              "type": "verse_sleep",
+              "fields": {
+               "SECS": 2
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L10": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device",
+    "AUTO": false
+   },
+   "inputs": {
+    "USINGS": {
+     "block": {
+      "type": "verse_using",
+      "fields": {
+       "MODULE": "/Fortnite.com/Devices"
+      },
+      "next": {
+       "block": {
+        "type": "verse_using",
+        "fields": {
+         "MODULE": "/UnrealEngine.com/Temporary/Diagnostics"
+        },
+        "next": {
+         "block": {
+          "type": "verse_using",
+          "fields": {
+           "MODULE": "/Verse.org/Random"
+          },
+          "next": {
+           "block": {
+            "type": "verse_using",
+            "fields": {
+             "MODULE": "/Verse.org/Colors"
+            },
+            "next": {
+             "block": {
+              "type": "verse_using",
+              "fields": {
+               "MODULE": "/Verse.org/Random"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_print",
+      "fields": {},
+      "inputs": {
+       "TEXT": {
+        "block": {
+         "type": "verse_text_join",
+         "fields": {
+          "LABEL": "Lucky number: "
+         },
+         "inputs": {
+          "V": {
+           "block": {
+            "type": "verse_random",
+            "fields": {
+             "LO": 1,
+             "HI": 100
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "L11": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "Door",
+       "DTYPE": "prop_mover_device"
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_call_device",
+      "fields": {
+       "DEVICE": "Door",
+       "METHOD": "Begin()"
+      },
+      "next": {
+       "block": {
+        "type": "verse_subscribe",
+        "fields": {
+         "DEVICE": "Door",
+         "EVENT": "FinishedEvent",
+         "HANDLER": "OnDoorFinished"
+        }
+       }
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnDoorFinished",
+       "PARAM": "none"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_print",
+         "fields": {},
+         "inputs": {
+          "TEXT": {
+           "block": {
+            "type": "verse_text",
+            "fields": {
+             "TEXT": "Door arrived"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "MISTAKES": {
+   "type": "verse_device",
+   "fields": {
+    "NAME": "my_device"
+   },
+   "inputs": {
+    "EDITABLES": {
+     "block": {
+      "type": "verse_editable",
+      "fields": {
+       "NAME": "MyTrigger",
+       "DTYPE": "trigger_device"
+      }
+     }
+    },
+    "ONBEGIN": {
+     "block": {
+      "type": "verse_subscribe",
+      "fields": {
+       "DEVICE": "MyTrigger",
+       "EVENT": "TriggeredEvent",
+       "HANDLER": "OnTriggered"
+      }
+     }
+    },
+    "MEMBERS": {
+     "block": {
+      "type": "verse_handler",
+      "fields": {
+       "NAME": "OnTriggered",
+       "PARAM": "agent"
+      },
+      "inputs": {
+       "DO": {
+        "block": {
+         "type": "verse_sleep",
+         "fields": {
+          "SECS": 1
+         },
+         "next": {
+          "block": {
+           "type": "verse_raw",
+           "fields": {
+            "CODE": "var X:int = 1"
+           }
+          }
+         }
+        }
+       }
+      },
+      "next": {
+       "block": {
+        "type": "verse_function",
+        "fields": {
+         "NAME": "Empty"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "generated": {
+  "L1": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        Print(\"Hello, world!\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 2
+  },
+  "L2": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /Verse.org/Simulation }  # for Sleep\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        Print(\"Ready\")\n        Sleep(3.0)\n        Print(\"Go!\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ],
+    "/Verse.org/Simulation": [
+     "Sleep"
+    ]
+   },
+   "spanCount": 4
+  },
+  "L3": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        for (I := 1..5):\n            Print(\"Round {I}\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 3
+  },
+  "L4": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, button_device\nusing { /Verse.org/Simulation }  # for @editable, agent\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    @editable\n    MyButton:button_device = button_device{}\n\n    OnBegin<override>()<suspends>:void =\n        MyButton.InteractedWithEvent.Subscribe(OnButtonPressed)\n\n    OnButtonPressed(Agent:agent):void =\n        Print(\"Pressed!\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "button_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 5
+  },
+  "L5": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, button_device, item_granter_device\nusing { /Verse.org/Simulation }  # for @editable, agent\n\nmy_device := class(creative_device):\n\n    @editable\n    MyButton:button_device = button_device{}\n    @editable\n    MyGranter:item_granter_device = item_granter_device{}\n\n    OnBegin<override>()<suspends>:void =\n        MyButton.InteractedWithEvent.Subscribe(OnButtonPressed)\n\n    OnButtonPressed(Agent:agent):void =\n        MyGranter.GrantItem(Agent)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "button_device",
+     "item_granter_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent"
+    ]
+   },
+   "spanCount": 6
+  },
+  "L6": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, button_device, item_granter_device\nusing { /Verse.org/Simulation }  # for @editable, agent\n\nmy_device := class(creative_device):\n\n    @editable\n    MyButton:button_device = button_device{}\n    @editable\n    MyGranter:item_granter_device = item_granter_device{}\n    var Presses:int = 0\n\n    OnBegin<override>()<suspends>:void =\n        MyButton.InteractedWithEvent.Subscribe(OnButtonPressed)\n\n    OnButtonPressed(Agent:agent):void =\n        set Presses += 1\n        if (Presses >= 3):\n            MyGranter.GrantItem(Agent)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "button_device",
+     "item_granter_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent"
+    ]
+   },
+   "spanCount": 9
+  },
+  "L7": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, mutator_zone_device\nusing { /Verse.org/Simulation }  # for @editable, agent\nusing { /Fortnite.com/Characters }  # for GetFortCharacter\n\nmy_device := class(creative_device):\n\n    @editable\n    MyZone:mutator_zone_device = mutator_zone_device{}\n\n    OnBegin<override>()<suspends>:void =\n        MyZone.AgentEntersEvent.Subscribe(OnEnter)\n\n    OnEnter(Agent:agent):void =\n        if (FortChar := Agent.GetFortCharacter[]):\n            FortChar.Damage(25.0)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "mutator_zone_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent"
+    ],
+    "/Fortnite.com/Characters": [
+     "GetFortCharacter"
+    ]
+   },
+   "spanCount": 6
+  },
+  "L8": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, trigger_device\nusing { /Verse.org/Simulation }  # for @editable, agent\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    @editable\n    MyTrigger:trigger_device = trigger_device{}\n\n    OnBegin<override>()<suspends>:void =\n        MyTrigger.TriggeredEvent.Subscribe(OnTriggered)\n\n    OnTriggered(MaybeAgent:?agent):void =\n        if (Agent := MaybeAgent?):\n            Print(\"Triggered by a player\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "trigger_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 6
+  },
+  "L9": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /Verse.org/Simulation }  # for Sleep\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\nusing { /Verse.org/Random }  # for GetRandomInt\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        spawn{SpawnTargets()}\n\n    SpawnTargets()<suspends>:void =\n        loop:\n            Print(\"Target {GetRandomInt(1, 8)}\")\n            Sleep(2.0)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/Verse.org/Random": [
+     "GetRandomInt"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ],
+    "/Verse.org/Simulation": [
+     "Sleep"
+    ]
+   },
+   "spanCount": 6
+  },
+  "L10": {
+   "code": "using { /Fortnite.com/Devices }\nusing { /UnrealEngine.com/Temporary/Diagnostics }\nusing { /Verse.org/Random }\nusing { /Verse.org/Colors }\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        Print(\"Lucky number: {GetRandomInt(1, 100)}\")\n",
+   "warnings": [
+    [
+     "tip",
+     "Nothing here uses /Verse.org/Colors yet. Unused using lines are harmless, but you can remove it.",
+     "Remove it"
+    ],
+    [
+     "tip",
+     "/Verse.org/Random is already imported above. One using line per module is enough.",
+     "Remove duplicate"
+    ]
+   ],
+   "autoUsing": false,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/Verse.org/Random": [
+     "GetRandomInt"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 6
+  },
+  "L11": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, prop_mover_device\nusing { /Verse.org/Simulation }  # for @editable\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\nmy_device := class(creative_device):\n\n    @editable\n    Door:prop_mover_device = prop_mover_device{}\n\n    OnBegin<override>()<suspends>:void =\n        Door.Begin()\n        Door.FinishedEvent.Subscribe(OnDoorFinished)\n\n    OnDoorFinished():void =\n        Print(\"Door arrived\")\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "prop_mover_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 6
+  },
+  "MISTAKES": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device, trigger_device\nusing { /Verse.org/Simulation }  # for @editable, agent, Sleep\n\nmy_device := class(creative_device):\n\n    @editable\n    MyTrigger:trigger_device = trigger_device{}\n\n    OnBegin<override>()<suspends>:void =\n        MyTrigger.TriggeredEvent.Subscribe(OnTriggered)\n\n    OnTriggered(Agent:agent):void =\n        Sleep(1.0)\n        var X:int = 1\n\n    Empty():void =\n        # (empty — drag blocks here)\n",
+   "warnings": [
+    [
+     "error",
+     "TriggeredEvent sends ?agent, so OnTriggered must receive \"maybe agent (?agent)\".",
+     "Make OnTriggered receive maybe agent (?agent)"
+    ],
+    [
+     "error",
+     "Sleep only works in <suspends> code (OnBegin or a <suspends> function). From a handler, put it in a function and use spawn.",
+     null
+    ],
+    [
+     "tip",
+     "Raw Verse is written out exactly as typed and is not checked here.",
+     null
+    ],
+    [
+     "error",
+     "\"Function\" has an empty body — Verse needs at least one expression there.",
+     null
+    ]
+   ],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device",
+     "trigger_device"
+    ],
+    "/Verse.org/Simulation": [
+     "@editable",
+     "agent",
+     "Sleep"
+    ]
+   },
+   "spanCount": 7
+  }
+ },
+ "lessonChecks": {
+  "L1": true,
+  "L2": true,
+  "L3": true,
+  "L4": true,
+  "L5": true,
+  "L6": true,
+  "L7": true,
+  "L8": true,
+  "L9": false,
+  "L10": true,
+  "L11": true
+ },
+ "parsed": {
+  "template": {
+   "report": {
+    "blocks": 82,
+    "raw": [],
+    "skipped": [],
+    "notes": []
+   },
+   "gen": {
+    "code": "using { /Fortnite.com/Devices }  # for creative_device, button_device, timer_device and 2 more\nusing { /Verse.org/Simulation }  # for @editable, agent, Sleep\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\nusing { /Verse.org/Random }  # for GetRandomInt\n\ntarget_gallery := class(creative_device):\n\n    @editable\n    StartButton:button_device = button_device{}\n    @editable\n    RoundTimer:timer_device = timer_device{}\n    @editable\n    Target1:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target2:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target3:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Hud:hud_message_device = hud_message_device{}\n    var Hits:int = 0\n    var Pick:int = 0\n    var IsRoundActive:logic = false\n\n    OnBegin<override>()<suspends>:void =\n        # Connect every device event to the function that handles it\n        StartButton.InteractedWithEvent.Subscribe(OnStart)\n        RoundTimer.SuccessEvent.Subscribe(OnRoundOver)\n        Target1.KnockdownEvent.Subscribe(OnTargetHit)\n        Target2.KnockdownEvent.Subscribe(OnTargetHit)\n        Target3.KnockdownEvent.Subscribe(OnTargetHit)\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        Print(\"Target gallery ready\")\n\n    OnStart(Agent:agent):void =\n        if (not IsRoundActive?):\n            set Hits = 0\n            set IsRoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit():void =\n        if (IsRoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver(MaybeAgent:?agent):void =\n        set IsRoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets()<suspends>:void =\n        loop:\n            if (not IsRoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    # Turns a string into a message (needed for HUD text)\n    MakeMessage<localizes>(Text:string):message = \"{Text}\"\n",
+    "warnings": [],
+    "autoUsing": true,
+    "needs": {
+     "/Fortnite.com/Devices": [
+      "creative_device",
+      "button_device",
+      "timer_device",
+      "shooting_range_target_device",
+      "hud_message_device"
+     ],
+     "/Verse.org/Simulation": [
+      "@editable",
+      "agent",
+      "Sleep"
+     ],
+     "/UnrealEngine.com/Temporary/Diagnostics": [
+      "Print"
+     ],
+     "/Verse.org/Random": [
+      "GetRandomInt"
+     ]
+    },
+    "spanCount": 57
+   }
+  },
+  "messy": {
+   "report": {
+    "blocks": 53,
+    "raw": [],
+    "skipped": [],
+    "notes": [
+     "1 comment at the end of a code line was dropped. Comments on their own line are kept as comment blocks.",
+     "Renamed HandlePress's input from InAgent to Agent (the name blocks use)."
+    ]
+   },
+   "gen": {
+    "code": "using { /Fortnite.com/Devices }\nusing { /Verse.org/Simulation }\nusing { /UnrealEngine.com/Temporary/Diagnostics }\n\nhelper_class := class:\n    Value:int = 3\n\nreward_device := class(creative_device):\n\n    @editable\n    RewardButton:button_device = button_device{}\n    @editable\n    Granter:item_granter_device = item_granter_device{}\n    @editable\n    Spawners:[]player_spawner_device = array{}\n    var PressCount:int = 0\n    MaxPresses:int = 5\n    var Greeting:string = \"Welcome!\"\n\n    OnBegin<override>()<suspends>:void =\n        Print(\"Device started\")\n        RewardButton.InteractedWithEvent.Subscribe(HandlePress)\n        for (Index := 0..2):\n            Print(\"Warmup {Index}\")\n        Sleep(1.5)\n\n    HandlePress(Agent:agent):void =\n        set PressCount += 1\n        if (PressCount > MaxPresses):\n            Print(\"Too many presses\")\n        else:\n            Granter.GrantItem(Agent)\n            if (FortChar := Agent.GetFortCharacter[]):\n                FortChar.Heal(10.0)\n        Print(\"Presses: {PressCount}\")\n\n    IsLucky()<decides><transacts>:void =\n        GetRandomInt(1, 6) = 6\n\n    Countdown()<suspends>:void =\n        loop:\n            Sleep(1.0)\n            if (PressCount >= 3 and not PressCount = 4):\n                break\n",
+    "warnings": [
+     [
+      "error",
+      "Your code uses GetFortCharacter, which lives in /Fortnite.com/Characters. Add: using { /Fortnite.com/Characters }",
+      "Add using { /Fortnite.com/Characters }"
+     ],
+     [
+      "error",
+      "Your code uses GetRandomInt, which lives in /Verse.org/Random. Add: using { /Verse.org/Random }",
+      "Add using { /Verse.org/Random }"
+     ],
+     [
+      "style",
+      "Style (guide 1.2, 2.4): don't decorate type names with _type, _class or _t. Just call it helper.",
+      "Rename to helper everywhere"
+     ],
+     [
+      "style",
+      "Style (guide 6.2): Value is only used inside helper_class, so it can be <private>.",
+      "Make Value <private>"
+     ],
+     [
+      "style",
+      "Style (guide 7.1): event handlers start with On, e.g. OnHandlePress.",
+      "Rename to OnHandlePress everywhere"
+     ]
+    ],
+    "autoUsing": false,
+    "needs": {
+     "/Fortnite.com/Devices": [
+      "creative_device",
+      "button_device",
+      "item_granter_device",
+      "player_spawner_device"
+     ],
+     "/Verse.org/Simulation": [
+      "@editable",
+      "Sleep",
+      "agent"
+     ],
+     "/UnrealEngine.com/Temporary/Diagnostics": [
+      "Print"
+     ],
+     "/Fortnite.com/Characters": [
+      "GetFortCharacter"
+     ],
+     "/Verse.org/Random": [
+      "GetRandomInt"
+     ]
+    },
+    "spanCount": 32
+   }
+  },
+  "big": {
+   "report": {
+    "blocks": 814,
+    "raw": [],
+    "skipped": [],
+    "notes": []
+   },
+   "gen": {
+    "code": "using { /Fortnite.com/Devices }  # for creative_device, button_device, timer_device and 2 more\nusing { /Verse.org/Simulation }  # for @editable, agent, Sleep\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\nusing { /Verse.org/Random }  # for GetRandomInt\n\ntarget_gallery := class(creative_device):\n\n    @editable\n    StartButton:button_device = button_device{}\n    @editable\n    RoundTimer:timer_device = timer_device{}\n    @editable\n    Target1:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target2:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target3:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Hud:hud_message_device = hud_message_device{}\n    var Hits:int = 0\n    var Pick:int = 0\n    var RoundActive:logic = false\n\n    OnBegin<override>()<suspends>:void =\n        # Connect every device event to the function that handles it\n        StartButton.InteractedWithEvent.Subscribe(OnStart)\n        RoundTimer.SuccessEvent.Subscribe(OnRoundOver)\n        Target1.KnockdownEvent.Subscribe(OnTargetHit)\n        Target2.KnockdownEvent.Subscribe(OnTargetHit)\n        Target3.KnockdownEvent.Subscribe(OnTargetHit)\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        Print(\"Target gallery ready\")\n\n    OnStart(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart0(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets0()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit0():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver0(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets0()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart1(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets1()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit1():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver1(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets1()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart2(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets2()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit2():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver2(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets2()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart3(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets3()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit3():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver3(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets3()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart4(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets4()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit4():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver4(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets4()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart5(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets5()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit5():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver5(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets5()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart6(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets6()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit6():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver6(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets6()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart7(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets7()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit7():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver7(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets7()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart8(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets8()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit8():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver8(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets8()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart9(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets9()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit9():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver9(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets9()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart10(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets10()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit10():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver10(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets10()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart11(Agent:agent):void =\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets11()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit11():void =\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver11(MaybeAgent:?agent):void =\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets11()<suspends>:void =\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    # Turns a string into a message (needed for HUD text)\n    MakeMessage<localizes>(Text:string):message = \"{Text}\"\n",
+    "warnings": [
+     [
+      "style",
+      "Style (guide 1.1): logic variables are usually named like a question, e.g. IsRoundActive.",
+      "Rename to IsRoundActive everywhere"
+     ]
+    ],
+    "autoUsing": true,
+    "needs": {
+     "/Fortnite.com/Devices": [
+      "creative_device",
+      "button_device",
+      "timer_device",
+      "shooting_range_target_device",
+      "hud_message_device"
+     ],
+     "/Verse.org/Simulation": [
+      "@editable",
+      "agent",
+      "Sleep"
+     ],
+     "/UnrealEngine.com/Temporary/Diagnostics": [
+      "Print"
+     ],
+     "/Verse.org/Random": [
+      "GetRandomInt"
+     ]
+    },
+    "spanCount": 501
+   }
+  }
+ },
+ "starters": {
+  "L1": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L2": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L3": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L4": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L7": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L8": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L9": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L10": {
+   "code": "# (no using lines)\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        Print(\"Lucky number: {GetRandomInt(1, 100)}\")\n",
+   "warnings": [
+    [
+     "error",
+     "Your code uses creative_device, which lives in /Fortnite.com/Devices. Add: using { /Fortnite.com/Devices }",
+     "Add using { /Fortnite.com/Devices }"
+    ],
+    [
+     "error",
+     "Your code uses Print, which lives in /UnrealEngine.com/Temporary/Diagnostics. Add: using { /UnrealEngine.com/Temporary/Diagnostics }",
+     "Add using { /UnrealEngine.com/Temporary/Diagnostics }"
+    ],
+    [
+     "error",
+     "Your code uses GetRandomInt, which lives in /Verse.org/Random. Add: using { /Verse.org/Random }",
+     "Add using { /Verse.org/Random }"
+    ]
+   ],
+   "autoUsing": false,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ],
+    "/Verse.org/Random": [
+     "GetRandomInt"
+    ],
+    "/UnrealEngine.com/Temporary/Diagnostics": [
+     "Print"
+    ]
+   },
+   "spanCount": 2
+  },
+  "L11": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L12": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L13": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L14": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L15": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L16": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  },
+  "L17": {
+   "code": "using { /Fortnite.com/Devices }  # for creative_device\n\nmy_device := class(creative_device):\n\n    OnBegin<override>()<suspends>:void =\n        # (empty — drag blocks here)\n",
+   "warnings": [],
+   "autoUsing": true,
+   "needs": {
+    "/Fortnite.com/Devices": [
+     "creative_device"
+    ]
+   },
+   "spanCount": 1
+  }
+ },
+ "sources": {
+  "template": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /Verse.org/Simulation }  # for @editable, agent\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\ntarget_gallery := class(creative_device):\n\n    @editable\n    StartButton:button_device = button_device{}\n    @editable\n    RoundTimer:timer_device = timer_device{}\n    @editable\n    Target1:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target2:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target3:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Hud:hud_message_device = hud_message_device{}\n    var Hits:int = 0\n    var Pick:int = 0\n    var IsRoundActive:logic = false\n\n    OnBegin<override>()<suspends>:void =\n        # Connect every device event to the function that handles it\n        StartButton.InteractedWithEvent.Subscribe(OnStart)\n        RoundTimer.SuccessEvent.Subscribe(OnRoundOver)\n        Target1.KnockdownEvent.Subscribe(OnTargetHit)\n        Target2.KnockdownEvent.Subscribe(OnTargetHit)\n        Target3.KnockdownEvent.Subscribe(OnTargetHit)\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        Print(\"Target gallery ready\")\n\n    OnStart(Agent:agent):void =\n        if (not IsRoundActive?):\n            set Hits = 0\n            set IsRoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit():void =\n        if (IsRoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver(MaybeAgent:?agent):void =\n        set IsRoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets()<suspends>:void =\n        loop:\n            if (not IsRoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n",
+  "messy": "using { /Fortnite.com/Devices }\nusing { /Verse.org/Simulation }\nusing { /UnrealEngine.com/Temporary/Diagnostics }\n\n# A device that rewards players\nreward_device := class(creative_device):\n\n    @editable\n    RewardButton : button_device = button_device{}\n    @editable Granter:item_granter_device = item_granter_device{}\n    @editable\n    Spawners:[]player_spawner_device = array{}\n    var PressCount : int = 0\n    MaxPresses:int = 5\n    var Greeting:string = \"Welcome!\"\n\n    OnBegin<override>()<suspends>:void=\n        Print(\"Device started\")   # log it\n        RewardButton.InteractedWithEvent.Subscribe(HandlePress)\n        for (Index := 0..2):\n            Print(\"Warmup {Index}\")\n        Sleep(1.5)\n\n    HandlePress(InAgent:agent):void=\n        set PressCount += 1\n        if (PressCount > MaxPresses):\n            Print(\"Too many presses\")\n        else:\n            Granter.GrantItem(InAgent)\n            if (FortChar := InAgent.GetFortCharacter[]):\n                FortChar.Heal(10.0)\n        Print(\"Presses: {PressCount}\")\n\n    IsLucky()<decides><transacts>:void=\n        GetRandomInt(1, 6) = 6\n\n    Countdown()<suspends>:void=\n        loop:\n            Sleep(1.0)\n            if (PressCount >= 3 and not PressCount = 4):\n                break\n\nhelper_class := class:\n    Value:int = 3\n",
+  "big": "using { /Fortnite.com/Devices }  # for creative_device\nusing { /Verse.org/Simulation }  # for @editable, agent\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # for Print\n\ntarget_gallery := class(creative_device):\n\n    @editable\n    StartButton:button_device = button_device{}\n    @editable\n    RoundTimer:timer_device = timer_device{}\n    @editable\n    Target1:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target2:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Target3:shooting_range_target_device = shooting_range_target_device{}\n    @editable\n    Hud:hud_message_device = hud_message_device{}\n    var Hits:int = 0\n    var Pick:int = 0\n    var RoundActive:logic = false\n\n    OnBegin<override>()<suspends>:void=\n        # Connect every device event to the function that handles it\n        StartButton.InteractedWithEvent.Subscribe(OnStart)\n        RoundTimer.SuccessEvent.Subscribe(OnRoundOver)\n        Target1.KnockdownEvent.Subscribe(OnTargetHit)\n        Target2.KnockdownEvent.Subscribe(OnTargetHit)\n        Target3.KnockdownEvent.Subscribe(OnTargetHit)\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        Print(\"Target gallery ready\")\n\n    OnStart(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart0(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets0()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit0():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver0(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets0()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart1(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets1()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit1():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver1(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets1()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart2(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets2()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit2():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver2(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets2()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart3(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets3()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit3():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver3(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets3()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart4(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets4()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit4():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver4(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets4()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart5(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets5()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit5():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver5(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets5()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart6(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets6()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit6():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver6(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets6()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart7(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets7()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit7():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver7(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets7()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart8(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets8()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit8():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver8(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets8()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart9(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets9()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit9():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver9(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets9()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart10(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets10()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit10():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver10(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets10()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n\n    OnStart11(Agent:agent):void=\n        if (not RoundActive?):\n            set Hits = 0\n            set RoundActive = true\n            StartButton.Disable()\n            RoundTimer.Start()\n            Hud.SetText(MakeMessage(\"Go! Knock down as many targets as you can.\"))\n            Hud.Show()\n            spawn{PopTargets11()}\n\n    # KnockdownEvent sends nothing, so this handler receives nothing\n    OnTargetHit11():void=\n        if (RoundActive?):\n            set Hits += 1\n            Hud.SetText(MakeMessage(\"Hits: {Hits}\"))\n            Hud.Show()\n\n    # SuccessEvent sends ?agent: the timer may finish with nobody attached\n    OnRoundOver11(MaybeAgent:?agent):void=\n        set RoundActive = false\n        Target1.PopDown()\n        Target2.PopDown()\n        Target3.PopDown()\n        StartButton.Enable()\n        Hud.SetText(MakeMessage(\"Time! Total hits: {Hits}\"))\n        Hud.Show()\n\n    # Runs in the background during a round, popping up a random target\n    PopTargets11()<suspends>:void=\n        loop:\n            if (not RoundActive?):\n                break\n            set Pick = GetRandomInt(1, 3)\n            if (Pick = 1):\n                Target1.PopUp()\n            if (Pick = 2):\n                Target2.PopUp()\n            if (Pick = 3):\n                Target3.PopUp()\n            Sleep(1.2)\n"
+ }
+}

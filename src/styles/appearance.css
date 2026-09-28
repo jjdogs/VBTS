@@ -1,0 +1,104 @@
+/* ============================================================
+   Appearance (Edit Mode) and the one-window editor.
+   Variables are set live by ui/appearance.ts:
+   --ui-scale --code-size --code-lh --radius-scale --space --ws-bg
+   ============================================================ */
+
+/* ---------- one editor: file bar on top, Blocks or Text below ---------- */
+#stage { flex-direction: column; }
+#panes { flex: 1; display: flex; min-width: 0; min-height: 0; }
+#stage > .code-bar { border-bottom: 1px solid var(--line); background: var(--code-bg); }
+
+
+/* "Like text" layout: blocks sit on the same background as the code */
+body[data-blocks-layout="document"] #blocksPane { background: var(--code-bg); }
+body.no-grid .blocklyMainBackground { fill: var(--ws-bg) !important; }
+
+/* ---------- spacing density ---------- */
+#coach { gap: calc(22px * var(--space, 1)); padding: calc(16px * var(--space, 1)) calc(18px * var(--space, 1)) calc(28px * var(--space, 1)); }
+.cat { padding-top: calc(8px * var(--space, 1)); padding-bottom: calc(8px * var(--space, 1)); }
+header { padding-top: calc(10px * var(--space, 1)); padding-bottom: calc(10px * var(--space, 1)); }
+.code-bar { padding-top: calc(10px * var(--space, 1)); padding-bottom: calc(10px * var(--space, 1)); }
+
+/* ---------- animations off ---------- */
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { transition: none !important; animation: none !important; }
+
+/* ---------- the Appearance panel ---------- */
+.ap { padding: calc(12px * var(--space, 1)) 14px 28px; display: flex; flex-direction: column; gap: 6px; }
+.ap-intro, .ap-note { margin: 0 0 6px; color: var(--muted); font-size: calc(13px * var(--ui-scale, 1)); }
+.ap details { border: 1px solid var(--line); border-radius: calc(10px * var(--radius-scale, 1)); background: var(--panel); }
+.ap summary { cursor: pointer; padding: 10px 12px; font-weight: 600; font-size: calc(14px * var(--ui-scale, 1)); list-style-position: inside; }
+.ap summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ap-sec { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+.ap-row { display: grid; grid-template-columns: 1fr minmax(0, 1.25fr); align-items: center; gap: 10px; font-size: calc(13.5px * var(--ui-scale, 1)); }
+.ap-row select { width: 100%; min-height: 34px; font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid var(--line); border-radius: calc(8px * var(--radius-scale, 1)); padding: 4px 8px; }
+.ap-check { grid-template-columns: auto 1fr; justify-content: start; }
+.ap-check input, .ap-colour input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.ap-slider { display: flex; align-items: center; gap: 8px; }
+.ap-slider input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.ap-slider output { min-width: 3.4em; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: calc(12.5px * var(--ui-scale, 1)); }
+.ap-colour { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; font-size: calc(13.5px * var(--ui-scale, 1)); }
+.ap-colour input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: calc(7px * var(--radius-scale, 1)); background: none; cursor: pointer; }
+.ap-undo { border: 0; background: transparent; color: var(--muted); font-size: 16px; width: 30px; height: 30px; border-radius: 8px; }
+.ap-undo:hover { background: var(--panel2); color: var(--ink); }
+.ap-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.ap-preset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: calc(10px * var(--radius-scale, 1)); background: var(--panel); font-size: calc(13px * var(--ui-scale, 1)); font-weight: 500; text-align: left; }
+.ap-preset[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ap-preset .sw { display: flex; gap: 4px; width: 100%; padding: 8px; border: 1px solid; border-radius: calc(7px * var(--radius-scale, 1)); }
+.ap-preset .sw i { width: 14px; height: 14px; border-radius: 50%; }
+.ap textarea { width: 100%; font: 12px/1.4 var(--mono); background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: calc(8px * var(--radius-scale, 1)); padding: 8px; resize: vertical; }
+.ap textarea[aria-invalid="true"] { border-color: var(--warn); }
+.ap-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (pointer: coarse) {
+  .ap-row select, .ap-colour input[type="color"], .ap-undo { min-height: 44px; }
+  .ap summary { padding: 13px 12px; }
+}
+
+/* ---------- the Text view editor (ui/text-editor.ts) ---------- */
+#code { flex: 1; min-height: 0; overflow: hidden; }
+#code .cm-editor { height: 100%; }
+.sync { font-size: calc(12.5px * var(--ui-scale, 1)); color: var(--muted); margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sync::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--ok); }
+.sync.pending::before { background: var(--muted); }
+.sync.raw::before { background: var(--t-com); }
+.sync.error { color: var(--warn); }
+.sync.error::before { background: var(--warn); }
+.sync[role="button"] { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+
+/* ============================================================
+   "Like text" blocks (Appearance → Block look): blocks that look
+   like the Text view — code font and colours, tinted outlines.
+   ============================================================ */
+body.blocks-text .blocklyPath { fill-opacity: .16; stroke-opacity: .9; stroke-width: 1.2px; }
+body.blocks-text .blocklySelected > .blocklyPath { fill-opacity: .28; }
+body.blocks-text .blocklyText { fill: var(--ink) !important; font-family: var(--mono) !important; }
+body.blocks-text .blocklyText.vb-kw { fill: var(--t-kw) !important; } /* no bold: labels are measured at normal weight */
+body.blocks-text .blocklyText.vb-var { fill: var(--t-var) !important; }
+body.blocks-text .blocklyText.vb-fn { fill: var(--t-fn) !important; }
+body.blocks-text .blocklyText.vb-type { fill: var(--t-type) !important; }
+body.blocks-text .blocklyText.vb-spec { fill: var(--t-spec) !important; }
+body.blocks-text .blocklyText.vb-com { fill: var(--t-com) !important; }
+body.blocks-text .blocklyText.vb-punct { fill: var(--ink) !important; }
+/* inputs (names, numbers, dropdowns) look like editable code, not white pills */
+body.blocks-text .blocklyEditableText > rect, body.blocks-text .blocklyFieldRect, body.blocks-text .blocklyDropdownRect {
+  fill: color-mix(in srgb, var(--code-bg) 70%, transparent) !important; stroke: var(--line) !important; fill-opacity: 1 !important;
+}
+body.blocks-text .blocklyEditableText > .blocklyText, body.blocks-text .blocklyDropdownText { fill: var(--ink) !important; }
+body.blocks-text .blocklyEditableText:hover > rect { stroke: var(--accent) !important; }
+
+/* ---------- line numbers beside blocks (ui/unified.ts) ---------- */
+#blockGutter {
+  position: absolute; top: 0; bottom: 0; left: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background: var(--code-bg); color: var(--t-com); font-family: var(--mono); font-size: var(--code-size, 13.5px);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+#blockGutter span { position: absolute; right: 14px; }
+#blockGutter span.active { color: var(--ink); }
+body:not([data-blocks-layout="document"]) #blockGutter { display: none; }
+/* In "like text" layout the workspace is see-through so the gutter shows at its left edge. */
+body[data-blocks-layout="document"] #blocklyDiv { z-index: 1; }
+body[data-blocks-layout="document"] .blocklyMainBackground { fill: transparent !important; }
+body[data-blocks-layout="document"] .blocklySvg { background-color: transparent !important; }
+/* Snap preview (insertion marker): a faint outline only, so it doesn't look like a second block */
+body.blocks-text .blocklyInsertionMarker .blocklyText, body.blocks-text .blocklyInsertionMarker .blocklyEditableText { display: none; }
+body.blocks-text .blocklyInsertionMarker > .blocklyPath { fill-opacity: .08 !important; stroke-dasharray: 4 3; }
