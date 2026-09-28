@@ -45,7 +45,7 @@ export const LESSONS: Lesson[] = [
     { title: 'Target timer', concept: 'spawn, loops, and random',
       goal: 'Aim-trainer style: a <suspends> function loops forever, printing a random target number every 2 seconds.',
       steps: ['Make a function SpawnTargets with <suspends> ticked.', 'Inside: loop forever → print "Target {random int 1 to 8}" → wait 2.', 'In OnBegin, spawn SpawnTargets.'],
-      check: (c) => /SpawnTargets\(\)<suspends>:void\\s*=/.test(c) && /loop:/.test(c) && /GetRandomInt\(/.test(c) && /spawn\{SpawnTargets\(\)\}/.test(c), start: dev() },
+      check: (c) => /SpawnTargets\(\)<suspends>:void\s*=/.test(c) && /loop:/.test(c) && /GetRandomInt\(/.test(c) && /spawn\{SpawnTargets\(\)\}/.test(c), start: dev() },
     { title: 'Open the toolbox', concept: 'using and modules',
       goal: 'Auto-using is off. Add the using lines this code needs so every warning clears.',
       steps: ['Read "Needs fixing": each message names a function and the module it lives in.', 'Open the Using category and drag the right using blocks into the device\'s using slot.', 'Watch the text view: the using line appears the moment you snap the block in.', 'Tip: the fix buttons can do it for you, but try it by hand first.'],

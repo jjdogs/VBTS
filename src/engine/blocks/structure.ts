@@ -32,6 +32,7 @@ export function registerStructureBlocks(): void {
     // Note: using lines are written by generate.ts, because they belong to the whole file.
     generate(b, g) {
       g.need('/Fortnite.com/Devices', 'creative_device');
+      g.helpers.clear(); // helpers are written into each device that uses them, not every device
       const edits = g.statementToCode(b, 'EDITABLES');
       let begin = g.statementToCode(b, 'ONBEGIN');
       const members = g.statementToCode(b, 'MEMBERS');

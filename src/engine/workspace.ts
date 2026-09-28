@@ -31,14 +31,18 @@ export const handlersIn = (ws: Workspace | null): PlacedHandler[] =>
   ws ? ws.getBlocksByType('verse_handler', false)
     .map(b => ({ name: field(b, 'NAME'), param: field(b, 'PARAM') as PlacedHandler['param'] })) : [];
 
+/** Your functions, plus handlers (a handler is a plain function too, so it can be called directly). */
 export const functionsIn = (ws: Workspace | null): PlacedFunction[] =>
-  ws ? ws.getBlocksByType('verse_function', false).map(b => ({
-    name: field(b, 'NAME'),
-    suspends: field(b, 'SUSPENDS') === 'TRUE',
-    decides: field(b, 'DECIDES') === 'TRUE',
-    returns: field(b, 'RET') || 'void',
-    params: countParams(field(b, 'PARAMS')),
-  })) : [];
+  ws ? [
+    ...ws.getBlocksByType('verse_function', false).map(b => ({
+      name: field(b, 'NAME'),
+      suspends: field(b, 'SUSPENDS') === 'TRUE',
+      decides: field(b, 'DECIDES') === 'TRUE',
+      returns: field(b, 'RET') || 'void',
+      params: countParams(field(b, 'PARAMS')),
+    })),
+    ...handlersIn(ws).map(h => ({ name: h.name, suspends: false, decides: false, returns: 'void', params: h.param === 'none' ? 0 : 1 })),
+  ] : [];
 
 /** How many inputs a function's parameter text declares ("A:int, B:int" → 2). */
 export const countParams = (text: string): number => (text.trim() ? text.split(',').filter(p => p.trim()).length : 0);

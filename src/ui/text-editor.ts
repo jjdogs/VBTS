@@ -115,8 +115,12 @@ export interface TextView {
   text(): string;
   /** Converts any typed text that is waiting to be converted, right now. */
   flush(): void;
-  /** Replaces your text with the standard format of the current blocks. */
-  tidy(): void;
+  /** Replaces your text with the standard format of the current blocks. False if the text can't become blocks. */
+  tidy(): boolean;
+  /** Throws away typed text that can't become blocks, and shows the blocks' code instead. */
+  discardTyped(): void;
+  /** Why the typed text can't become blocks, or null. */
+  pendingError(): string | null;
   topLine(): number;
   showLineAtTop(line: number): void;
   onScroll(fn: () => void): void;
@@ -145,6 +149,8 @@ export function createTextView(opts: {
   /** Your text at the last conversion, and which of its lines each block came from. */
   let sourceText: string | null = null;
   let sourceSpans: Record<string, LineSpan> = {};
+  /** Why the last conversion failed (the typed text is still waiting). */
+  let lastError: string | null = null;
 
   const extensions: Extension[] = [
     lineNumbers(), highlightActiveLineGutter(), highlightActiveLine(), history(), drawSelection(), bracketMatching(),
@@ -198,7 +204,8 @@ export function createTextView(opts: {
     clearTimeout(timer);
     if (!dirty) return;
     const res = V.parseVerse(text());
-    if (!res.ok) { onStatus({ kind: 'error', message: res.error }); return; }
+    if (!res.ok) { lastError = res.error; onStatus({ kind: 'error', message: res.error }); return; }
+    lastError = null;
     document.body.dataset.textSync = '1'; // tells the layout not to jump to the top
     B.Events.setGroup(true);
     try {
@@ -251,7 +258,15 @@ export function createTextView(opts: {
       const code = current().code;
       if (!dirty && code !== text()) replaceText(code);
       if (!dirty) { sourceText = null; onStatus({ kind: 'synced' }); }
+      return !dirty;
     },
+    discardTyped() {
+      clearTimeout(timer);
+      dirty = false; echo = null; sourceText = null; lastError = null;
+      replaceText(current().code);
+      onStatus({ kind: 'synced' });
+    },
+    pendingError: () => (dirty ? lastError : null),
     topLine() {
       const block = view.lineBlockAtHeight(view.scrollDOM.scrollTop + 4);
       return view.state.doc.lineAt(block.from).number - 1;

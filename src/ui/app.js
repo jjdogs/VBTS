@@ -203,7 +203,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
         renderLessonDots();
       } else {
         r.classList.add('fail');
-        r.textContent = last.warnings.length ? 'Not yet. Start with the items under “Needs fixing”, then check again.' : 'Not yet. Compare your Verse text with the goal — names and numbers must match exactly.';
+        r.textContent = last.warnings.some(w => w.level === 'error') ? 'Not yet. Start with the items under “Needs fixing”, then check again.' : 'Not yet. Compare your Verse text with the goal — names and numbers must match exactly.';
       }
     };
   }
@@ -212,7 +212,8 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   // ---- view + actions ----
   function setView(v) {
     // Leaving the Text view: convert anything typed, and tidy the text into the standard format.
-    if (document.body.dataset.view === 'text' && v !== 'text') textView.tidy();
+    // If the text can't become blocks, stay here and explain (switching would leave the two apart).
+    if (document.body.dataset.view === 'text' && v !== 'text' && !textView.tidy()) { askToDiscard(v); return; }
     document.body.dataset.view = v; state.view = v; store.set(state);
     const toggle = $('viewToggle');
     toggle.textContent = v === 'text' ? 'Show Blocks' : 'Show Text';
@@ -220,6 +221,20 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
     setTimeout(() => { Blockly.svgResize(ws); paintHL(); }, 30);
   }
+  /** Text can't become blocks: keep editing, or switch and replace the text with the blocks' code. */
+  let switchTo = null;
+  function askToDiscard(v) {
+    switchTo = v;
+    $('syncWhy').textContent = textView.pendingError() || 'The text has a problem Verse Blocks can\'t read yet.';
+    $('syncDlg').showModal();
+  }
+  $('syncKeep').onclick = () => { $('syncDlg').close(); textView.focus(); };
+  $('syncDiscard').onclick = () => {
+    $('syncDlg').close();
+    textView.discardTyped();
+    toast('Text replaced with the code from your blocks');
+    setView(switchTo);
+  };
   document.querySelectorAll('.seg button').forEach((b) => (b.onclick = () => setView(b.dataset.view)));
   $('viewToggle').onclick = () => {
     const to = document.body.dataset.view === 'text' ? 'blocks' : 'text';
@@ -253,8 +268,13 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   };
   $('shareLoad').onclick = () => {
     let data; try { data = dec($('shareIn').value); } catch (e) { toast('That share code is incomplete or damaged'); return; }
+    // Keep the current blocks: loading clears the workspace first, so a bad code would lose them.
+    const before = Blockly.serialization.workspaces.save(ws);
     try { ws.clear(); Blockly.serialization.workspaces.load(data, ws); ws.scrollCenter(); $('projDlg').close(); toast('Project loaded'); }
-    catch (e) { toast('Those blocks could not be loaded'); }
+    catch (e) {
+      ws.clear(); Blockly.serialization.workspaces.load(before, ws);
+      toast('Those blocks could not be loaded. Your blocks were kept.');
+    }
   };
   $('newProj').onclick = () => {
     const b = $('newProj');
@@ -337,7 +357,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   ];
   $('roadmap').innerHTML = PHASES.map(([st, t], i) => {
     const cls = st === 'done' ? 'done' : (PHASES.findIndex(p => p[0] !== 'done') === i ? 'now' : '');
-    return `<li class="${cls}"><i aria-hidden="true"></i><span>${t}${st === 'done' ? ' (done)' : ''}</span></li>`;
+    return `<li class="${cls}"><i aria-hidden="true"></i><span>${escT(t)}${st === 'done' ? ' (done)' : ''}</span></li>`;
   }).join('');
 
   // ---- boot ----

@@ -18,7 +18,7 @@ npm run dev        # opens the app at http://localhost:5173 and reloads as you e
 | Command | What it does |
 |---|---|
 | `npm run dev` | Runs the app locally with live reload |
-| `npm test` | Runs all 43 tests (about a second) |
+| `npm test` | Runs all the tests (a few seconds) |
 | `npm run check` | TypeScript type-check |
 | `npm run build` | Builds the whole app into one file: `dist/index.html` |
 | `npm run preview` | Serves the built file to try it |

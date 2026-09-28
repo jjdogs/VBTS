@@ -82,6 +82,12 @@
   <div id="tmplList"></div>
   <div class="dlg-actions"><button class="btn" id="tmplClose">Close</button></div>
 </dialog>
+<dialog id="syncDlg" aria-labelledby="syncTitle">
+  <h2 id="syncTitle">Your text can't become blocks yet</h2>
+  <p id="syncWhy"></p>
+  <p>Keep editing to fix it, or switch anyway: your text will be replaced with the code from your blocks, and what you typed since they last matched is lost.</p>
+  <div class="dlg-actions"><button class="btn" id="syncDiscard">Switch and replace my text</button><button class="btn btn-primary" id="syncKeep">Keep editing</button></div>
+</dialog>
 <dialog id="projDlg" aria-labelledby="projTitle">
   <h2 id="projTitle">Project</h2>
   <p>Share code: copy it to back up your blocks or send them to someone. They paste it under Load.</p>

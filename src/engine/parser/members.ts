@@ -132,7 +132,7 @@ export class DeviceParser {
       if (m && FIELD_TYPES.includes(m[3])) {
         let value = m[4].trim();
         const type = m[3];
-        const simple = type === 'string' ? /^"(?:[^"\\{}]|\\.)*"$/.test(value)
+        const simple = type === 'string' ? /^"(?:[^"\\{}]|\\[\\"{}])*"$/.test(value)
           : type === 'logic' ? /^(true|false)$/.test(value)
             : /^-?\d+(\.\d+)?$/.test(value);
         if (simple) {
