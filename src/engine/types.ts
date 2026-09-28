@@ -5,8 +5,8 @@
 
 // ---------- devices ----------
 
-/** What a device event sends to its handler. */
-export type EventPayload = 'agent' | '?agent' | 'none';
+/** What a device event sends to its handler: a type ('agent', '?agent', 'device_ai_interaction_result'…) or 'none'. */
+export type EventPayload = string;
 
 /** One Creative device's events and simple actions, from Epic's Verse API. */
 export interface DeviceInfo {
@@ -14,6 +14,8 @@ export interface DeviceInfo {
   events: Record<string, EventPayload>;
   /** Actions with no inputs, or one agent. Methods that take an agent end in "(Agent)". */
   methods: string[];
+  /** Actions with simple inputs, as Verse declares them: "SetScoreAward(Value:int)". */
+  actions: string[];
 }
 
 export type DeviceCatalog = Record<string, DeviceInfo>;

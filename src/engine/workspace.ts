@@ -6,7 +6,8 @@
 import type { Block, Workspace } from './blockly.ts';
 
 export interface PlacedDevice { name: string; type: string }
-export interface PlacedHandler { name: string; param: 'agent' | 'maybe' | 'none' }
+/** param: a HANDLER_INPUTS key (agent, maybe, none, player, elimination…). */
+export interface PlacedHandler { name: string; param: string }
 export interface PlacedFunction { name: string; suspends: boolean; decides: boolean; returns: string; params: number }
 export interface PlacedField { name: string; type: string; mutable: boolean; kind: 'value' | 'array' | 'map' | 'option' }
 
@@ -29,7 +30,7 @@ export const devicesIn = (ws: Workspace | null): PlacedDevice[] =>
 
 export const handlersIn = (ws: Workspace | null): PlacedHandler[] =>
   ws ? ws.getBlocksByType('verse_handler', false)
-    .map(b => ({ name: field(b, 'NAME'), param: field(b, 'PARAM') as PlacedHandler['param'] })) : [];
+    .map(b => ({ name: field(b, 'NAME'), param: field(b, 'PARAM') })) : [];
 
 /** Your functions, plus handlers (a handler is a plain function too, so it can be called directly). */
 export const functionsIn = (ws: Workspace | null): PlacedFunction[] =>
@@ -53,10 +54,17 @@ export const fieldsIn = (ws: Workspace | null): PlacedField[] => {
   const kinds: Array<[string, PlacedField['kind']]> = [
     ['verse_field', 'value'], ['verse_member_field', 'value'], ['verse_array_field', 'array'], ['verse_map_field', 'map'], ['verse_option_field', 'option'],
   ];
-  return kinds.flatMap(([type, kind]) => ws.getBlocksByType(type, false).map(b => ({
+  const declared = kinds.flatMap(([type, kind]) => ws.getBlocksByType(type, false).map(b => ({
     name: field(b, 'NAME'), type: field(b, 'TYPE') || field(b, 'ELEM') || field(b, 'VAL'),
     mutable: kind === 'option' || field(b, 'KIND') === 'var', kind, // options are always var
   })));
+  // Local values in functions: the kind comes from the type written (none for Name := value).
+  const locals = ws.getBlocksByType('verse_local', false).map((b): PlacedField => {
+    const type = field(b, 'TYPE');
+    const kind = type.startsWith('[]') ? 'array' : /^\[\w+\]/.test(type) ? 'map' : type.startsWith('?') ? 'option' : 'value';
+    return { name: field(b, 'NAME'), type, mutable: field(b, 'KIND') === 'var', kind };
+  });
+  return [...declared, ...locals];
 };
 
 /** @editable device arrays: name → device type. */
@@ -169,6 +177,9 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
     if (name === 'Agent' && t === 'verse_unwrap_agent') return true;
     if (name === 'MaybeAgent' && t === 'verse_handler' && field(e.block, 'PARAM') === 'maybe') return true;
     if (name === 'Player' && t === 'verse_for_players') return true;
+    if (name === 'Player' && t === 'verse_handler' && field(e.block, 'PARAM') === 'player') return true;
+    // if (Player := player[Agent]):  — any "if it exists" that names the value
+    if (t === 'verse_if_bind' && e.input === 'DO' && field(e.block, 'VAR') === name) return true;
     if (name === 'FortChar' && t === 'verse_fort_character') return true;
   }
   return false;

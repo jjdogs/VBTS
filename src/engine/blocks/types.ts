@@ -13,6 +13,7 @@ import Blockly from '../blockly.ts';
 import type { Block, BlockSvg, Workspace } from '../blockly.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
 import { nameField } from '../fields.ts';
+import { moduleForType, typeNamesIn } from '../data/verse-types.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
 import { asStatement, body, f, Slot, stacksIn, visibility, visibilityDropdown } from './shared.ts';
@@ -130,7 +131,8 @@ export function registerTypeBlocks(): void {
         .appendField(new Blockly.FieldTextInput(''), 'DEFAULT');
       stacksIn(this, [Slot.MEMBER, Slot.FUNCTION]); // fields and methods can be mixed, as in classes
     },
-    generate(b) {
+    generate(b, g) {
+      for (const t of typeNamesIn(f(b, 'TYPE'))) { const m = moduleForType(t); if (m) g.need(m, t); }
       const def = f(b, 'DEFAULT').trim();
       return `${f(b, 'KIND') === 'var' ? 'var ' : ''}${f(b, 'NAME')}${visibility(b)}:${f(b, 'TYPE')}${def ? ` = ${def}` : ''}\n`;
     },

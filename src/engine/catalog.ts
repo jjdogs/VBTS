@@ -5,11 +5,11 @@
 import raw from './data/devices.json' with { type: 'json' };
 import type { DeviceCatalog, DeviceInfo, EventPayload } from './types.ts';
 
-type RawEntry = { e?: Record<string, string>; m?: string[] };
+type RawEntry = { e?: Record<string, string>; m?: string[]; a?: string[] };
 
 export const CATALOG: DeviceCatalog = {};
 for (const [name, entry] of Object.entries(raw as Record<string, RawEntry>)) {
-  CATALOG[name] = { events: (entry.e ?? {}) as Record<string, EventPayload>, methods: entry.m ?? [] };
+  CATALOG[name] = { events: (entry.e ?? {}) as Record<string, EventPayload>, methods: entry.m ?? [], actions: entry.a ?? [] };
 }
 
 /** Devices most maps use, shown first in the device dropdown. */
@@ -24,3 +24,11 @@ export const DEVICE_TYPES: readonly string[] =
   COMMON.concat(Object.keys(CATALOG).filter(d => !COMMON.includes(d)).sort());
 
 export const deviceInfo = (type: string | undefined): DeviceInfo | undefined => (type ? CATALOG[type] : undefined);
+
+/** "SetActiveDuration(Time:float, Agent:agent)" → name and inputs. */
+export function parseAction(sig: string): { name: string; params: Array<{ name: string; type: string }> } {
+  const m = sig.match(/^(\w+)\((.*)\)$/);
+  if (!m) return { name: sig, params: [] };
+  const params = m[2].split(',').map(p => p.trim()).filter(Boolean).map(p => { const [name, type] = p.split(':'); return { name, type }; });
+  return { name: m[1], params };
+}

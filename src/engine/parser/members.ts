@@ -3,6 +3,7 @@
  * @editable devices and variables, OnBegin, handlers and functions.
  */
 import { CATALOG } from '../catalog.ts';
+import { handlerParamFor, HANDLER_INPUTS } from '../data/handlers.ts';
 import { hasLiteral, KEY_TYPES, parseParams, RETURN_TYPES, splitList, VALUE_TYPES } from '../data/verse-types.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
@@ -120,7 +121,7 @@ export class DeviceParser {
         }
       }
       const map = text.match(MAP_FIELD);
-      if (map && (KEY_TYPES as readonly string[]).includes(map[3]) && hasLiteral(map[4])) {
+      if (map && (KEY_TYPES as readonly string[]).includes(map[3]) && (VALUE_TYPES as readonly string[]).includes(map[4])) {
         edits.push(this.b.make('verse_map_field', { KIND: map[1] ? 'var' : 'const', NAME: map[2], KEY: map[3], VAL: map[4] }));
         continue;
       }
@@ -221,25 +222,28 @@ export class DeviceParser {
     return ctx;
   }
 
-  /** A handler (one agent input, or subscribed with none) or one of your functions. */
+  /**
+   * A handler or one of your functions. Handlers: one agent or ?agent input; or subscribed
+   * somewhere with no input or one input of a type events send (player, elimination_result…).
+   */
   private functionBlock(h: Header, nd: LineNode, text: string, statements: StatementParser, inClass = false): BlockState {
     const { name, params, effects, returns } = h;
-    const agentParam = params.length === 1 && /^\??agent$/.test(params[0].type) ? params[0] : null;
+    const input = params.length === 1 ? params[0] : null;
+    const typed = input ? handlerParamFor(input.type) : undefined; // e.g. 'agent', 'player'
     const isHandler = !inClass && returns === 'void' && effects === '' && !h.vis &&
-      (agentParam !== null || (params.length === 0 && this.subscribed.has(name)));
+      (typed === 'agent' || typed === 'maybe' || ((typed !== undefined || params.length === 0) && this.subscribed.has(name)));
 
     if (isHandler) {
       let lines = nd.children;
-      if (agentParam) {
-        const want = agentParam.type === 'agent' ? 'Agent' : 'MaybeAgent'; // the names blocks use
-        if (agentParam.name !== want) {
-          this.b.report.notes.push(`Renamed ${name}'s input from ${agentParam.name} to ${want} (the name blocks use).`);
-          lines = renameIn(lines, agentParam.name, want);
+      if (input && typed) {
+        const want = HANDLER_INPUTS[typed].name; // the names blocks use
+        if (input.name !== want) {
+          this.b.report.notes.push(`Renamed ${name}'s input from ${input.name} to ${want} (the name blocks use).`);
+          lines = renameIn(lines, input.name, want);
         }
       }
       const body = this.b.chain(statements.parse(lines));
-      const param = agentParam ? (agentParam.type === 'agent' ? 'agent' : 'maybe') : 'none';
-      return this.b.make('verse_handler', { NAME: name, PARAM: param }, body ? { DO: body } : undefined);
+      return this.b.make('verse_handler', { NAME: name, PARAM: typed ?? 'none' }, body ? { DO: body } : undefined);
     }
 
     const writable = EFFECTS.includes(effects) && (RETURN_TYPES as readonly string[]).includes(returns) && (!h.vis || VISIBILITIES.includes(h.vis));

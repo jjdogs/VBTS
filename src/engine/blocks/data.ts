@@ -11,7 +11,7 @@ import Blockly from '../blockly.ts';
 import type { Block } from '../blockly.ts';
 import { DEVICE_TYPES } from '../catalog.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
-import { KEY_TYPES, hasLiteral, literal, moduleForType, splitList, VALUE_TYPES } from '../data/verse-types.ts';
+import { KEY_TYPES, hasLiteral, literal, moduleForType, splitList, typeNamesIn, VALUE_TYPES } from '../data/verse-types.ts';
 import { nameField } from '../fields.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
@@ -24,7 +24,7 @@ export const FAILABLE = 'Failable';
 const kindDropdown = () => new Blockly.FieldDropdown([['var', 'var'], ['constant', 'const']]);
 const typeDropdown = (types: readonly string[]) => new Blockly.FieldDropdown(types.map(t => [t, t]));
 
-const needType = (g: VerseGenerator, type: string) => { const m = moduleForType(type); if (m) g.need(m, type); };
+const needType = (g: VerseGenerator, type: string) => { for (const t of typeNamesIn(type)) { const m = moduleForType(t); if (m) g.need(m, t); } };
 
 /** Warns when a value that can fail is used somewhere failure isn't allowed. */
 export function checkFailable(g: VerseGenerator, b: Block, what: string): void {
@@ -101,11 +101,12 @@ export function registerDataBlocks(): void {
     init() {
       this.appendDummyInput().appendField(kindDropdown(), 'KIND').appendField(nameField('PlayerScores'), 'NAME')
         .appendField(': [').appendField(typeDropdown(KEY_TYPES), 'KEY').appendField(']')
-        .appendField(typeDropdown(VALUE_TYPES.filter(t => hasLiteral(t))), 'VAL').appendField('= map{}');
+        .appendField(typeDropdown(VALUE_TYPES), 'VAL').appendField('= map{}'); // starts empty, so any value type works
       stacksIn(this, [Slot.MEMBER, Slot.FUNCTION]);
     },
     generate(b, g) {
       needType(g, f(b, 'KEY'));
+      needType(g, f(b, 'VAL'));
       return `${f(b, 'KIND') === 'var' ? 'var ' : ''}${f(b, 'NAME')}:[${f(b, 'KEY')}]${f(b, 'VAL')} = map{}\n`;
     },
   });

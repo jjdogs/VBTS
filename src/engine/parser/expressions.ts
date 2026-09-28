@@ -50,6 +50,8 @@ export interface ExpressionContext {
 }
 const emptyContext = (): ExpressionContext => ({ arrays: new Set(), maps: new Set(), options: new Set(), functions: new Map() });
 const MAX_ARGS = 3;
+/** Built-in types a value can be cast to with Type[Value]. */
+const CAST_TYPES = ['player', 'fort_character', 'team'];
 /** Method blocks have one more slot than function call blocks. */
 const MAX_METHOD_ARGS = 4;
 
@@ -60,6 +62,13 @@ export class ExpressionParser {
 
   /** Sets the names of the device class currently being converted. */
   setContext(ctx: ExpressionContext): void { this.ctx = ctx; }
+
+  /** A local value declared in a function: containers become known, so Items[0] reads as an item. */
+  learnLocal(name: string, type: string): void {
+    if (type.startsWith('[]')) this.ctx.arrays.add(name);
+    else if (/^\[\w+\]/.test(type)) this.ctx.maps.add(name);
+    else if (type.startsWith('?')) this.ctx.options.add(name);
+  }
 
   /** Your own types in the file: classes/structs (for obj{…}) and enums (for type.Value). */
   private types = new Set<string>();
@@ -169,6 +178,7 @@ export class ExpressionParser {
       if (tk.text === '(') { p++; const inner = or(); expect(')'); return inner; }
       if (tk.kind === 'id') {
         if (tk.text === 'true' || tk.text === 'false') { p++; return b.make('verse_bool', { V: tk.text }); }
+        if (tk.text === 'GetPlayspace' && is('(', p + 1) && is(')', p + 2)) { p += 3; return b.make('verse_playspace'); }
         if (tk.text === 'GetRandomInt' && is('(', p + 1)) {
           p += 2;
           const start = p;
@@ -210,6 +220,11 @@ export class ExpressionParser {
         if (is('[') && (ctx.arrays.has(name) || ctx.maps.has(name))) {
           p++; const key = or(); expect(']');
           return b.make('verse_index', { NAME: name }, { KEY: { block: key } });
+        }
+        // player[Agent], cat[Pet]: a cast (can fail)
+        if (is('[') && (CAST_TYPES.includes(name) || this.types.has(name))) {
+          p++; const value = or(); expect(']');
+          return b.make('verse_cast', { TYPE: name }, { VALUE: { block: value } });
         }
         if (is('.') && tokens[p + 1]?.text === 'Length' && tokens[p + 2]?.text !== '(') { p += 2; return b.make('verse_length', { NAME: name }); }
         // cat{Name := "Percy", Age := 3}
