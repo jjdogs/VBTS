@@ -4,7 +4,7 @@ Learn UEFN's Verse language with snap-together blocks, code.org style, with the 
 written alongside. Blocks, text, or both side by side; guided lessons; game-mode templates;
 and a text → blocks converter.
 
-Live version: https://claude.ai/artifact/8fhKrUyeQKGS67sYM1JnDC
+Live version: https://jjdogs.github.io/VBTS/ (rebuilt and published from `main` automatically; see *Publishing*)
 
 ## Setup
 
@@ -26,6 +26,15 @@ npm run dev        # opens the app at http://localhost:5173 and reloads as you e
 | `npm run devices -- digest.md` | Regenerates the device list from Epic's docs (needs Python) |
 
 Before sharing changes: `npm run check && npm test && npm run build`.
+
+## Publishing
+
+The site is hosted on GitHub Pages. `.github/workflows/pages.yml` runs on every push to `main`: it
+type-checks, runs the tests, builds `dist/index.html` and publishes it. If the checks fail, nothing is
+published. Watch a deploy in the repository's **Actions** tab.
+
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. On a free
+GitHub plan, Pages needs the repository to be public.
 
 ## How it's organized
 
