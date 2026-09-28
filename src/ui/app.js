@@ -40,7 +40,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   };
   // Blockly's stylesheet also uses the sprite sheet (dropdown checkmarks, category icons).
   const spriteCss = document.createElement('style');
-  spriteCss.textContent = `.blocklyTreeIcon, .blocklyMenuItemSelected .blocklyMenuItemCheckbox { background-image: url(${MEDIA['sprites.png']}) !important; }`;
+  spriteCss.textContent = `.blocklyToolboxCategoryIcon, .blocklyMenuItemSelected .blocklyMenuItemCheckbox { background-image: url(${MEDIA['sprites.svg']}) !important; }`;
   document.head.appendChild(spriteCss);
   // Swap the path the moment Blockly sets it, before the browser tries to fetch it.
   const fromMedia = (v) => (typeof v === 'string' && v.startsWith('vb-media/') && MEDIA[v.slice(9)]) || v;
