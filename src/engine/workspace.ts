@@ -170,6 +170,10 @@ export function inSuspends(block: Block): boolean {
 /** Names a block can use because an enclosing block provides them. */
 export type ScopeName = 'Agent' | 'MaybeAgent' | 'Player' | 'FortChar' | 'Result' | 'Message';
 
+/** Names made by "name := value" parts of a condition (verse_bind blocks). */
+const bindsIn = (cond: Block | null): string[] =>
+  cond ? [cond, ...cond.getDescendants(false)].filter(b => b.type === 'verse_bind').map(b => field(b, 'VAR')) : [];
+
 /** A local value with this name above the block in its function (Player := Message.Player). */
 function localAbove(block: Block, name: string): boolean {
   let cur: Block | null = block;
@@ -193,6 +197,13 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
     if (name === 'Player' && t === 'verse_handler' && field(e.block, 'PARAM') === 'player') return true;
     // if (Player := player[Agent]):  — any "if it exists" that names the value
     if (t === 'verse_if_bind' && e.input === 'DO' && field(e.block, 'VAR') === name) return true;
+    // if (Player := player[Agent], …):  — a name made in the condition, used in the then part
+    if ((t === 'verse_if' || t === 'verse_if_else') && e.input === 'DO' && bindsIn(e.block.getInputTargetBlock('COND')).includes(name)) return true;
+    // …or in a later part of the same "all of": Player := player[Agent], UI := GetPlayerUI[Player]
+    if (t === 'verse_all' && e.input) {
+      const earlier = ['A', 'B', 'C', 'D'].slice(0, ['A', 'B', 'C', 'D'].indexOf(e.input));
+      if (earlier.some(p => bindsIn(e.block.getInputTargetBlock(p)).includes(name))) return true;
+    }
     if (name === 'FortChar' && t === 'verse_fort_character') return true;
     if (name === 'Result' && t === 'verse_handler' && ['elimination', 'damage', 'ai'].includes(field(e.block, 'PARAM'))) return true;
     if (name === 'Message' && t === 'verse_handler' && field(e.block, 'PARAM') === 'widget') return true;

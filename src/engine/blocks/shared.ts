@@ -3,7 +3,7 @@
  */
 import Blockly from '../blockly.ts';
 import type { Block } from '../blockly.ts';
-import type { VerseGenerator } from '../generator/verse-generator.ts';
+import { MARK_START, type VerseGenerator } from '../generator/verse-generator.ts';
 import { EXPLAIN } from '../registry.ts';
 import { hasInScope } from '../workspace.ts';
 
@@ -36,6 +36,24 @@ export function body(gen: VerseGenerator, block: Block, input: string): string {
     return gen.INDENT + '# (empty — drag blocks here)\n';
   }
   return code;
+}
+
+/**
+ * The else part of an if: "else if (…):" when the else holds just one if (any kind), else "else:"
+ * and its lines. `required` warns about an empty else (if / else); "if it exists" may omit it.
+ */
+export function elseCode(gen: VerseGenerator, block: Block, required: boolean): string {
+  const first = block.getInputTargetBlock('ELSE');
+  if (first && first.isEnabled() && !first.getNextBlock() && ['verse_if', 'verse_if_else', 'verse_if_bind'].includes(first.type)) {
+    // Keep the inner if's line marker (so its lines still map to it) ahead of "else ".
+    const code = gen.blockToCode(first) as string;
+    const nl = code.indexOf('\n');
+    const marked = code.startsWith(MARK_START);
+    return marked ? `${code.slice(0, nl + 1)}else ${code.slice(nl + 1)}` : `else ${code}`;
+  }
+  if (required) return `else:\n${body(gen, block, 'ELSE')}`;
+  const otherwise = gen.statementToCode(block, 'ELSE');
+  return otherwise.trim() ? `else:\n${otherwise}` : '';
 }
 
 /** Warns when Agent or Player is used somewhere it doesn't exist. */

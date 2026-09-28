@@ -17,7 +17,7 @@ import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
 import { deviceArraysIn, fieldsIn, inFailureContext } from '../workspace.ts';
 import { COND } from './logic.ts';
-import { asStatement, body, checkAgent, f, Slot, stacksIn } from './shared.ts';
+import { asStatement, body, checkAgent, elseCode, f, Slot, stacksIn } from './shared.ts';
 
 /** Output type for values that can fail (index, option value, <decides> call). */
 export const FAILABLE = 'Failable';
@@ -220,8 +220,7 @@ export function registerDataBlocks(): void {
     generate(b, g) {
       const value = g.valueToCode(b, 'VALUE', Order.NONE);
       if (!value) g.warn(b, '"if it exists" needs something that can fail, like an array item, map entry or option value.');
-      const otherwise = g.statementToCode(b, 'ELSE');
-      return `if (${f(b, 'VAR')} := ${value || 'false?'}):\n${body(g, b, 'DO')}${otherwise.trim() ? `else:\n${otherwise}` : ''}`;
+      return `if (${f(b, 'VAR')} := ${value || 'false?'}):\n${body(g, b, 'DO')}${elseCode(g, b, false)}`;
     },
   });
 

@@ -63,6 +63,11 @@ export const TOOLBOX: Toolbox = {
       block('verse_if'), block('verse_if_else'),
       block('verse_compare', { inputs: { A: { block: { type: 'verse_get' } }, B: number(3) }, fields: { OP: '>=' } }),
       block('verse_logic_op'), block('verse_not'), block('verse_is_true'), block('verse_bool'),
+      label('Several things that must all succeed: if (Player := player[Agent], UI := GetPlayerUI[Player])'),
+      block('verse_if', { inputs: { COND: { block: { type: 'verse_all', inputs: {
+        A: { block: { type: 'verse_bind', fields: { VAR: 'Player' }, inputs: { VALUE: { block: { type: 'verse_cast', inputs: { VALUE: { block: { type: 'verse_agent_value' } } } } } } } },
+        B: { block: { type: 'verse_bind', fields: { VAR: 'UI' }, inputs: { VALUE: { block: { type: 'verse_player_ui', inputs: { PLAYER: { block: { type: 'verse_agent_value', fields: { WHO: 'Player' } } } } } } } } } } } } } }),
+      block('verse_all'), block('verse_bind'),
     ]),
     category('Loops', COLORS.loops, [block('verse_loop'), block('verse_for_range'), block('verse_break')]),
     category('Math', COLORS.math, [
@@ -73,6 +78,8 @@ export const TOOLBOX: Toolbox = {
     category('Text', COLORS.text, [
       block('verse_print', { inputs: { TEXT: { shadow: { type: 'verse_text' } } } }),
       block('verse_text'), block('verse_text_join', { inputs: { V: { block: { type: 'verse_get' } } } }),
+      block('verse_text_multi', { fields: { COUNT: '1', T0: 'You have ', TEND: ' coins' }, inputs: { V1: { block: { type: 'verse_get', fields: { NAME: 'Coins' } } } } }),
+      block('verse_text_multi', { fields: { COUNT: '2', T0: 'Round ', T1: ' of ', TEND: '' }, inputs: { V1: { block: { type: 'verse_get', fields: { NAME: 'Round' } } }, V2: { block: { type: 'verse_get', fields: { NAME: 'Rounds' } } } } }),
     ]),
     category('Variables', COLORS.vars, [
       block('verse_field'), block('verse_get'), block('verse_set', { inputs: { V: number(1) }, fields: { OP: '+=' } }),
@@ -183,6 +190,9 @@ export const TOOLBOX: Toolbox = {
       block('verse_call_fn'),
       block('verse_call_value'),
       block('verse_call_decides'),
+      label('Reach into any value: .Field, .Call( ) or .Try[ ] (when no other block fits)'),
+      block('verse_chain', { fields: { MEMBER: 'GetTransform', KIND: 'call' }, inputs: { OBJ: { block: { type: 'verse_get', fields: { NAME: 'Platform' } } } } }),
+      block('verse_do', { inputs: { VALUE: { block: { type: 'verse_chain', fields: { MEMBER: 'Show', KIND: 'call' }, inputs: { OBJ: { block: { type: 'verse_get', fields: { NAME: 'Platform' } } } } } } } }),
     ]),
     category('Time', COLORS.time, [block('verse_sleep'), block('verse_spawn'), block('verse_race')]),
     category('Raw Verse', COLORS.raw, [
