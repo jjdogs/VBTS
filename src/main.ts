@@ -18,7 +18,7 @@ import { setupUnifiedEditor } from './ui/unified.ts';
 import { createTextView } from './ui/text-editor.ts';
 import { registerDocumentMetrics } from './ui/document-metrics.ts';
 
-import sprites from './ui/blockly-media/sprites.png?inline';
+import sprites from './ui/blockly-media/sprites.svg?inline';
 import dropdownArrow from './ui/blockly-media/dropdown-arrow.svg?inline';
 import deleteIcon from './ui/blockly-media/delete-icon.svg?inline';
 import foldoutIcon from './ui/blockly-media/foldout-icon.svg?inline';
@@ -29,7 +29,7 @@ Blockly.setLocale(English as unknown as Record<string, string>);
 
 /** File name (as Blockly asks for it) → embedded data URL. */
 const MEDIA: Record<string, string> = {
-  'sprites.png': sprites,
+  'sprites.svg': sprites,
   'dropdown-arrow.svg': dropdownArrow,
   'delete-icon.svg': deleteIcon,
   'foldout-icon.svg': foldoutIcon,

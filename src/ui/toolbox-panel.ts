@@ -135,7 +135,7 @@ export function mountToolboxPanel(opts: {
         block.moveTo(new B.utils.Coordinate(
           (ev.clientX - grab.x - svg.left - ws.scrollX) / ws.scale,
           (ev.clientY - grab.y - svg.top - ws.scrollY) / ws.scale));
-        dragger = new B.dragging.Dragger(block, ws);
+        dragger = new B.dragging.Dragger(block);
         dragger.onDragStart(ev);
         start.x = ev.clientX; start.y = ev.clientY;
       }

@@ -80,11 +80,11 @@ body.blocks-text .blocklyText.vb-spec { fill: var(--t-spec) !important; }
 body.blocks-text .blocklyText.vb-com { fill: var(--t-com) !important; }
 body.blocks-text .blocklyText.vb-punct { fill: var(--ink) !important; }
 /* inputs (names, numbers, dropdowns) look like editable code, not white pills */
-body.blocks-text .blocklyEditableText > rect, body.blocks-text .blocklyFieldRect, body.blocks-text .blocklyDropdownRect {
+body.blocks-text .blocklyEditableField > rect, body.blocks-text .blocklyFieldRect, body.blocks-text .blocklyDropdownRect {
   fill: color-mix(in srgb, var(--code-bg) 70%, transparent) !important; stroke: var(--line) !important; fill-opacity: 1 !important;
 }
-body.blocks-text .blocklyEditableText > .blocklyText, body.blocks-text .blocklyDropdownText { fill: var(--ink) !important; }
-body.blocks-text .blocklyEditableText:hover > rect { stroke: var(--accent) !important; }
+body.blocks-text .blocklyEditableField > .blocklyText, body.blocks-text .blocklyDropdownText { fill: var(--ink) !important; }
+body.blocks-text .blocklyEditableField:hover > rect { stroke: var(--accent) !important; }
 
 /* ---------- line numbers beside blocks (ui/unified.ts) ---------- */
 #blockGutter {
@@ -100,5 +100,5 @@ body[data-blocks-layout="document"] #blocklyDiv { z-index: 1; }
 body[data-blocks-layout="document"] .blocklyMainBackground { fill: transparent !important; }
 body[data-blocks-layout="document"] .blocklySvg { background-color: transparent !important; }
 /* Snap preview (insertion marker): a faint outline only, so it doesn't look like a second block */
-body.blocks-text .blocklyInsertionMarker .blocklyText, body.blocks-text .blocklyInsertionMarker .blocklyEditableText { display: none; }
+body.blocks-text .blocklyInsertionMarker .blocklyText, body.blocks-text .blocklyInsertionMarker .blocklyEditableField { display: none; }
 body.blocks-text .blocklyInsertionMarker > .blocklyPath { fill-opacity: .08 !important; stroke-dasharray: 4 3; }
