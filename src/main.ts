@@ -12,7 +12,7 @@ import './styles/appearance.css';
 import { startApp } from './ui/app.js';
 import { createLayout } from './ui/layout.ts';
 import { mountToolboxPanel } from './ui/toolbox-panel.ts';
-import { setupResponsive } from './ui/responsive.ts';
+import { ICONS } from './ui/icons.ts';
 import { blockOverrides, createAppearance, mountAppearancePanel } from './ui/appearance.ts';
 import { setupUnifiedEditor } from './ui/unified.ts';
 import { createTextView } from './ui/text-editor.ts';
@@ -57,9 +57,11 @@ const appearance = createAppearance(V.COLORS);
 V.setLabelStyle(appearance.settings().blockWords);
 V.setColourOverrides(blockOverrides(appearance));
 registerDocumentMetrics(); // text-like scroll limits in the "like text" blocks layout
+// Icons in the page's chrome (top bar, view switch, status bar) are filled in from ui/icons.ts.
+document.querySelectorAll<HTMLElement>('.ico-slot').forEach(el => { el.outerHTML = ICONS[el.dataset.icon as keyof typeof ICONS] ?? ''; });
 const layout = createLayout();
 const { ws, current, textView, files } = startApp({
-  Blockly, V, MEDIA, layout, appearance,
+  Blockly, V, MEDIA, ICONS, layout, appearance,
   makeTextView: (w, cur, onStatus, context) => createTextView({ parent: document.getElementById('code')!, B: Blockly, ws: w, V, current: cur, onStatus, context }),
 });
 (ws as unknown as { verseMain: boolean }).verseMain = true; // document scroll limits apply to the main workspace only
@@ -73,5 +75,3 @@ setupUnifiedEditor({ B: Blockly, ws, appearance, current, textView });
   topLine: () => textView.topLine(), showLine: (n: number) => textView.showLineAtTop(n),
   project: () => files.project(),
 };
-document.getElementById('lookBtn')!.addEventListener('click', () => layout.show('appearance'));
-setupResponsive();

@@ -1,99 +1,89 @@
 /**
- * Layout manager: movable side panels around the block workspace.
+ * Layout manager: side panels around the editor, like a code editor's side bars.
  *
- *  - A panel is either PINNED (a column in the left or right dock) or UNPINNED
- *    (an icon on the activity bar; clicking it slides the panel out over the workspace).
- *  - Pinned panels can be reordered and moved between sides by dragging their header,
- *    or with the ⋯ menu (which also works on touch screens).
+ *  - Each panel lives on the left or right side. Each side has an activity bar of icons and
+ *    shows one panel at a time; clicking the open panel's icon hides it.
+ *  - A panel moves to the other side from its ⋯ menu (or Look → Layout and panels).
  *  - Panel widths and the blocks/code split can be resized; double-click a divider to reset.
- *  - The layout is saved in the browser. On narrow screens every panel acts unpinned.
+ *  - When the window is too narrow for the open panels, they float over the editor instead.
+ *  - Phones: a bottom tab bar, and the chosen panel opens as a sheet from the bottom.
+ *  - The layout is saved in the browser.
  */
+import { ICONS } from './icons.ts';
+import { closeMenu, openMenu } from './menu.ts';
 
-export type PanelId = 'learn' | 'toolbox' | 'appearance';
-type Side = 'left' | 'right';
+export type PanelId = 'files' | 'toolbox' | 'learn' | 'appearance';
+export type Side = 'left' | 'right';
 
 interface LayoutState {
-  /** Pinned panels per side, listed from the screen edge inward. */
-  left: PanelId[];
-  right: PanelId[];
+  side: Record<PanelId, Side>;
+  /** The panel shown on each side (null = that side is closed). */
+  open: Record<Side, PanelId | null>;
   widths: Record<PanelId, number>;
-  /** Where each panel goes back to when it is pinned again. */
-  lastSide: Record<PanelId, Side>;
-  /** The code pane's share of the stage in split view (0–1). */
+  /** The code pane's share of the editor in split view (0–1). */
   codeFraction: number;
-  toolboxCompact: boolean;
-  /** Set once the saved layout has moved to the App Lab-style default. */
-  appLab?: boolean;
 }
 
-const PANEL_IDS: PanelId[] = ['learn', 'toolbox', 'appearance'];
-const TITLES: Record<PanelId, string> = { learn: 'Learn', toolbox: 'Toolbox', appearance: 'Appearance' };
-/** Shorter labels for the narrow side bar. */
-const BAR_LABELS: Record<PanelId, string> = { learn: 'Learn', toolbox: 'Toolbox', appearance: 'Look' };
+export const PANEL_IDS: PanelId[] = ['files', 'toolbox', 'learn', 'appearance'];
+export const PANEL_TITLES: Record<PanelId, string> = { files: 'Files', toolbox: 'Toolbox', learn: 'Learn', appearance: 'Look' };
+const PANEL_ICONS: Record<PanelId, string> = { files: ICONS.files, toolbox: ICONS.toolbox, learn: ICONS.learn, appearance: ICONS.look };
 const DEFAULTS: LayoutState = {
-  left: ['toolbox'],
-  right: ['learn'],
-  widths: { learn: 320, toolbox: 300, appearance: 340 },
-  lastSide: { learn: 'right', toolbox: 'left', appearance: 'right' },
+  side: { files: 'left', toolbox: 'left', learn: 'left', appearance: 'right' },
+  open: { left: 'toolbox', right: null },
+  widths: { files: 260, toolbox: 300, learn: 320, appearance: 340 },
   codeFraction: 0.44,
-  toolboxCompact: false,
-  appLab: true,
 };
-const LIMITS: Record<PanelId, [min: number, max: number]> = { learn: [240, 560], toolbox: [220, 520], appearance: [280, 520] };
-const COMPACT_WIDTH = 72;
-const BAR_WIDTH = 56;
-/** Narrowest usable workspace, in split view (blocks + code) and in Blocks or Text view. */
+const LIMITS: Record<PanelId, [min: number, max: number]> = { files: [200, 440], toolbox: [220, 520], learn: [240, 560], appearance: [280, 520] };
+const BAR_WIDTH = 48;
+/** Narrowest usable editor, in split view (blocks + code) and in Blocks or Text view. */
 const MIN_STAGE_SPLIT = 720;
 const MIN_STAGE_SINGLE = 420;
-/** Split view stacks vertically when the workspace is narrower than this and at least this tall. */
+/** Split view stacks vertically when the editor is narrower than this and at least this tall. */
 const STACK_BELOW_WIDTH = 640;
 const STACK_MIN_HEIGHT = 480;
 const NARROW = window.matchMedia('(max-width: 900px)');
-const COARSE = window.matchMedia('(pointer: coarse)');
-const KEY = 'verse-blocks:layout:v1';
-
-// Simple line icons for the activity bar and panel buttons (drawn for this app).
-const ICONS: Record<string, string> = {
-  learn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11v4c0 1.5 2.2 3 5 3s5-1.5 5-3v-4"/><path d="M21 9v5"/></svg>',
-  appearance: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.2-1.8-.5-1.2.3-2.2 1.5-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>',
-  toolbox: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
-  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3-1-6z"/><path d="M12 12v9"/></svg>',
-  unpin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3-1-6z"/><path d="M12 12v9"/><path d="M4 4l16 16"/></svg>',
-  more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
-  menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
-};
+const KEY = 'verse-blocks:layout:v2';
 
 function load(): LayoutState {
+  const state = structuredClone(DEFAULTS);
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-    // One-time move to the App Lab-style default (Toolbox left, Learn right).
-    if (saved && !saved.appLab) return { ...structuredClone(DEFAULTS), appLab: true } as LayoutState;
-    if (!saved) return structuredClone(DEFAULTS);
-    const state: LayoutState = { ...structuredClone(DEFAULTS), ...saved };
-    state.widths = { ...DEFAULTS.widths, ...(saved.widths || {}) };
-    state.lastSide = { ...DEFAULTS.lastSide, ...(saved.lastSide || {}) };
-    // Drop anything unknown or duplicated (e.g. from an older saved layout).
-    const seen = new Set<PanelId>();
-    for (const side of ['left', 'right'] as const) {
-      state[side] = (state[side] || []).filter((p): p is PanelId => PANEL_IDS.includes(p) && !seen.has(p) && !!seen.add(p));
+    if (!saved) return state;
+    for (const id of PANEL_IDS) {
+      if (saved.side?.[id] === 'left' || saved.side?.[id] === 'right') state.side[id] = saved.side[id];
+      const w = saved.widths?.[id];
+      if (typeof w === 'number' && isFinite(w)) state.widths[id] = clamp(w, LIMITS[id]);
     }
-    return state;
-  } catch {
-    return structuredClone(DEFAULTS);
-  }
+    for (const side of ['left', 'right'] as const) {
+      const id = saved.open?.[side];
+      state.open[side] = PANEL_IDS.includes(id) && state.side[id as PanelId] === side ? id : null;
+    }
+    if (typeof saved.codeFraction === 'number') state.codeFraction = Math.min(0.8, Math.max(0.2, saved.codeFraction));
+  } catch { /* use the defaults */ }
+  return state;
 }
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const clamp = (v: number, [lo, hi]: [number, number]) => Math.min(hi, Math.max(lo, v));
 
 export interface Layout {
-  /** Shows a panel: scrolls to it if pinned, slides it out if not. */
+  /** Shows a panel: opens it on its side (or as the sheet on a phone). */
   show(id: PanelId): void;
-  /** Closes the slide-out panel, if one is open. */
+  /** Hides a panel if it is open. */
+  hide(id: PanelId): void;
+  /** Closes panels that float over the editor (narrow windows, phones). */
   closeOverlay(): void;
   /** The body element of a panel, to put content in. */
   body(id: PanelId): HTMLElement;
-  /** Called when the Toolbox panel switches between full and compact. */
+  /** A slot in the panel's header for its own buttons (left of ⋯). */
+  actions(id: PanelId): HTMLElement;
+  isOpen(id: PanelId): boolean;
+  sideOf(id: PanelId): Side;
+  setSide(id: PanelId, side: Side): void;
+  reset(): void;
+  /** Called after any layout change (sides, open panels). */
+  onChange(fn: () => void): void;
+  /** The Toolbox's colour-chips mode (kept for the Toolbox panel; this layout never uses it). */
   onToolboxCompact(fn: (compact: boolean) => void): void;
   isCompact(): boolean;
 }
@@ -101,56 +91,33 @@ export interface Layout {
 export function createLayout(): Layout {
   let state = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* private mode etc. */ } };
-  const bar = $('activityBar'), docks: Record<Side, HTMLElement> = { left: $('dockLeft'), right: $('dockRight') };
-  const overlay = $('overlayHost');
+  const bars: Record<Side, HTMLElement> = { left: $('barLeft'), right: $('barRight') };
+  const docks: Record<Side, HTMLElement> = { left: $('sideLeft'), right: $('sideRight') };
+  const sheet = $('sheetHost'), bottomNav = $('bottomNav');
   const panels = {} as Record<PanelId, HTMLElement>;
-  const compactListeners: Array<(c: boolean) => void> = [];
-  let openOverlay: PanelId | null = null;
-  /** Panels tucked into the side bar automatically because the screen is too narrow for them. */
-  const autoTucked = new Set<PanelId>();
-  /** Toolbox collapsed to chips automatically for the same reason. */
-  let autoCompact = false;
+  const listeners: Array<() => void> = [];
+  /** Phones: the panel shown as a sheet (not saved). */
+  let sheetOpen: PanelId | null = null;
+  /** Sides whose panel floats over the editor because the window is too narrow (not saved). */
+  const floating = new Set<Side>();
 
-  const pinnedSide = (id: PanelId): Side | null =>
-    state.left.includes(id) ? 'left' : state.right.includes(id) ? 'right' : null;
   const isNarrow = () => NARROW.matches;
-  /** Pinned for display purposes: on narrow screens, or when tucked to make room, it isn't. */
-  const shownPinned = (id: PanelId) => !isNarrow() && pinnedSide(id) !== null && !autoTucked.has(id);
-  const isCompactNow = () => state.toolboxCompact || autoCompact;
-  const widthOf = (id: PanelId) => {
-    if (id === 'toolbox' && isCompactNow()) return COMPACT_WIDTH;
-    // Touch screens get bigger buttons, so give the Toolbox header room for them.
-    return id === 'toolbox' && COARSE.matches ? Math.max(state.widths.toolbox, 208) : state.widths[id];
-  };
+  const isOpen = (id: PanelId) => (isNarrow() ? sheetOpen === id : state.open[state.side[id]] === id);
 
-  /**
-   * Make room: the workspace needs a minimum width to be usable (more in split view, where it
-   * holds blocks and code). If the pinned panels leave less, first collapse the Toolbox to chips,
-   * then tuck panels (widest first) into the side bar. The saved layout is not changed, so
-   * everything comes back when the window is wide enough again.
-   */
+  /** Float the open panels (right side first) when the editor would get too narrow. */
   function makeRoom() {
-    autoTucked.clear();
-    autoCompact = false;
+    floating.clear();
     if (isNarrow()) return;
-    const view = document.body.dataset.view || 'split';
-    const minStage = view === 'split' ? MIN_STAGE_SPLIT : MIN_STAGE_SINGLE;
-    const pinned = [...state.left, ...state.right];
-    const room = () => {
-      const barShown = PANEL_IDS.some(id => pinnedSide(id) === null || autoTucked.has(id));
-      return window.innerWidth - (barShown ? BAR_WIDTH : 0) -
-        pinned.filter(id => !autoTucked.has(id)).reduce((sum, id) => sum + widthOf(id), 0);
-    };
-    if (room() >= minStage) return;
-    if (pinned.includes('toolbox') && !state.toolboxCompact) autoCompact = true;
-    const byWidth = [...pinned].sort((a, b) => widthOf(b) - widthOf(a));
-    for (const id of byWidth) {
-      if (room() >= minStage) break;
-      autoTucked.add(id);
-    }
+    const minStage = (document.body.dataset.view || 'blocks') === 'split' ? MIN_STAGE_SPLIT : MIN_STAGE_SINGLE;
+    const room = () => window.innerWidth - (['left', 'right'] as const).reduce((sum, side) =>
+      sum + (bars[side].hidden ? 0 : BAR_WIDTH) + (state.open[side] && !floating.has(side) ? state.widths[state.open[side]!] : 0), 0);
+    // The right panel floats first; the left one only when even a single view would be cramped
+    // (a cramped split view stacks blocks over code instead, see chooseSplitDirection).
+    if (room() < minStage && state.open.right) floating.add('right');
+    if (room() < MIN_STAGE_SINGLE && state.open.left) floating.add('left');
   }
 
-  /** Split view stacks blocks over code only when the workspace is narrow and tall. */
+  /** Split view stacks blocks over code only when the editor is narrow and tall. */
   function chooseSplitDirection() {
     const r = $('panes').getBoundingClientRect();
     document.body.dataset.split = r.width < STACK_BELOW_WIDTH && r.height >= STACK_MIN_HEIGHT ? 'column' : 'row';
@@ -162,240 +129,140 @@ export function createLayout(): Layout {
     panels[id] = el;
     const head = el.querySelector('.panel-head') as HTMLElement;
     head.innerHTML = `
-      ${id === 'toolbox' ? `<button class="pb" data-act="compact" aria-label="Collapse toolbox">${ICONS.menu}</button>` : ''}
-      <h2 class="panel-title">${TITLES[id]}</h2>
-      <button class="pb" data-act="menu" aria-label="${TITLES[id]} panel options" aria-haspopup="menu">${ICONS.more}</button>
-      <button class="pb" data-act="pin"></button>`;
+      <h2 class="panel-title">${PANEL_TITLES[id]}</h2>
+      <span class="panel-actions"></span>
+      <button class="pb" data-act="menu" aria-label="${PANEL_TITLES[id]} panel options" aria-haspopup="menu" title="Panel options">${ICONS.more}</button>
+      <button class="pb sheet-close" data-act="close" aria-label="Close ${PANEL_TITLES[id]}" title="Close">${ICONS.close}</button>`;
     head.addEventListener('click', (e) => {
-      const act = (e.target as HTMLElement).closest('button')?.dataset.act;
-      if (act === 'pin') togglePin(id);
-      if (act === 'menu') openMenu(id, (e.target as HTMLElement).closest('button')!);
-      if (act === 'compact') setCompact(!state.toolboxCompact);
+      const btn = (e.target as HTMLElement).closest('button');
+      if (btn?.dataset.act === 'menu') panelMenu(id, btn);
+      if (btn?.dataset.act === 'close') hide(id);
     });
     const resizer = document.createElement('div');
     resizer.className = 'resizer';
     resizer.setAttribute('role', 'separator');
-    resizer.setAttribute('aria-label', `Resize ${TITLES[id]}`);
+    resizer.setAttribute('aria-label', `Resize ${PANEL_TITLES[id]}`);
     el.appendChild(resizer);
     makeResizable(id, resizer);
-    makeDraggable(id, head);
+  }
+
+  function panelMenu(id: PanelId, anchor: HTMLElement) {
+    const other: Side = state.side[id] === 'left' ? 'right' : 'left';
+    openMenu(anchor, [
+      ...(isNarrow() ? [] : [{ label: `Move to the ${other} side`, run: () => setSide(id, other) }]),
+      { label: `Hide ${PANEL_TITLES[id]}`, run: () => hide(id) },
+      'separator',
+      { label: 'Reset layout', run: reset },
+    ]);
   }
 
   // ---------- render: put every panel where the state says ----------
   function render() {
+    const narrow = isNarrow();
+    document.body.classList.toggle('narrow', narrow);
+    for (const side of ['left', 'right'] as const) {
+      const ids = PANEL_IDS.filter(id => state.side[id] === side);
+      bars[side].hidden = narrow || ids.length === 0;
+      bars[side].innerHTML = ids.map(id => activityButton(id, state.open[side] === id, false)).join('');
+    }
+    bottomNav.hidden = !narrow;
+    bottomNav.innerHTML = PANEL_IDS.map(id => activityButton(id, sheetOpen === id, true)).join('');
     makeRoom();
-    document.body.classList.toggle('narrow', isNarrow());
     for (const side of ['left', 'right'] as const) {
       const dock = docks[side];
-      const ids = isNarrow() ? [] : side === 'left' ? state.left : [...state.right].reverse(); // DOM order = screen order
+      const id = narrow ? null : state.open[side];
+      dock.hidden = !id;
       dock.dataset.side = side;
-      for (const id of ids) dock.appendChild(panels[id]);
-      dock.hidden = ids.length === 0;
+      dock.classList.toggle('floating', floating.has(side));
+      if (id) {
+        dock.appendChild(panels[id]);
+        dock.style.width = `${state.widths[id]}px`;
+      }
     }
+    sheet.hidden = !(narrow && sheetOpen);
     for (const id of PANEL_IDS) {
       const el = panels[id];
-      const side = shownPinned(id) ? pinnedSide(id)! : null;
-      el.dataset.state = side ? 'pinned' : 'floating';
-      el.dataset.side = side ?? 'left';
-      el.style.width = `${widthOf(id)}px`;
-      if (!side && el.parentElement !== overlay) overlay.appendChild(el);
-      el.hidden = !side && openOverlay !== id;
-      const pinBtn = el.querySelector('[data-act="pin"]') as HTMLButtonElement;
-      pinBtn.innerHTML = side ? ICONS.unpin : ICONS.pin;
-      pinBtn.setAttribute('aria-label', side ? `Unpin ${TITLES[id]}` : `Pin ${TITLES[id]}`);
-      pinBtn.title = side ? 'Unpin: tuck into the side bar' : 'Pin: keep it open';
-      pinBtn.hidden = isNarrow() || autoTucked.has(id);
-      (el.querySelector('.panel-head') as HTMLElement).draggable = !isNarrow();
+      if (narrow && el.parentElement !== sheet) sheet.appendChild(el);
+      if (!narrow && !isOpen(id) && el.parentElement !== sheet) sheet.appendChild(el); // parked, hidden
+      el.hidden = !isOpen(id);
+      el.dataset.side = state.side[id];
     }
-    panels.toolbox.classList.toggle('compact', isCompactNow());
-    const compactBtn = panels.toolbox.querySelector('[data-act="compact"]') as HTMLButtonElement;
-    compactBtn.setAttribute('aria-label', isCompactNow() ? 'Expand toolbox' : 'Collapse toolbox');
-    compactBtn.setAttribute('aria-expanded', String(!isCompactNow()));
-    compactBtn.title = autoCompact ? 'Collapsed automatically to make room. Widen the window to show names.'
-      : state.toolboxCompact ? 'Show category names' : 'Show colors only';
-    compactBtn.disabled = autoCompact;
-
-    // Activity bar: only panels that are not pinned.
-    const unpinned = PANEL_IDS.filter(id => !shownPinned(id));
-    bar.innerHTML = unpinned.map(id => {
-      const tucked = autoTucked.has(id);
-      const title = tucked ? `${TITLES[id]} (tucked away to make room; widen the window to pin it again)` : TITLES[id];
-      return `<button class="ab${tucked ? ' tucked' : ''}" data-panel="${id}" aria-label="${title}" aria-expanded="${openOverlay === id}" title="${title}">${ICONS[id]}<span>${BAR_LABELS[id]}</span></button>`;
-    }).join('');
-    bar.hidden = unpinned.length === 0 && !document.body.classList.contains('dragging-panel');
-    overlay.hidden = !openOverlay;
-    overlay.dataset.open = openOverlay ?? '';
     applyCodeFraction();
     chooseSplitDirection();
+    listeners.forEach(fn => fn());
   }
 
-  bar.addEventListener('click', (e) => {
-    const id = (e.target as HTMLElement).closest('button')?.dataset.panel as PanelId | undefined;
-    if (!id) return;
-    if (openOverlay === id) closeOverlay(); else openPanel(id);
-  });
+  function activityButton(id: PanelId, active: boolean, labelled: boolean) {
+    return `<button class="ab" data-panel="${id}" aria-pressed="${active}" aria-label="${PANEL_TITLES[id]}" title="${PANEL_TITLES[id]}">${PANEL_ICONS[id]}${labelled ? `<span>${PANEL_TITLES[id]}</span>` : ''}</button>`;
+  }
+  for (const host of [bars.left, bars.right, bottomNav]) {
+    host.addEventListener('click', (e) => {
+      const id = (e.target as HTMLElement).closest('button')?.dataset.panel as PanelId | undefined;
+      if (!id) return;
+      if (isOpen(id)) hide(id); else show(id);
+    });
+  }
 
-  function openPanel(id: PanelId) {
-    openOverlay = id;
+  function show(id: PanelId) {
+    closeMenu();
+    if (isNarrow()) sheetOpen = id;
+    else { state.open[state.side[id]] = id; save(); }
     render();
     (panels[id].querySelector('.panel-body') as HTMLElement)?.focus({ preventScroll: true });
   }
-  function closeOverlay() {
-    if (!openOverlay) return;
-    const was = openOverlay;
-    openOverlay = null;
+  function hide(id: PanelId) {
+    if (!isOpen(id)) return;
+    if (isNarrow()) sheetOpen = null;
+    else { state.open[state.side[id]] = null; save(); }
     render();
-    (bar.querySelector(`[data-panel="${was}"]`) as HTMLElement | null)?.focus({ preventScroll: true });
   }
-  // Clicking outside a slid-out panel (or pressing Esc) tucks it away.
-  document.addEventListener('pointerdown', (e) => {
-    const t = e.target as HTMLElement;
-    if (openOverlay && !overlay.contains(t) && !bar.contains(t) && !t.closest('.panel-menu, .blocklyFlyout, .blocklyWidgetDiv, .blocklyDropDownDiv, dialog')) closeOverlay();
-    if (!t.closest('.panel-menu, [data-act="menu"]')) closeMenu();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); closeOverlay(); } });
-
-  // ---------- pinning, moving, compact ----------
-  function unpinAll(id: PanelId) {
-    state.left = state.left.filter(p => p !== id);
-    state.right = state.right.filter(p => p !== id);
+  function closeOverlay() {
+    if (isNarrow()) { if (sheetOpen) { sheetOpen = null; render(); } return; }
+    let changed = false;
+    for (const side of floating) if (state.open[side]) { state.open[side] = null; changed = true; }
+    if (changed) { save(); render(); }
   }
-  function pinTo(id: PanelId, side: Side, index?: number) {
-    unpinAll(id);
-    const list = state[side];
-    list.splice(index === undefined ? list.length : Math.max(0, Math.min(index, list.length)), 0, id);
-    state.lastSide[id] = side;
-    if (openOverlay === id) openOverlay = null;
+  function setSide(id: PanelId, side: Side) {
+    if (state.side[id] === side) return;
+    const wasOpen = state.open[state.side[id]] === id;
+    if (wasOpen) state.open[state.side[id]] = null;
+    state.side[id] = side;
+    if (wasOpen) state.open[side] = id;
     save(); render();
   }
-  function unpin(id: PanelId) {
-    const side = pinnedSide(id);
-    if (side) state.lastSide[id] = side;
-    unpinAll(id); save(); render();
-  }
-  function togglePin(id: PanelId) { if (shownPinned(id)) unpin(id); else pinTo(id, state.lastSide[id]); }
-  /** Moves a pinned panel one step toward the left or right edge of the screen. */
-  function nudge(id: PanelId, dir: -1 | 1) {
-    const side = pinnedSide(id);
-    if (!side) return;
-    // Screen order across both docks: left dock (edge → inward), then right dock (inward → edge).
-    const order: Array<[Side, PanelId]> = [...state.left.map(p => ['left', p] as [Side, PanelId]), ...[...state.right].reverse().map(p => ['right', p] as [Side, PanelId])];
-    const i = order.findIndex(([, p]) => p === id), j = i + dir;
-    if (j < 0 || j >= order.length) { pinTo(id, dir < 0 ? 'left' : 'right', dir < 0 ? 0 : 0); return; }
-    const [otherSide, other] = order[j];
-    if (otherSide === side) {
-      const list = state[side], a = list.indexOf(id), b = list.indexOf(other);
-      [list[a], list[b]] = [list[b], list[a]];
-      save(); render();
-    } else {
-      pinTo(id, otherSide, otherSide === 'left' ? state.left.length : state.right.length);
-    }
-  }
-  function setCompact(compact: boolean) {
-    state.toolboxCompact = compact; save(); render();
-    compactListeners.forEach(fn => fn(compact));
+  function reset() {
+    state = structuredClone(DEFAULTS);
+    sheetOpen = null;
+    save(); render();
   }
 
-  // ---------- ⋯ menu (works with touch, unlike dragging) ----------
-  let menu: HTMLElement | null = null;
-  function closeMenu() { menu?.remove(); menu = null; }
-  function openMenu(id: PanelId, anchor: HTMLElement) {
-    closeMenu();
-    const pinned = shownPinned(id), side = pinnedSide(id);
-    const items: Array<[string, () => void, boolean?]> = [];
-    if (autoTucked.has(id)) items.push(['Tucked away to make room. Widen the window, or unpin other panels, to pin it again.', () => {}, true]);
-    if (pinned) {
-      items.push(['Move left', () => nudge(id, -1)], ['Move right', () => nudge(id, 1)]);
-      items.push([`Move to the ${side === 'left' ? 'right' : 'left'} side`, () => pinTo(id, side === 'left' ? 'right' : 'left')]);
-      items.push(['Unpin (tuck into side bar)', () => unpin(id)]);
-    } else if (!isNarrow()) {
-      items.push(['Pin on the left', () => pinTo(id, 'left')], ['Pin on the right', () => pinTo(id, 'right')]);
+  // Clicking outside a floating panel or the phone sheet (or pressing Esc) puts it away.
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('.panel-menu, .blocklyWidgetDiv, .blocklyDropDownDiv, dialog, .ab')) return;
+    if (isNarrow() ? sheetOpen && !sheet.contains(t) : [...floating].some(side => !docks[side].contains(t))) {
+      if (isNarrow()) closeOverlay();
+      else for (const side of [...floating]) if (!docks[side].contains(t)) { state.open[side] = null; save(); render(); }
     }
-    if (id === 'toolbox') items.push([state.toolboxCompact ? 'Show category names' : 'Show colors only', () => setCompact(!state.toolboxCompact)]);
-    items.push(['Reset layout', () => { state = structuredClone(DEFAULTS); openOverlay = null; save(); render(); compactListeners.forEach(fn => fn(false)); }]);
-    menu = document.createElement('div');
-    menu.className = 'panel-menu';
-    menu.setAttribute('role', 'menu');
-    items.forEach(([label, run, note]) => {
-      const b = document.createElement('button');
-      b.setAttribute('role', 'menuitem');
-      if (note) { b.className = 'note'; b.setAttribute('aria-disabled', 'true'); }
-      b.textContent = label;
-      b.onclick = () => { closeMenu(); run(); };
-      menu!.appendChild(b);
-    });
-    document.body.appendChild(menu);
-    const r = anchor.getBoundingClientRect();
-    menu.style.top = `${r.bottom + 4}px`;
-    menu.style.left = `${Math.min(window.innerWidth - menu.offsetWidth - 8, Math.max(8, r.right - menu.offsetWidth))}px`;
-    (menu.firstElementChild as HTMLElement)?.focus();
-  }
-
-  // ---------- drag a panel by its header ----------
-  let dragging: PanelId | null = null;
-  let marker: HTMLElement | null = null;
-  function makeDraggable(id: PanelId, head: HTMLElement) {
-    head.addEventListener('dragstart', (e) => {
-      if ((e.target as HTMLElement).closest('button')) { e.preventDefault(); return; }
-      dragging = id;
-      e.dataTransfer?.setData('text/plain', id);
-      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-      closeOverlay();
-      requestAnimationFrame(() => { document.body.classList.add('dragging-panel'); for (const s of ['left', 'right'] as const) docks[s].hidden = false; bar.hidden = false; });
-    });
-    head.addEventListener('dragend', () => {
-      dragging = null; marker?.remove(); marker = null;
-      document.body.classList.remove('dragging-panel');
-      render();
-    });
-  }
-  /** Where in a dock a drop at clientX would land. */
-  function dropIndex(side: Side, clientX: number): { domIndex: number; stateIndex: number } {
-    const cols = [...docks[side].querySelectorAll(':scope > .panel')].filter(c => (c as HTMLElement).dataset.panel !== dragging) as HTMLElement[];
-    let domIndex = cols.findIndex(c => { const r = c.getBoundingClientRect(); return clientX < r.left + r.width / 2; });
-    if (domIndex < 0) domIndex = cols.length;
-    // state lists run edge → inward; the right dock's DOM order is the reverse of that
-    const stateIndex = side === 'left' ? domIndex : cols.length - domIndex;
-    return { domIndex, stateIndex };
-  }
-  for (const side of ['left', 'right'] as const) {
-    const dock = docks[side];
-    dock.addEventListener('dragover', (e) => {
-      if (!dragging) return;
-      e.preventDefault();
-      const { domIndex } = dropIndex(side, e.clientX);
-      marker ??= Object.assign(document.createElement('div'), { className: 'drop-marker' });
-      const cols = [...dock.querySelectorAll(':scope > .panel')].filter(c => (c as HTMLElement).dataset.panel !== dragging);
-      dock.insertBefore(marker, cols[domIndex] ?? null);
-    });
-    dock.addEventListener('drop', (e) => {
-      if (!dragging) return;
-      e.preventDefault();
-      const id = dragging;
-      pinTo(id, side, dropIndex(side, e.clientX).stateIndex);
-    });
-  }
-  bar.addEventListener('dragover', (e) => { if (dragging) { e.preventDefault(); bar.classList.add('drop-here'); } });
-  bar.addEventListener('dragleave', () => bar.classList.remove('drop-here'));
-  bar.addEventListener('drop', (e) => { if (!dragging) return; e.preventDefault(); bar.classList.remove('drop-here'); unpin(dragging); });
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.querySelector('dialog[open], .panel-menu')) closeOverlay(); });
 
   // ---------- resize a panel by its inner edge ----------
   function makeResizable(id: PanelId, handle: HTMLElement) {
     handle.addEventListener('pointerdown', (e) => {
-      if (id === 'toolbox' && state.toolboxCompact) return;
+      if (isNarrow()) return;
       e.preventDefault();
       handle.setPointerCapture(e.pointerId);
       const startX = e.clientX, startW = state.widths[id];
-      const onRight = panels[id].dataset.state === 'pinned' && panels[id].dataset.side === 'right';
+      const dir = state.side[id] === 'right' ? -1 : 1;
       document.body.classList.add('resizing');
       const move = (ev: PointerEvent) => {
-        const dx = (ev.clientX - startX) * (onRight ? -1 : 1);
-        state.widths[id] = clamp(startW + dx, LIMITS[id]);
-        panels[id].style.width = `${state.widths[id]}px`;
+        state.widths[id] = clamp(startW + (ev.clientX - startX) * dir, LIMITS[id]);
+        docks[state.side[id]].style.width = `${state.widths[id]}px`;
       };
       const up = () => {
         handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up);
-        document.body.classList.remove('resizing'); save();
+        document.body.classList.remove('resizing'); save(); render();
       };
       handle.addEventListener('pointermove', move);
       handle.addEventListener('pointerup', up);
@@ -433,7 +300,7 @@ export function createLayout(): Layout {
     save(); applyCodeFraction();
   });
 
-  NARROW.addEventListener('change', () => { openOverlay = null; render(); });
+  NARROW.addEventListener('change', () => { sheetOpen = null; render(); });
   // Re-check room on resize/rotate and when switching Blocks / Split / Text.
   let resizeTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = window.setTimeout(render, 80); });
@@ -441,13 +308,17 @@ export function createLayout(): Layout {
   render();
 
   return {
-    show(id) {
-      if (shownPinned(id)) panels[id].scrollIntoView({ block: 'nearest' });
-      else openPanel(id);
-    },
+    show,
+    hide,
     closeOverlay,
     body: (id) => panels[id].querySelector('.panel-body') as HTMLElement,
-    onToolboxCompact: (fn) => { compactListeners.push(fn); },
-    isCompact: () => isCompactNow(),
+    actions: (id) => panels[id].querySelector('.panel-actions') as HTMLElement,
+    isOpen,
+    sideOf: (id) => state.side[id],
+    setSide,
+    reset,
+    onChange: (fn) => { listeners.push(fn); },
+    onToolboxCompact: () => {},
+    isCompact: () => false,
   };
 }
