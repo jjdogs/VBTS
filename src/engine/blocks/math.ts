@@ -2,10 +2,21 @@
  * Math blocks: numbers, arithmetic and random numbers.
  */
 import Blockly from '../blockly.ts';
+import type { Block } from '../blockly.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
 import { formatFloat, Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
+import { fieldsIn, inFailureContext } from '../workspace.ts';
 import { f } from './shared.ts';
+
+/** True when a value is surely an int: an int number, an int variable, or math on ints. */
+function isInt(block: Block | null): boolean {
+  if (!block) return false;
+  if (block.type === 'verse_number') return f(block, 'TYPE') === 'int';
+  if (block.type === 'verse_get') return fieldsIn(block.workspace).find(x => x.name === f(block, 'NAME'))?.type === 'int';
+  if (block.type === 'verse_arith') return f(block, 'OP') !== '/' && isInt(block.getInputTargetBlock('A')) && isInt(block.getInputTargetBlock('B'));
+  return false;
+}
 
 export function registerMathBlocks(): void {
   defineBlock({
@@ -30,18 +41,21 @@ export function registerMathBlocks(): void {
     type: 'verse_arith',
     colour: COLORS.math,
     explain: {
-      title: 'Math', doc: DOCS.operators, tip: 'Adds, subtracts, or multiplies two numbers of the same type.',
-      text: 'Both sides must be the same type. Dividing ints is special in Verse (it can fail), so this block sticks to + - *.',
+      title: 'Math', doc: DOCS.operators, tip: 'Adds, subtracts, multiplies or divides two numbers of the same type.',
+      text: 'Both sides must be the same type. Dividing floats (10.0 / 4.0) always works. Dividing ints is special in Verse: it fails when dividing by 0, so it only works inside an if.',
     },
     init() {
       this.appendValueInput('A');
-      this.appendValueInput('B').appendField(new Blockly.FieldDropdown([['+', '+'], ['-', '-'], ['*', '*']]), 'OP');
+      this.appendValueInput('B').appendField(new Blockly.FieldDropdown([['+', '+'], ['-', '-'], ['*', '*'], ['/', '/']]), 'OP');
       this.setInputsInline(true);
       this.setOutput(true, 'Number');
     },
     generate(b, g) {
       const op = f(b, 'OP');
-      const order = op === '*' ? Order.MUL : Order.ADD;
+      const order = op === '*' || op === '/' ? Order.MUL : Order.ADD;
+      if (op === '/' && isInt(b.getInputTargetBlock('A')) && isInt(b.getInputTargetBlock('B')) && !inFailureContext(b)) {
+        g.warn(b, 'Dividing ints can fail in Verse (dividing by 0), so it only works inside an if. For decimals, use floats like 10.0 / 4.0.');
+      }
       // Blockly adds parentheses when the inner order is not lower than the outer one. The left side
       // allows its own level (a - b - c needs none); the right side doesn't, so a - (b - c) keeps them.
       return [`${g.valueToCode(b, 'A', order + 1) || '0'} ${op} ${g.valueToCode(b, 'B', order) || '0'}`, order];

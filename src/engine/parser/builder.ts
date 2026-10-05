@@ -9,6 +9,8 @@ export type NextLink = { block: BlockState };
 
 export class BlockBuilder {
   report: ParseReport = { blocks: 0, raw: [], skipped: [], notes: [] };
+  /** How many end-of-line comments were kept on blocks (the rest are reported as dropped). */
+  notesKept = 0;
   /** Block id → lines of the original text it came from. */
   spans: Record<string, LineSpan> = {};
   private nextId = 0;
@@ -26,6 +28,13 @@ export class BlockBuilder {
     if (fields) block.fields = fields;
     if (inputs) block.inputs = inputs;
     return block;
+  }
+
+  /** Keeps a comment from the end of a line on the block made from it (shown as its comment bubble). */
+  note(block: BlockState | null | undefined, text: string | null): void {
+    if (!block || !text || block.type === 'verse_comment') return;
+    (block as BlockState & { icons?: Record<string, unknown> }).icons = { comment: { text, pinned: false } };
+    this.notesKept++;
   }
 
   /** Makes a raw Verse block that keeps `code` word for word. */

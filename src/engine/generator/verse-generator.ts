@@ -67,6 +67,16 @@ export class VerseGenerator extends Blockly.CodeGenerator {
    */
   override scrub_(block: Block, code: string, thisOnly?: boolean): string {
     const next = block.nextConnection?.targetBlock() ?? null;
+    // A comment on a line's block (its comment bubble) goes at the end of that line: X := 1 # note
+    const note = !block.outputConnection && block.type !== 'verse_comment' ? block.getCommentText?.()?.trim() : '';
+    if (note && code) {
+      // The block's first line, after attribute lines like @editable.
+      const lines = code.split('\n');
+      let at = 0;
+      while (at < lines.length - 1 && /^\s*@\w+\s*$/.test(lines[at])) at++;
+      lines[at] += ` # ${note.replace(/\s*\n\s*/g, ' ')}`;
+      code = lines.join('\n');
+    }
     let mark = '';
     if (block.previousConnection) {
       mark = MARK_START + block.id + MARK_COUNT + countLines(code) + '\n';

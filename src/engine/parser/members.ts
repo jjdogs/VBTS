@@ -9,7 +9,7 @@ import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
 import type { ExpressionParser } from './expressions.ts';
 import { StatementParser, type StatementContext } from './statements.ts';
-import { lastLineOf, stripComment, unescapeString, type LineNode } from './tree.ts';
+import { lastLineOf, stripComment, trailingComment, unescapeString, type LineNode } from './tree.ts';
 
 const FIELD_TYPES = ['int', 'float', 'logic', 'string'];
 const EDITABLE_DEVICE = /^(\w+)\s*:\s*(\w+)\s*=\s*(\w+)\{\}$/;
@@ -78,7 +78,10 @@ export class DeviceParser {
     const settle = (to: number) => {
       if (to < from) return;
       const first = members[from].line - 1, last = lastLineOf(members[to]) - 1;
-      for (const blk of [...edits.slice(editsBefore), ...fns.slice(fnsBefore)]) this.b.track(blk, first, last);
+      const made = [...edits.slice(editsBefore), ...fns.slice(fnsBefore)];
+      for (const blk of made) this.b.track(blk, first, last);
+      // A comment at the end of the member's line (`RaiseSpeed : float = 100.0 # Units per second`)
+      for (let k = from; k <= to; k++) { const c = trailingComment(members[k].text); if (c) { this.b.note(made[0], c); break; } }
     };
     for (let i = 0; i < members.length; i++) {
       settle(i - 1);
@@ -109,7 +112,11 @@ export class DeviceParser {
       }
       const da = text.match(EDITABLE_ARRAY);
       if (editable && da && CATALOG[da[2]]) { edits.push(this.b.make('verse_editable_array', { NAME: da[1], DTYPE: da[2] })); continue; }
-      if (editable) { edits.push(this.b.raw('verse_raw_member', '@editable ' + text)); continue; }
+      if (editable) {
+        const field = this.valueField(text, true);
+        edits.push(field ?? this.b.raw('verse_raw_member', '@editable ' + text));
+        continue;
+      }
 
       // Arrays, maps and options
       const arr = text.match(ARRAY_FIELD);
@@ -129,19 +136,8 @@ export class DeviceParser {
       if (opt && (VALUE_TYPES as readonly string[]).includes(opt[2])) { edits.push(this.b.make('verse_option_field', { NAME: opt[1], TYPE: opt[2] })); continue; }
 
       // var Score:int = 0   /   MaxScore:int = 10
-      m = text.match(/^(var\s+)?(\w+)\s*:\s*(\w+)\s*=\s*(.+)$/);
-      if (m && FIELD_TYPES.includes(m[3])) {
-        let value = m[4].trim();
-        const type = m[3];
-        const simple = type === 'string' ? /^"(?:[^"\\{}]|\\[\\"{}])*"$/.test(value)
-          : type === 'logic' ? /^(true|false)$/.test(value)
-            : /^-?\d+(\.\d+)?$/.test(value);
-        if (simple) {
-          if (type === 'string') value = unescapeString(value.slice(1, -1));
-          edits.push(this.b.make('verse_field', { KIND: m[1] ? 'var' : 'const', NAME: m[2], TYPE: type, VALUE: value }));
-          continue;
-        }
-      }
+      const field = this.valueField(text, false);
+      if (field) { edits.push(field); continue; }
 
       const anyField = this.anyField(text);
       if (anyField) { edits.push(anyField); continue; }
@@ -166,6 +162,21 @@ export class DeviceParser {
     if (begin) inputs.ONBEGIN = begin;
     const f = this.b.chain(fns); if (f) inputs.MEMBERS = f;
     return this.b.make('verse_device', { NAME: name }, inputs);
+  }
+
+  /** var Score:int = 0  /  MaxScore:int = 10  (and @editable RaiseSpeed:float = 100.0): a field block, or null. */
+  private valueField(text: string, editable: boolean): BlockState | null {
+    const m = text.match(/^(var\s+)?(\w+)\s*:\s*(\w+)\s*=\s*(.+)$/);
+    if (!m || !FIELD_TYPES.includes(m[3])) return null;
+    let value = m[4].trim();
+    const type = m[3];
+    const simple = type === 'string' ? /^"(?:[^"\\{}]|\\[\\"{}])*"$/.test(value)
+      : type === 'logic' ? /^(true|false)$/.test(value)
+        : /^-?\d+(\.\d+)?$/.test(value);
+    if (!simple) return null;
+    if (type === 'string') value = unescapeString(value.slice(1, -1));
+    if (editable && m[1]) return null; // @editable var: kept as raw Verse
+    return this.b.make('verse_field', { KIND: editable ? 'editable' : m[1] ? 'var' : 'const', NAME: m[2], TYPE: type, VALUE: value });
   }
 
   /** A field of any type (custom types, containers with values…), or null. */
@@ -193,6 +204,7 @@ export class DeviceParser {
         ? this.b.raw('verse_raw_member_wrap', text, { DO: this.b.chain(statements.parse(nd.children))! })
         : this.b.raw('verse_raw_member', text);
       this.b.track(made, nd.line - 1, lastLineOf(nd) - 1);
+      this.b.note(made, trailingComment(nd.text));
       members.push(made);
     }
     const inputs: NonNullable<BlockState['inputs']> = {};
