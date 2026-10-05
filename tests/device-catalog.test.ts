@@ -76,3 +76,27 @@ garage_device := class(creative_device):
     assert.ok(r.code.includes('using { /Fortnite.com/Vehicles }'));
   });
 });
+
+describe('device modules', () => {
+  const band = (usings: string) => `${usings}
+using { /Verse.org/Simulation }
+
+band_device := class(creative_device):
+    @editable
+    Speaker : speaker_device = speaker_device{}
+
+    OnBegin<override>()<suspends>:void =
+        Speaker.Enable()
+`;
+
+  test('a Patchwork device needs its own using line', () => {
+    const r = convert(band('using { /Fortnite.com/Devices }'));
+    assert.ok(r.errors.some(e => e.includes('using { /Fortnite.com/Devices/Patchwork }')), r.errors.join('\n'));
+  });
+
+  test('with it, there is nothing to fix', () => {
+    const r = convert(band('using { /Fortnite.com/Devices }\nusing { /Fortnite.com/Devices/Patchwork }'));
+    assert.deepEqual(r.errors, []);
+    assert.ok(!r.blocks.includes('verse_raw'), 'no raw Verse blocks');
+  });
+});

@@ -16,6 +16,8 @@ export interface DeviceInfo {
   methods: string[];
   /** Actions with simple inputs, as Verse declares them: "SetScoreAward(Value:int)". */
   actions: string[];
+  /** The device's using path, when it isn't /Fortnite.com/Devices (Patchwork devices). */
+  module?: string;
 }
 
 export type DeviceCatalog = Record<string, DeviceInfo>;

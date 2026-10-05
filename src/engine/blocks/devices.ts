@@ -3,7 +3,7 @@
  */
 import Blockly from '../blockly.ts';
 import type { Block, BlockSvg, Field } from '../blockly.ts';
-import { DEVICE_TYPES, deviceInfo, parseAction } from '../catalog.ts';
+import { DEVICE_TYPES, deviceInfo, deviceModule, parseAction } from '../catalog.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
 import { deviceOptions, looseDropdown, nameField, prime, rerender, type Option } from '../fields.ts';
 import { Order } from '../generator/verse-generator.ts';
@@ -57,7 +57,7 @@ export function registerDeviceBlocks(): void {
     generate(b, g) {
       const type = f(b, 'DTYPE');
       g.need('/Verse.org/Simulation', '@editable');
-      g.need('/Fortnite.com/Devices', type);
+      g.need(deviceModule(type), type);
       return `@editable\n${f(b, 'NAME')}:${type} = ${type}{}\n`;
     },
   });
