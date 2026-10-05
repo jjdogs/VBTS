@@ -50,19 +50,20 @@ index.html              the page's markup
 src/
   main.ts               starts everything: Blockly, the engine, then the UI
   styles/app.css        main styles
-  styles/layout.css     panels, side bar, dividers
+  styles/layout.css     the chrome: top bar, activity bars, panels, tabs, status bar, phone sheets
   ui/app.js             the interface (Learn panel, code view, dialogs, lessons, templates)
-  ui/layout.ts          movable panels: pin/unpin, drag to rearrange, resize, saved layout
+  ui/layout.ts          side panels: one per side, chosen from the activity bars; resize; phones' sheets
+  ui/menu.ts            popup menus (⋯ menus, the top bar's menu, a file's menu)
+  ui/icons.ts           the line icons used in the chrome
   ui/toolbox-panel.ts   the Toolbox: category grid + always-visible palette (drag into the workspace,
                         or in Text view drag/click code into the editor)
   ui/document-metrics.ts scroll limits so "like text" blocks scroll like a document
-  ui/responsive.ts      the small-screen header's More menu
-  ui/appearance.ts      Edit Mode: appearance settings, presets, the Appearance panel
+  ui/appearance.ts      Look: settings, themes, the Look panel (search, JSON, Changed only, Inspect)
   ui/unified.ts         one editor: "like text" blocks layout, keeping your place between views
   ui/text-editor.ts     the Text view editor: Verse highlighting, typing → blocks, blocks → text
-  ui/files.ts           several files per project: file tabs, switching, share codes (VB3)
+  ui/files.ts           several files per project: Files panel, tabs, problem dots, share codes (VB3)
   engine/code-labels.ts optional Verse wording on blocks (Appearance → Block words)
-  styles/appearance.css appearance variables and the Appearance panel
+  styles/appearance.css appearance variables, the one-window editor, "like text" blocks
   styles/responsive.css size- and touch-based styles
   ui/blockly-media/     Blockly's control icons, embedded so they work on published pages
   engine/               everything about Verse and blocks — no UI code in here
@@ -118,19 +119,19 @@ rebuilt (for example in Svelte) without touching the engine.
 A moment after you pause, your text becomes blocks and the Learn panel's checks update; your
 text isn't rewritten while you type. Leaving the Text view tidies it into the standard format.
 Changing blocks (in Blocks or Split view) updates the text. Moving the cursor onto a line
-selects its block, so Learn explains that line. The file bar shows the sync status ("In sync",
-"2 pieces kept as raw Verse · details", or why it can't make blocks yet). **Show Text / Show
-Blocks** switches views in place.
+selects its block, so Learn explains that line. The status bar shows the sync status ("In sync",
+"In sync · 2 pieces kept as raw Verse", or why it can't make blocks yet). The three icons at the
+right of the tabs switch between **Blocks**, **Text** and **Split**.
 
 Blocks and Text are two ways of showing the same code in the same place (Split puts them
 side by side). With the default **"Like text"** blocks layout (`ui/unified.ts`), blocks line up
 in one column from the top-left and are tidied after every drop, the background doesn't drag
 around like a map, and the mouse wheel scrolls like a text editor (Ctrl + wheel zooms).
 Switching Blocks ⇄ Text keeps your place: the block at the top of one view is the line at the
-top of the other. The file bar above both views works for either. "Free canvas" (Appearance)
-brings back the open workspace.
+top of the other. The tabs above both views work for either. "Free canvas" (Look) brings back
+the open workspace.
 
-## Appearance (Edit Mode)
+## Look (appearance settings)
 
 **Block look → Like text** (the default) makes blocks look like the Text view: the code font
 at the code size, compact rows, blocks drawn as tinted outlines in their category colour, a
@@ -139,14 +140,20 @@ left and top edges. **Classic** gives solid blocks. **Block words** can switch f
 wording (default) to Verse wording (`src/engine/code-labels.ts`); both look and words apply
 after a reload, and neither changes the generated code.
 
-**Customize** (or the palette icon on the side bar) opens the Appearance panel
-(`ui/appearance.ts`). Everything applies live and is saved on the device:
-- themes: Follow system, Midnight, Daylight, High contrast, Warm; then any colour individually
-  (interface, code highlighting, and each block category, with ↺ to undo one);
-- fonts and sizes for the interface, code and blocks; line spacing; block size;
-- blocks layout (like text / free canvas), block shape (rounded / classic / simple; applies
-  after a reload), dot grid, corner roundness, spacing density, animations;
-- export / import your look as a code, and reset.
+The palette icon on the right activity bar opens the **Look** panel (`ui/appearance.ts`).
+Everything applies live and is saved on the device:
+- **Theme and accent**: Graphite (the default), Midnight, Daylight, Warm, High contrast, or
+  "Match my device"; six accent colours or any colour;
+- **Layout and panels**: blocks layout (like text / free canvas), block look and words, block size
+  and shape, dot grid, and which side each panel sits on;
+- **Tabs and files**: problem dots on files, ".verse" after tab names;
+- **Feel**: corner roundness, spacing, animations; **Text and fonts**: fonts, sizes, line spacing;
+- **App chrome colors**, **Code colors**, **Block colors**: any colour individually (↺ undoes one);
+- **Save and share**: export / import your look as a code, and reset.
+
+At the top: **Search settings** filters every section, **Changed only** shows just what you have
+changed, **JSON** edits every setting as JSON, and **Inspect** lets you click any part of the
+app (a block, a word of code, a bar) to jump to the colour that paints it.
 
 Settings become CSS variables (`styles/appearance.css`: `--ui-scale`, `--code-size`,
 `--code-lh`, `--radius-scale`, `--space`, colours) and a Blockly theme; block colours go through
@@ -154,16 +161,17 @@ the engine's `setColourOverrides`.
 
 ## Responsive design
 
-- **Making room** (`ui/layout.ts`): the workspace needs at least 720 px in Split view (420 px in
-  Blocks or Text). If pinned panels leave less, the Toolbox collapses to chips, then panels tuck
-  into the side bar (marked with a dot). Your saved layout isn't changed; widen the window and
-  they return.
+- **Making room** (`ui/layout.ts`): the editor needs at least 720 px in Split view (420 px in
+  Blocks or Text). If the open panels leave less, the right panel floats over the editor (and the
+  left one too if even 420 px is not left). Your saved layout isn't changed; widen the window and
+  they dock again.
 - **Split direction** follows the workspace's shape: blocks and code stack only when the
   workspace is narrow *and* tall (so phones in landscape get them side by side).
-- **Tablets and phones** (≤ 900 px): a one-row header; Customize, Templates and Project move
-  into **More** (≤ 640 px the name shrinks to the logo).
+- **Tablets and phones** (≤ 900 px): the activity bars become a bottom tab bar (Files, Toolbox,
+  Learn, Look) and a panel opens as a sheet from the bottom; tap outside it or its tab to close.
+  The top bar keeps the logo, Share and ⋯; the status bar keeps its icons.
 - **Touch screens**: buttons, tabs, categories and dividers are at least 44 px.
-- **Short screens** (≤ 500 px tall, e.g. landscape or 200% zoom): tighter spacing, no legend.
+- **Short screens** (≤ 500 px tall, e.g. landscape or 200% zoom): tighter spacing, taller sheets.
 - `styles/responsive.css` holds the size and input rules.
 
 To check every size after a change (needs Python and Playwright:
@@ -176,7 +184,8 @@ python3 scripts/responsive-audit.py dist/index.html
 
 It checks phone, phone landscape, tablet, tablet landscape, laptop, laptop at 200% zoom, desktop
 and ultrawide for page scrolling, header wrapping, small touch targets, cramped blocks/code and
-dialogs that don't fit, plus make-room, restore-on-widen and rotating a phone.
+dialogs that don't fit, plus floating panels, docking again on widen and rotating a phone. Set
+`CHROMIUM_PATH` to use a Chromium you already have.
 
 ## Verse style
 
@@ -238,10 +247,12 @@ Anything else is kept word for word in a raw Verse block, so nothing is lost.
 
 ## Several files
 
-A project can hold several `.verse` files, shown as tabs in the file bar (`ui/files.ts`). Click a
-tab to open that file, click the open tab (or double-click it) to rename or delete it, and **+**
-adds a file that starts with a device named after it. Renaming a file also renames a device
-still named after it.
+A project can hold several `.verse` files (`ui/files.ts`). The **Files** panel lists them all; the
+tabs above the editor are the files you have open. Click a file or tab to open it, double-click
+(or use its ⋯ menu) to rename it, × closes a tab (the file stays in the project), and **+** adds a
+file that starts with a device named after it. Names are linked: renaming a file renames the
+device or class inside it that has the file's name. A red dot marks a file with something to
+fix, an amber dot one with style notes. The project's name sits in the top bar (click to rename).
 
 All files are in the same Verse module, like `.verse` files in one UEFN folder: a class, struct
 or enum made in one file can be used in another without a `using` line. Only the open file is on
@@ -254,27 +265,33 @@ the workspace; the engine gets a summary of the others (`engine/project.ts`, `pr
 
 Leaving a file works like leaving the Text view: typed text is turned into blocks first, and if
 it can't be, you're asked before it is replaced. Undo history is per visit to a file. Templates
-open as their own file. **Project** share codes (`VB3:…`) hold every file; older `VB2:` codes
-still load as a one-file project, and older saved work becomes the project's first file.
+open as their own file. **Share** codes (`VB3:…`) hold every file, the open tabs and the
+project's name; older `VB2:` codes still load as a one-file project, and older saved work becomes
+the project's first file.
 
 ## Layout
 
-Like Code.org's App Lab: the **Toolbox** on the left has a two-column category grid and, below
-it, the chosen category's blocks, always visible. In Blocks view, drag a block from there into
-the workspace (it snaps like any block); in Text view the Toolbox shows each block's Verse, which
-you can drag into the editor or click to insert at the cursor. The **Workspace** header has the
-file tabs on the left and the view and save buttons on the right, and **Learn** sits on the
-right. Collapsing the Toolbox (☰) leaves just the colour chips, which open Blockly's tray.
+Like a code editor (`ui/layout.ts`):
 
-The **Learn** and **Toolbox** panels can each be pinned (a column on the left or right) or
-unpinned (an icon on the side bar that slides the panel out when clicked). Drag a panel's
-header to reorder it or move it to the other side, or use its **⋯** menu (works on touch
-screens). **☰** collapses the Toolbox to color chips. Drag panel edges and the blocks/code
-divider to resize; double-click a divider to reset. The layout is saved in the browser;
-**⋯ → Reset layout** restores the default. On narrow screens every panel uses the side bar.
+- **Top bar**: the project's name, **Share** (copy a share code, load one, or start a blank
+  project) and **⋯** (templates, copy or save the Verse, new file, blank project, reset layout).
+- **Activity bars** on the left (Files, Toolbox, Learn) and right (Look). Each side shows one
+  panel at a time; click the open panel's icon to hide it. A panel's **⋯** menu moves it to the
+  other side (also in Look → Layout and panels).
+- **Editor**: the open files as tabs, then the Blocks / Text / Split icons. Drag panel edges and the
+  blocks/code divider to resize; double-click a divider to reset.
+- **Status bar**: sync status, "Saved on this device", the problem count (click it to see what
+  needs fixing), and buttons to copy the Verse or save it as a `.verse` file.
 
-To add another panel: add a `<section class="panel" id="panel-NAME">` to `index.html`, then
-add its id, title and icon in `src/ui/layout.ts` (`PanelId`, `TITLES`, `ICONS`, `DEFAULTS`).
+The **Toolbox** is like Code.org's App Lab: a two-column category grid and, below it, the chosen
+category's blocks, always visible. In Blocks view, drag a block from there into the workspace (it
+snaps like any block); in Text view the Toolbox shows each block's Verse, which you can drag into
+the editor or click to insert at the cursor.
+
+The layout is saved in the browser; **⋯ → Reset panel layout** restores the default. To add
+another panel: add a `<section class="panel" id="panel-NAME">` inside `#sheetHost` in
+`index.html`, then add its id, title, icon and default side in `src/ui/layout.ts` (`PanelId`,
+`PANEL_TITLES`, `PANEL_ICONS`, `DEFAULTS`).
 
 ## Common changes
 

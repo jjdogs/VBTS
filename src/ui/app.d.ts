@@ -10,6 +10,6 @@ import type { GenerateResult, ProjectContext } from '../engine/index.ts';
 import type { Files } from './files.ts';
 
 export function startApp(options: {
-  Blockly: typeof Blockly; V: Engine; MEDIA: Record<string, string>; layout: Layout; appearance: Appearance;
+  Blockly: typeof Blockly; V: Engine; MEDIA: Record<string, string>; ICONS: Record<string, string>; layout: Layout; appearance: Appearance;
   makeTextView: (ws: WorkspaceSvg, current: () => GenerateResult, onStatus: (s: SyncStatus) => void, context: () => ProjectContext) => TextView;
 }): { ws: WorkspaceSvg; current: () => GenerateResult; textView: TextView; files: Files };

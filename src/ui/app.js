@@ -5,10 +5,11 @@
  * it now receives Blockly, the engine and the embedded icons from main.ts instead of
  * finding them as globals. It talks to the engine only through `V` (see src/engine/index.ts).
  */
-import { blankFile, createFiles, decodeProject, encodeProject, normalizeProject } from './files.ts';
+import { DEFAULT_PROJECT_NAME, blankFile, createFiles, decodeProject, encodeProject, normalizeProject } from './files.ts';
+import { closeMenu, openMenu } from './menu.ts';
 import { mountWorkspaceControls } from './workspace-controls.ts';
 
-export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }) {
+export function startApp({ Blockly, V, MEDIA, ICONS, layout, appearance, makeTextView }) {
   if (!Blockly) { document.querySelector('main').style.display = 'none'; document.getElementById('loadErr').style.display = 'block'; return; }
   const KEY = 'verse-blocks:v1';
   const store = {
@@ -78,13 +79,13 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   function setStatus(s) {
     statusEl.className = 'sync ' + s.kind;
     statusEl.onclick = null; statusEl.removeAttribute('role'); statusEl.tabIndex = -1;
-    if (s.kind === 'synced') statusEl.textContent = 'In sync with blocks';
+    if (s.kind === 'synced') statusEl.textContent = 'In sync';
     if (s.kind === 'pending') statusEl.textContent = 'Updating blocks…';
     if (s.kind === 'error') statusEl.textContent = `Can't make blocks yet: ${s.message}`;
     if (s.kind === 'raw') {
       lastReport = s.report;
       const n = s.report.raw.length;
-      statusEl.textContent = n ? `${n} piece${n > 1 ? 's' : ''} kept as raw Verse · details` : 'In sync · notes';
+      statusEl.textContent = n ? `In sync · ${n} piece${n > 1 ? 's' : ''} kept as raw Verse` : 'In sync · notes';
       statusEl.setAttribute('role', 'button'); statusEl.tabIndex = 0;
       statusEl.onclick = () => { showReport(lastReport); layout.show('learn'); $('coach').scrollTop = 0; };
     }
@@ -92,12 +93,16 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   }
   const textView = makeTextView(ws, () => last, setStatus, () => files.context());
   const files = createFiles({
-    B: Blockly, ws, V, host: $('fileTabs'), initial: state.project, toast,
+    B: Blockly, ws, V, tabsHost: $('fileTabs'), panelHost: layout.body('files'), panelActions: layout.actions('files'), initial: state.project, toast,
+    currentWarnings: () => last.warnings,
+    prefs: () => ({ dots: appearance.settings().fileDots, ext: appearance.settings().fileExt }),
     persist: (p) => { state.project = p; store.set(state); },
     // Leaving a file: typed text must become blocks first (or be replaced), as when leaving the Text view.
     beforeLeave: (then) => { if (textView.tidy()) then(); else askToDiscard(then); },
     onOpened: () => { ws.scrollCenter(); renderSetup(); },
   });
+  // Look → Tabs and files changes how tabs and the Files panel show names and problem dots.
+  appearance.onChange(() => files.refresh());
   function render() {
     last = V.generate(ws, files.context()); // the other files' classes and names are known too
     last.fileName = files.current().name + '.verse';
@@ -119,7 +124,22 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
       wl.appendChild(li);
     });
     paintHL();
+    showProblems(errs, list.filter(w => w.level === 'style').length);
   }
+  /** Status bar: the open file's problems; the file's dot follows. */
+  let shownProblems = '';
+  function showProblems(errs, notes) {
+    const key = `${errs}/${notes}`;
+    if (key === shownProblems) return;
+    shownProblems = key;
+    const b = $('problemStatus');
+    b.classList.toggle('bad', errs > 0);
+    b.querySelector('.lbl').textContent = errs ? `${errs} problem${errs > 1 ? 's' : ''}` : 'No problems';
+    b.querySelector('.ico').outerHTML = errs ? ICONS.alert : ICONS.check;
+    b.title = errs ? 'Show what needs fixing' : notes ? `Nothing to fix (${notes} style note${notes > 1 ? 's' : ''})` : 'Nothing to fix. This should compile.';
+    files.refresh();
+  }
+  $('problemStatus').onclick = () => { layout.show('learn'); setTimeout(() => $('problems').scrollIntoView({ block: 'start', behavior: 'smooth' }), 60); };
   // Errors first, then tips, then style-guide notices.
   const RANK = { error: 0, tip: 1, style: 2 };
   function applyFix(w) {
@@ -231,10 +251,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     // If the text can't become blocks, stay here and explain (switching would leave the two apart).
     if (document.body.dataset.view === 'text' && v !== 'text' && !textView.tidy()) { askToDiscard(() => setView(v)); return; }
     document.body.dataset.view = v; state.view = v; store.set(state);
-    const toggle = $('viewToggle');
-    toggle.textContent = v === 'text' ? 'Show Blocks' : 'Show Text';
-    toggle.hidden = v === 'split';
-    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    document.querySelectorAll('.view-switch button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
     setTimeout(() => { Blockly.svgResize(ws); paintHL(); }, 30);
   }
   /** Text can't become blocks: keep editing, or go on (then) and replace the text with the blocks' code. */
@@ -252,15 +269,13 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     const then = afterDiscard; afterDiscard = null;
     if (then) then();
   };
-  document.querySelectorAll('.seg button').forEach((b) => (b.onclick = () => setView(b.dataset.view)));
-  $('viewToggle').onclick = () => {
-    const to = document.body.dataset.view === 'text' ? 'blocks' : 'text';
-    setView(to);
-    if (to === 'text') setTimeout(() => textView.focus(), 80);
-  };
+  document.querySelectorAll('.view-switch button').forEach((b) => (b.onclick = () => {
+    setView(b.dataset.view);
+    if (b.dataset.view === 'text') setTimeout(() => textView.focus(), 80);
+  }));
   /** The code as you see it (anything typed is converted first). */
   const shownCode = () => { textView.flush(); return document.body.dataset.view === 'blocks' ? last.code : textView.text(); };
-  $('copyBtn').onclick = async () => {
+  async function copyVerse() {
     const code = shownCode();
     try { await navigator.clipboard.writeText(code); toast('Verse copied'); }
     catch (e) {
@@ -268,15 +283,18 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
       try { document.execCommand('copy'); toast('Verse copied'); } catch (e2) { toast('Select the text view to copy'); }
       ta.remove();
     }
-  };
-  if (location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
-    const d = $('dlBtn'); d.hidden = false;
-    d.onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([shownCode()], { type: 'text/plain' })); a.download = last.fileName || 'my_device.verse'; a.click(); };
   }
+  $('copyBtn').onclick = copyVerse;
+  // Saving a file works on the site itself, but not inside an embedded preview (no download permission).
+  const canDownload = window.self === window.top || location.protocol === 'file:';
+  function downloadVerse() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([shownCode()], { type: 'text/plain' })); a.download = last.fileName || 'my_device.verse'; a.click(); }
+  $('dlBtn').hidden = !canDownload;
+  $('dlBtn').onclick = downloadVerse;
 
   // ---- project: share codes ----
   // VB3 codes hold every file of the project; older VB2 codes (one workspace) still load.
-  $('projBtn').onclick = () => { files.saveCurrent(); $('shareOut').value = encodeProject(files.project()); $('shareIn').value = ''; $('projDlg').showModal(); };
+  function openShare() { files.saveCurrent(); $('shareOut').value = encodeProject(files.project()); $('shareIn').value = ''; $('projDlg').showModal(); }
+  $('shareBtn').onclick = openShare;
   $('projClose').onclick = () => $('projDlg').close();
   $('shareCopy').onclick = async () => {
     const t = $('shareOut'); try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); try { document.execCommand('copy'); } catch (e2) {} }
@@ -287,7 +305,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     // replaceAll puts the old project back if the new one can't load, so a bad code loses nothing.
     files.saveCurrent();
     textView.discardTyped();
-    try { files.replaceAll(data); $('projDlg').close(); toast(data.files.length > 1 ? `Project loaded (${data.files.length} files)` : 'Project loaded'); }
+    try { files.replaceAll(data); showProjectName(); $('projDlg').close(); toast(data.files.length > 1 ? `Project loaded (${data.files.length} files)` : 'Project loaded'); }
     catch (e) { toast('Those blocks could not be loaded. Your blocks were kept.'); }
   };
   $('newProj').onclick = () => {
@@ -295,9 +313,46 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
     if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Replace my blocks?'; return; }
     delete b.dataset.armed; b.textContent = 'Start a blank project';
     textView.discardTyped();
-    files.replaceAll({ files: [{ name: 'my_device', ws: blankFile('my_device') }], current: 0 });
+    files.replaceAll({ files: [{ name: 'my_device', ws: blankFile('my_device') }], current: 0, name: DEFAULT_PROJECT_NAME });
+    showProjectName();
     $('projDlg').close(); toast('Blank project ready');
   };
+
+  // ---- top bar: project name and the ⋯ menu ----
+  const nameBtn = $('projName');
+  function showProjectName() { nameBtn.textContent = files.project().name || DEFAULT_PROJECT_NAME; }
+  nameBtn.onclick = () => {
+    const input = document.createElement('input');
+    input.className = 'proj-name-input'; input.value = files.project().name || DEFAULT_PROJECT_NAME;
+    input.setAttribute('aria-label', 'Project name'); input.maxLength = 60;
+    nameBtn.hidden = true; nameBtn.after(input); input.focus(); input.select();
+    let done = false;
+    const finish = (keep) => {
+      if (done) return; done = true;
+      if (keep) files.setProjectName(input.value);
+      input.remove(); nameBtn.hidden = false; showProjectName(); nameBtn.focus();
+    };
+    input.onkeydown = (e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') { e.stopPropagation(); finish(false); } };
+    input.onblur = () => finish(true);
+  };
+  $('moreBtn').onclick = () => openMenu($('moreBtn'), [
+    { label: 'Game-mode templates…', run: openTemplates },
+    { label: 'Share or load a project…', run: openShare },
+    'separator',
+    { label: 'Copy Verse code', run: copyVerse },
+    ...(canDownload ? [{ label: `Save ${last.fileName || 'my_device.verse'}`, run: downloadVerse }] : []),
+    'separator',
+    { label: 'New file', run: () => files.add('new_file') },
+    { label: 'Start a blank project', keepOpen: true, danger: true, run: (b) => {
+      if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Click again: this replaces every file'; return; }
+      closeMenu();
+      textView.discardTyped();
+      files.replaceAll({ files: [{ name: 'my_device', ws: blankFile('my_device') }], current: 0, name: DEFAULT_PROJECT_NAME });
+      showProjectName(); toast('Blank project ready');
+    } },
+    'separator',
+    { label: 'Reset panel layout', run: () => layout.reset() },
+  ]);
 
   // ---- text -> blocks ----
   const escT = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -338,7 +393,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
       };
     });
   }
-  $('tmplBtn').onclick = () => { renderTemplates(); $('tmplDlg').showModal(); };
+  function openTemplates() { renderTemplates(); $('tmplDlg').showModal(); }
   $('tmplClose').onclick = () => $('tmplDlg').close();
   function renderSetup() {
     const box = $('setup'); const st = state.setup; const t = st && V.TEMPLATES.find(x => x.id === st.id);
@@ -384,6 +439,7 @@ export function startApp({ Blockly, V, MEDIA, layout, appearance, makeTextView }
   if (saved) { try { Blockly.serialization.workspaces.load(saved, ws); ws.clearUndo(); } catch (e) { loadStarter(0); } }
   else loadStarter(0);
   files.render();
+  showProjectName();
   setView(state.view || 'blocks'); // one main window by default; Split is an option
   render.ready = true;
   renderLesson(); render(); renderSetup();

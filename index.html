@@ -9,23 +9,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body data-view="blocks">
-<header>
-  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:#7B61FF"></i><i style="background:#E9A23B"></i><i style="background:#2E9BD6"></i><i style="background:#3DAE72"></i></span><span class="brand-name">Verse Blocks</span></div>
-  <div class="seg" role="group" aria-label="View">
-    <button data-view="blocks" aria-pressed="true">Blocks</button>
-    <button data-view="text" aria-pressed="false">Text</button>
-    <button data-view="split" aria-pressed="false" title="Blocks and text side by side">Split</button>
+<header id="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:#7B61FF"></i><i style="background:#E9A23B"></i><i style="background:#2E9BD6"></i><i style="background:#3DAE72"></i></span><span class="brand-name">VBTS</span><button id="projName" class="proj-name" title="Rename this project"></button></div>
+  <div class="top-actions">
+    <button class="top-btn" id="shareBtn" title="Share this project, or load one"><span class="ico-slot" data-icon="share"></span><span class="lbl">Share</span></button>
+    <button class="icon-btn" id="moreBtn" aria-haspopup="menu" aria-expanded="false" aria-label="More" title="More"><span class="ico-slot" data-icon="more"></span></button>
   </div>
-  <button class="btn" id="lookBtn" title="Change colours, fonts, sizes and layout">Customize</button>
-  <button class="btn" id="tmplBtn">Templates</button>
-  <button class="btn" id="projBtn">Project</button>
-  <button class="btn" id="moreBtn" aria-haspopup="menu" aria-expanded="false">More</button>
-  <button class="btn btn-primary" id="copyBtn">Copy<span class="long"> Verse</span></button>
 </header>
 <main id="layout">
-  <nav id="activityBar" aria-label="Side panels"></nav>
-  <div class="dock" id="dockLeft"></div>
-  <!-- Panels start here; the layout manager moves them into docks or the slide-out host. -->
+  <nav id="barLeft" class="activity-bar" aria-label="Left side panels"></nav>
+  <div class="side" id="sideLeft"></div>
+  <div id="stage">
+    <!-- One editor bar for every view: open files as tabs, then Blocks / Text / Split -->
+    <div class="editor-bar">
+      <div id="fileTabs" class="file-tabs"></div>
+      <div class="view-switch" role="group" aria-label="View">
+        <button data-view="blocks" aria-pressed="true" aria-label="Blocks" title="Blocks"><span class="ico-slot" data-icon="blocks"></span></button>
+        <button data-view="text" aria-pressed="false" aria-label="Text" title="Text (Verse code)"><span class="ico-slot" data-icon="code"></span></button>
+        <button data-view="split" aria-pressed="false" aria-label="Split" title="Blocks and text side by side"><span class="ico-slot" data-icon="split"></span></button>
+      </div>
+    </div>
+    <div id="panes">
+    <div id="blocksPane"><div id="blocklyDiv"></div></div>
+    <div id="codeSplit" class="splitter" role="separator" tabindex="0" aria-label="Resize blocks and code. Use arrow keys; double-click to reset."></div>
+    <section id="codePane" aria-label="Verse code">
+      <div id="code" aria-label="Verse code editor"></div>
+    </section>
+    </div>
+  </div>
+  <div class="side" id="sideRight"></div>
+  <nav id="barRight" class="activity-bar" aria-label="Right side panels"></nav>
+  <!-- Panels start here; the layout manager moves them into a side or the phone sheet. -->
+  <div id="sheetHost" hidden>
+  <section class="panel" id="panel-files" data-panel="files" aria-label="Files">
+    <header class="panel-head"></header>
+    <div class="panel-body" tabindex="-1"></div>
+  </section>
   <section class="panel" id="panel-learn" data-panel="learn" aria-label="Learn">
     <header class="panel-head"></header>
     <div class="panel-body" id="coach" tabindex="-1">
@@ -40,7 +59,7 @@
       <p class="coach-h">Selected block</p>
       <p class="empty">Click any block to see what it does in Verse.</p>
     </section>
-    <section>
+    <section id="problems">
       <p class="coach-h" id="warnHead">Needs fixing</p>
       <ul id="warnList"></ul>
     </section>
@@ -50,7 +69,7 @@
     </section>
     </div>
   </section>
-  <section class="panel" id="panel-appearance" data-panel="appearance" aria-label="Appearance">
+  <section class="panel" id="panel-appearance" data-panel="appearance" aria-label="Look">
     <header class="panel-head"></header>
     <div class="panel-body" tabindex="-1"></div>
   </section>
@@ -58,22 +77,17 @@
     <header class="panel-head"></header>
     <div class="panel-body" tabindex="-1"></div>
   </section>
-  <div id="stage">
-    <!-- One file bar for both views, like an editor tab -->
-    <div class="code-bar"><div id="fileTabs" class="file-tabs"></div><span id="syncStatus" class="sync synced" aria-live="polite">In sync with blocks</span><button class="btn" id="viewToggle">Show Text</button><button class="btn" id="dlBtn" hidden>Save<span class="long"> .verse</span></button></div>
-    <div id="panes">
-    <div id="blocksPane"><div id="blocklyDiv"></div></div>
-    <div id="codeSplit" class="splitter" role="separator" tabindex="0" aria-label="Resize blocks and code. Use arrow keys; double-click to reset."></div>
-    <section id="codePane" aria-label="Verse code">
-
-      <div id="code" aria-label="Verse code editor"></div>
-      <div class="legend"><span>Colors match block groups:</span><b style="color:var(--t-kw)">control</b><b style="color:var(--t-var)">variables</b><b style="color:var(--t-type)">devices &amp; types</b><b style="color:var(--t-fn)">functions</b><b style="color:var(--t-str)">text</b><b style="color:var(--t-num)">numbers</b></div>
-    </section>
-    </div>
   </div>
-  <div class="dock" id="dockRight"></div>
-  <div id="overlayHost" hidden></div>
 </main>
+<footer id="statusbar">
+  <span id="syncStatus" class="sb-item sync synced" aria-live="polite">In sync</span>
+  <span class="sb-item" id="savedStatus" title="Your project is saved in this browser, on this device"><span class="ico-slot" data-icon="device"></span><span class="lbl">Saved on this device</span></span>
+  <button class="sb-item" id="problemStatus" title="Show what needs fixing"><span class="ico-slot" data-icon="check"></span><span class="lbl">No problems</span></button>
+  <span class="sb-spacer"></span>
+  <button class="sb-item sb-icon" id="copyBtn" title="Copy the Verse code" aria-label="Copy the Verse code"><span class="ico-slot" data-icon="copy"></span></button>
+  <button class="sb-item sb-icon" id="dlBtn" title="Save as a .verse file" aria-label="Save as a .verse file" hidden><span class="ico-slot" data-icon="save"></span></button>
+</footer>
+<nav id="bottomNav" aria-label="Panels" hidden></nav>
 <div id="loadErr"><h2>The block engine didn't load</h2><p>Verse Blocks needs Blockly from cdn.jsdelivr.net. Check your connection and reload.</p></div>
 <div id="toast" role="status"></div>
 <dialog id="tmplDlg" aria-labelledby="tmplTitle">
@@ -89,12 +103,12 @@
   <div class="dlg-actions"><button class="btn" id="syncDiscard">Switch and replace my text</button><button class="btn btn-primary" id="syncKeep">Keep editing</button></div>
 </dialog>
 <dialog id="projDlg" aria-labelledby="projTitle">
-  <h2 id="projTitle">Project</h2>
-  <p>Share code: copy it to back up your blocks or send them to someone. They paste it under Load.</p>
+  <h2 id="projTitle">Share</h2>
+  <p>Share code: copy it to back up your project or send it to someone. They paste it under Load.</p>
   <textarea id="shareOut" readonly aria-label="Your share code"></textarea>
   <div class="dlg-actions"><button class="btn btn-primary" id="shareCopy">Copy share code</button></div>
   <hr class="dlg-sep">
-  <p>Load: paste a share code. This replaces your current blocks.</p>
+  <p>Load: paste a share code. This replaces your current project.</p>
   <textarea id="shareIn" aria-label="Paste a share code" placeholder="VB2:…"></textarea>
   <div class="dlg-actions">
     <button class="btn" id="newProj">Start a blank project</button>

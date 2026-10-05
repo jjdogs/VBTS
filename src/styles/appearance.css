@@ -7,7 +7,6 @@
 /* ---------- one editor: file bar on top, Blocks or Text below ---------- */
 #stage { flex-direction: column; }
 #panes { flex: 1; display: flex; min-width: 0; min-height: 0; }
-#stage > .code-bar { border-bottom: 1px solid var(--line); background: var(--code-bg); }
 
 
 /* "Like text" layout: blocks sit on the same background as the code */
@@ -17,42 +16,9 @@ body.no-grid .blocklyMainBackground { fill: var(--ws-bg) !important; }
 /* ---------- spacing density ---------- */
 #coach { gap: calc(22px * var(--space, 1)); padding: calc(16px * var(--space, 1)) calc(18px * var(--space, 1)) calc(28px * var(--space, 1)); }
 .cat { padding-top: calc(8px * var(--space, 1)); padding-bottom: calc(8px * var(--space, 1)); }
-header { padding-top: calc(10px * var(--space, 1)); padding-bottom: calc(10px * var(--space, 1)); }
-.code-bar { padding-top: calc(10px * var(--space, 1)); padding-bottom: calc(10px * var(--space, 1)); }
 
 /* ---------- animations off ---------- */
 body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { transition: none !important; animation: none !important; }
-
-/* ---------- the Appearance panel ---------- */
-.ap { padding: calc(12px * var(--space, 1)) 14px 28px; display: flex; flex-direction: column; gap: 6px; }
-.ap-intro, .ap-note { margin: 0 0 6px; color: var(--muted); font-size: calc(13px * var(--ui-scale, 1)); }
-.ap details { border: 1px solid var(--line); border-radius: calc(10px * var(--radius-scale, 1)); background: var(--panel); }
-.ap summary { cursor: pointer; padding: 10px 12px; font-weight: 600; font-size: calc(14px * var(--ui-scale, 1)); list-style-position: inside; }
-.ap summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.ap-sec { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
-.ap-row { display: grid; grid-template-columns: 1fr minmax(0, 1.25fr); align-items: center; gap: 10px; font-size: calc(13.5px * var(--ui-scale, 1)); }
-.ap-row select { width: 100%; min-height: 34px; font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid var(--line); border-radius: calc(8px * var(--radius-scale, 1)); padding: 4px 8px; }
-.ap-check { grid-template-columns: auto 1fr; justify-content: start; }
-.ap-check input, .ap-colour input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
-.ap-slider { display: flex; align-items: center; gap: 8px; }
-.ap-slider input { flex: 1; min-width: 0; accent-color: var(--accent); }
-.ap-slider output { min-width: 3.4em; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: calc(12.5px * var(--ui-scale, 1)); }
-.ap-colour { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; font-size: calc(13.5px * var(--ui-scale, 1)); }
-.ap-colour input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: calc(7px * var(--radius-scale, 1)); background: none; cursor: pointer; }
-.ap-undo { border: 0; background: transparent; color: var(--muted); font-size: 16px; width: 30px; height: 30px; border-radius: 8px; }
-.ap-undo:hover { background: var(--panel2); color: var(--ink); }
-.ap-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-.ap-preset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: calc(10px * var(--radius-scale, 1)); background: var(--panel); font-size: calc(13px * var(--ui-scale, 1)); font-weight: 500; text-align: left; }
-.ap-preset[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.ap-preset .sw { display: flex; gap: 4px; width: 100%; padding: 8px; border: 1px solid; border-radius: calc(7px * var(--radius-scale, 1)); }
-.ap-preset .sw i { width: 14px; height: 14px; border-radius: 50%; }
-.ap textarea { width: 100%; font: 12px/1.4 var(--mono); background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: calc(8px * var(--radius-scale, 1)); padding: 8px; resize: vertical; }
-.ap textarea[aria-invalid="true"] { border-color: var(--warn); }
-.ap-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-@media (pointer: coarse) {
-  .ap-row select, .ap-colour input[type="color"], .ap-undo { min-height: 44px; }
-  .ap summary { padding: 13px 12px; }
-}
 
 /* ---------- the Text view editor (ui/text-editor.ts) ---------- */
 #code { flex: 1; min-height: 0; overflow: hidden; }
