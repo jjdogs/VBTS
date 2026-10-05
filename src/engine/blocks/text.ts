@@ -29,7 +29,7 @@ export function registerTextBlocks(): void {
     colour: COLORS.text,
     explain: {
       title: 'Print', doc: DOCS.quick, tip: 'Writes text to the UEFN output log (and on screen while testing).',
-      text: 'Print lives in /UnrealEngine.com/Temporary/Diagnostics. It takes a string; numbers get wrapped in "{ }" string interpolation automatically.',
+      text: 'Print is part of Verse itself (/Verse.org/Verse), so it needs no using line. It takes a string; numbers get wrapped in "{ }" string interpolation automatically.',
     },
     init() {
       this.appendValueInput('TEXT').appendField('print');
@@ -44,7 +44,6 @@ export function registerTextBlocks(): void {
       } else if (target && !(target.outputConnection?.getCheck() ?? []).includes(STRING) && !(target.type === 'verse_raw_expr' && /^".*"$/.test(value))) {
         value = `"{${value}}"`; // Print takes a string, so wrap non-text values
       }
-      g.need('/UnrealEngine.com/Temporary/Diagnostics', 'Print');
       return `Print(${value})\n`;
     },
   });

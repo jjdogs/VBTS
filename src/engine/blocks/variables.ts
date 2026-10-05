@@ -7,7 +7,7 @@ import { moduleForType, typeNamesIn } from '../data/verse-types.ts';
 import { nameField } from '../fields.ts';
 import { escapeString, formatFloat, Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { fieldsIn } from '../workspace.ts';
+import { fieldsIn, rawDeclared } from '../workspace.ts';
 import { asStatement, f, Slot, stacksIn } from './shared.ts';
 
 /** Turns what the user typed into a valid Verse literal of the chosen type. */
@@ -66,7 +66,9 @@ export function registerVariableBlocks(): void {
     },
     generate(b, g) {
       const name = f(b, 'NAME');
-      const declared = fieldsIn(b.workspace).find(x => x.name === name);
+      // A var written as raw Verse (a type blocks can't show yet) counts too.
+      const raw = rawDeclared(b.workspace, name);
+      const declared = fieldsIn(b.workspace).find(x => x.name === name) ?? (raw && !raw.isFunction ? { mutable: raw.mutable } : undefined);
       if (!declared) g.warn(b, `No variable named ${name}. Add a "var" block under linked devices & variables.`);
       else if (!declared.mutable) g.warn(b, `${name} is a constant. Change it to var so it can be set.`);
       return `set ${name} ${f(b, 'OP')} ${g.valueToCode(b, 'V', Order.NONE) || '0'}\n`;

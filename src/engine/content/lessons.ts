@@ -49,7 +49,7 @@ export const LESSONS: Lesson[] = [
     { title: 'Open the toolbox', concept: 'using and modules',
       goal: 'Auto-using is off. Add the using lines this code needs so every warning clears.',
       steps: ['Read "Needs fixing": each message names a function and the module it lives in.', 'Open the Using category and drag the right using blocks into the device\'s using slot.', 'Watch the text view: the using line appears the moment you snap the block in.', 'Tip: the fix buttons can do it for you, but try it by hand first.'],
-      check: (c, r) => !!r && !r.autoUsing && !r.warnings.some(w => w.level === 'error') && /using \{ \/Verse\.org\/Random \}/.test(c) && /using \{ \/UnrealEngine\.com\/Temporary\/Diagnostics \}/.test(c) && /using \{ \/Fortnite\.com\/Devices \}/.test(c),
+      check: (c, r) => !!r && !r.autoUsing && !r.warnings.some(w => w.level === 'error') && /using \{ \/Verse\.org\/Random \}/.test(c) && /using \{ \/Fortnite\.com\/Devices \}/.test(c),
       start: { blocks: { languageVersion: 0, blocks: [{ type: 'verse_device', x: 30, y: 30, fields: { NAME: 'my_device', AUTO: false }, inputs: { ONBEGIN: { block: { type: 'verse_print', inputs: { TEXT: { block: { type: 'verse_text_join', fields: { LABEL: 'Lucky number: ' }, inputs: { V: { block: { type: 'verse_random', fields: { LO: 1, HI: 100 } } } } } } } } } } }] } } },
     { title: 'Moving parts', concept: 'Events that send nothing',
       goal: 'Start a prop mover called Door when the game begins, and print "Door arrived" when it finishes.',

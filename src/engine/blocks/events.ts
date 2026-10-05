@@ -11,7 +11,7 @@ import { moduleForType } from '../data/verse-types.ts';
 import { deviceOptions, looseDropdown, nameField, prime, type Option } from '../fields.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { deviceTypeFor, handlersIn, liveWorkspace } from '../workspace.ts';
+import { deviceTypeFor, functionsIn, handlersIn, liveWorkspace, rawDeclared } from '../workspace.ts';
 import { asStatement, body, f, Slot, stacksIn } from './shared.ts';
 
 /** The handler dropdown shared by both subscribe blocks. */
@@ -24,7 +24,17 @@ const handlerDropdown = () => looseDropdown(function () {
 function checkHandler(g: VerseGenerator, b: Block, ev: string, sends: string | undefined): void {
   const name = f(b, 'HANDLER');
   const handler = handlersIn(b.workspace).find(h => h.name === name);
-  if (!handler) { g.warn(b, `No handler named ${name}. Add a "when called" block under functions & event handlers.`); return; }
+  if (!handler) {
+    // Any function that takes what the event sends works as a handler, including one written as raw Verse.
+    const fn = functionsIn(b.workspace).find(x => x.name === name);
+    if (fn) {
+      if (sends === 'none' ? fn.params !== 0 : sends && fn.params !== 1) g.warn(b, `${ev} sends ${sends === 'none' ? 'nothing' : sends}, so ${name} must take ${sends === 'none' ? 'no inputs' : 'one input'}.`);
+      return;
+    }
+    if (rawDeclared(b.workspace, name)?.isFunction) return;
+    g.warn(b, `No handler named ${name}. Add a "when called" block under functions & event handlers.`);
+    return;
+  }
   if (!sends) return;
   const want = handlerParamFor(sends);
   if (!want) return; // an event blocks can't receive yet: its handler is raw Verse
@@ -92,7 +102,7 @@ export function registerEventBlocks(): void {
     generate(b, g) {
       const dev = f(b, 'DEVICE'), ev = f(b, 'EVENT');
       const type = deviceTypeFor(b, dev);
-      if (!type) g.warn(b, `No @editable device named ${dev}. Add one in "linked devices".`);
+      if (!type && !rawDeclared(b.workspace, dev)?.editable) g.warn(b, `No @editable device named ${dev}. Add one in "linked devices".`);
       checkHandler(g, b, ev, deviceInfo(type)?.events[ev]);
       return `${dev}.${ev}.Subscribe(${f(b, 'HANDLER')})\n`;
     },

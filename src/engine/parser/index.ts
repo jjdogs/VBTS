@@ -16,8 +16,8 @@ import { DeviceParser } from './members.ts';
 import { buildTree, countTrailingComments, lastLineOf, splitLines, stripComment } from './tree.ts';
 
 const DEVICE_CLASS = /^(\w+)\s*:=\s*class(?:<\w+>)*\s*\(\s*creative_device\s*\)\s*:$/;
-/** name := class<spec>(parent):  or  name := struct: */
-const TYPE_DECL = /^(\w+)\s*:=\s*(class|struct)(?:<(concrete|unique|final|abstract)>)?(?:\((\w+)\))?\s*:$/;
+/** name := class<spec>(parent):  or  name := struct:  (or with {} for one with no members of its own) */
+const TYPE_DECL = /^(\w+)\s*:=\s*(class|struct)(?:<(concrete|unique|final|abstract)>)?(?:\((\w+)\))?\s*(?::|\{\s*\})$/;
 const ENUM_DECL = /^(\w+)\s*:=\s*enum\s*\{\s*([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*\}$/;
 const USING_LINE = /^using\s*\{\s*([^\s{}]+)\s*\}$/;
 
