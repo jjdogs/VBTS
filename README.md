@@ -23,9 +23,16 @@ npm run dev        # opens the app at http://localhost:5173 and reloads as you e
 | `npm run build` | Builds the whole app into one file: `dist/index.html` |
 | `npm run preview` | Serves the built file to try it |
 | `npm run golden` | Re-records the golden test outputs (see *Tests*) |
-| `npm run devices -- digest.md` | Regenerates the device list from Epic's docs (needs Python) |
+| `npm run api` | Reads Epic's Verse API reference into `scripts/data/verse-api-devices.json` (needs Python; pages are cached in `.cache/`) |
+| `npm run devices` | Rebuilds the device list from that snapshot and prints what changed |
 
 Before sharing changes: `npm run check && npm test && npm run build`.
+
+**Keeping up with Verse.** Every Monday the *Verse API sync* workflow (`.github/workflows/verse-api.yml`)
+runs both scripts. When Epic's reference changed, it opens a pull request into `dev` listing new
+devices, actions and events. Epic's reference doesn't show what an event sends, so new events' types
+are read from their description: check those before merging. You can also run it by hand from the
+Actions tab.
 
 ## Publishing
 

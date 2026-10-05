@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc -p .",
+    "api": "python3 scripts/fetch-verse-api.py",
     "devices": "python3 scripts/extract-devices.py",
     "golden": "node scripts/record-golden.ts"
   },
