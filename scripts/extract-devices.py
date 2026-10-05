@@ -35,13 +35,26 @@ NOT_DEVICES = {'creative_device'}  # the class your own Verse devices extend
 
 # A required input of a simple type: Name:int, Name:float, Name:logic, Name:string, Name:agent
 SIMPLE_PARAM = r"[A-Z]\w*:(int|float|logic|string|agent)"
-# What an event's description says it sends → the type. Order matters: the first match wins.
+# What an event's description says it sends → the type ('' = a type blocks can't receive).
+# The first match wins; they are checked against every event whose type is known.
 SENDS = [
-    (r'\bSource is\b|\bTarget is\b', 'device_ai_interaction_result'),
-    (r'\bReturns? (?:false|an? agent) if\b|\bfalse if no agent\b|\boptional agent\b', '?agent'),
-    (r'\bSends the (?:agent|player)\b|\bSends an? agent\b|\bSends the \w+ agent\b|\bagent (?:that|who)\b.*\bSends\b', 'agent'),
-    (r'\bSends the fort_vehicle\b', 'fort_vehicle'),
+    (r'(?i)\btuple\b|\b(?:Sends|and) the (?:int|float|logic|string)\b', ''),  # more than one value
+    (r'\bSource is\b.*\bTarget is\b', 'device_ai_interaction_result'),
+    (r'\bfort_vehicle\b', 'fort_vehicle'),
+    (r'(?i)\b(?:Sends|passing|Returns|returning|Includes)\b.*\bagent\b.*(?:\bfalse\b|\bif (?:any|applicable)\b)'
+     r'|\bfalse\b.*\bagent\b|\bReturns an? agent if\b', '?agent'),
+    (r'(?i)\b(?:Sends|passing)\b.*\b(?:agent|player)\b|\bReturns the \w+ agent\b', 'agent'),
+    # No "Sends" and no one mentioned: it sends nothing. Mentioning an agent without saying it's sent
+    # is unclear (most such events do send the agent).
+    (r'(?i)^(?=.*\w)(?!.*\b(?:Sends|passing|Returns|agents?|players?|guards?|creative_prop|vehicle|value)\b)', 'none'),
 ]
+
+
+def described(doc: str):
+    """The type an event's description says it sends, or None if it isn't clear."""
+    doc = re.sub(r"[`']", ' ', doc)
+    return next((t for pattern, t in SENDS if re.search(pattern, doc)), None)
+
 
 snapshot = json.load(open(SNAPSHOT, encoding='utf-8'))
 try:
@@ -49,19 +62,29 @@ try:
 except FileNotFoundError:
     previous = {}
 review = []
+# Inherited events have the same name and description on every device that has them, so a known
+# type carries over (every vehicle spawner's DestroyedEvent: "Signaled when a vehicle is destroyed.").
+same_event: dict = {}
+for _device, _entry in previous.items():
+    for _event, _type in _entry.get('e', {}).items():
+        _doc = snapshot.get(_device, {}).get('events', {}).get(_event)
+        if _doc is not None:
+            same_event.setdefault((_event, _doc), set()).add(_type)
 
 
 def sends(device: str, event: str, doc: str) -> str:
+    guess = described(doc)
     known = previous.get(device, {}).get('e', {}).get(event)
-    if known:
+    if known and guess != '':
         return known
-    # The same event on another device (e.g. a shared base class) usually sends the same thing.
-    elsewhere = {d['e'][event] for d in previous.values() if event in d.get('e', {})}
-    guess = next((t for pattern, t in SENDS if re.search(pattern, doc)), 'none' if not re.search(r'\bSends\b', doc) else None)
-    if len(elsewhere) == 1 and (guess is None or guess in elsewhere):
-        guess = elsewhere.pop()
+    inherited = same_event.get((event, doc), set())
+    if len(inherited) == 1 and guess != '':
+        return next(iter(inherited))
     if guess is None:
-        review.append(f'{device}.{event}: sends something unrecognised, skipped ("{doc}")')
+        review.append(f'{device}.{event}: unclear what it sends, left out ("{doc}")')
+        return ''
+    if guess == '':
+        review.append(f'{device}.{event}: sends a type blocks can\'t receive yet, left out ("{doc}")')
         return ''
     review.append(f'{device}.{event}: new event, sends {guess} (from: "{doc}")')
     return guess
@@ -72,9 +95,12 @@ def keep_order(old: list, new: list) -> list:
     return [x for x in old if x in new] + sorted(x for x in new if x not in old)
 
 
-catalog = {}
+catalog, base_classes = {}, set()
 for name, info in snapshot.items():
-    if name in NOT_DEVICES or name in ABSTRACT or info.get('doc', '').startswith('Base class'):
+    if name in NOT_DEVICES:
+        continue
+    if name in ABSTRACT or info.get('doc', '').startswith('Base class'):
+        base_classes.add(name)
         continue
     events = {}
     for ev, doc in info['events'].items():
@@ -110,7 +136,9 @@ for name, info in snapshot.items():
 
 # Report what changed, so the pull request says it.
 for name in sorted(set(previous) | set(catalog)):
-    if name not in catalog:
+    if name in base_classes and name in previous:
+        review.append(f'{name}: left out, it is a base class ("{snapshot[name]["doc"]}")')
+    elif name not in catalog:
         review.append(f'{name}: removed (no longer in the reference)')
     elif name not in previous:
         review.append(f'{name}: new device')

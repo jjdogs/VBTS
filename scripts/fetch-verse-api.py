@@ -37,28 +37,38 @@ lock = threading.Lock()
 pool = ThreadPoolExecutor(opts.workers)
 
 
+def rendered(page: str) -> bool:
+    """A page with its content (a heading with text), not the site's empty loading shell."""
+    return re.search(r'<h1>\s*\w', page) is not None
+
+
 def get(path: str) -> str:
     """One page of the reference, from the cache when we have it."""
     global fetched
     file = os.path.join(opts.cache, hashlib.sha1(path.encode()).hexdigest() + '.html')
     if not opts.refresh and os.path.exists(file):
-        return open(file, encoding='utf-8').read()
-    for attempt in range(4):
+        page = open(file, encoding='utf-8').read()
+        if rendered(page):
+            return page
+    for attempt in range(6):
         try:
             time.sleep(opts.delay)
             req = urllib.request.Request(SITE + path, headers={'User-Agent': 'verse-blocks-api-sync (github.com/jjdogs/VBTS)'})
             page = urllib.request.urlopen(req, timeout=60).read().decode('utf-8')
-            break
+            if rendered(page):
+                break
+            # Now and then the site sends the empty app shell (a spinner) instead of the page.
+            if attempt == 5:
+                sys.exit(f'{path} came back empty 6 times; nothing written.')
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 return ''
-            if attempt == 3:
+            if attempt == 5:
                 raise
-            time.sleep(2 ** attempt * 2)
         except (urllib.error.URLError, TimeoutError):
-            if attempt == 3:
+            if attempt == 5:
                 raise
-            time.sleep(2 ** attempt * 2)
+        time.sleep(2 ** attempt * 2)
     with lock:
         fetched += 1
         if fetched % 100 == 0:

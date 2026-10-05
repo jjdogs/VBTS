@@ -44,8 +44,18 @@ describe('device catalog', () => {
     assert.ok(cat.prop_manipulator_device.methods.includes('ShowProps()'));
   });
 
+  test('devices newer than the 2024 digest are listed (from Epic\'s live reference)', () => {
+    assert.equal(cat.vehicle_spawner_xwing_device.events.SpawnedEvent, 'fort_vehicle');
+    assert.ok(cat.carryable_spawner_device, 'carryable_spawner_device');
+  });
+
+  test("events that send two values aren't offered with the wrong input", () => {
+    assert.ok(!('ReleasedEvent' in cat.input_trigger_device.events), 'sends (agent, float)');
+    assert.ok(!('RespondingButtonEvent' in cat.popup_dialog_device.events), 'sends (agent, int)');
+  });
+
   test("abstract base devices aren't offered (they can't be placed)", () => {
-    for (const d of ['trigger_base_device', 'vehicle_spawner_device', 'powerup_device', 'effect_volume_device'])
+    for (const d of ['trigger_base_device', 'vehicle_spawner_device', 'powerup_device', 'effect_volume_device', 'patchwork_device'])
       assert.ok(!(d in cat), d);
   });
 });
