@@ -52,11 +52,11 @@ test('handler input names are renamed and reported', () => {
   assert.match(code, /H\(Agent:agent\):void =\n {8}Print\("\{Agent\}"\)/);
 });
 
-test('trailing comments are reported, own-line comments kept', () => {
-  const { report, code } = convert(wrap('# keep me\nPrint("a")  # drop me'));
-  assert.ok(report.notes.some(n => n.startsWith('1 comment')));
-  assert.match(code, /# keep me/);
-  assert.doesNotMatch(code, /drop me/);
+test('comments are kept: on their own line, and at the end of a line (on that line\'s block)', () => {
+  const { report, code } = convert(wrap('# keep me\nPrint("a")  # keep me too'));
+  assert.ok(!report.notes.some(n => /comment/.test(n)), 'nothing was dropped');
+  assert.match(code, /^ *# keep me$/m);
+  assert.match(code, /^ *Print\("a"\) # keep me too$/m);
 });
 
 test('code outside the device and your types is skipped and reported', () => {

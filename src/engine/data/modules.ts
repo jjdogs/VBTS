@@ -30,7 +30,7 @@ export const COLORS = {
 export const MODULES: readonly ModuleInfo[] = [
   { path: '/Fortnite.com/Devices', text: 'Every Creative device (button_device, trigger_device…) and creative_device itself.', unlocks: 'creative_device, *_device' },
   { path: '/Verse.org/Simulation', text: 'Core game types: agent, player, Sleep, and the @editable attribute.', unlocks: 'agent, player, Sleep, @editable' },
-  { path: '/UnrealEngine.com/Temporary/Diagnostics', text: 'Debug tools like Print for the output log.', unlocks: 'Print' },
+  { path: '/UnrealEngine.com/Temporary/Diagnostics', text: 'Debug tools: log channels (log.Print with a level) and debug_draw. Plain Print needs no using line.', unlocks: 'log, log_channel, debug_draw' },
   { path: '/Fortnite.com/Characters', text: 'fort_character and GetFortCharacter[] for health, damage and healing.', unlocks: 'fort_character, GetFortCharacter' },
   { path: '/Verse.org/Random', text: 'Random numbers: GetRandomInt, GetRandomFloat, Shuffle.', unlocks: 'GetRandomInt, GetRandomFloat' },
   { path: '/Fortnite.com/Playspaces', text: 'fort_playspace: the game session, its players and teams.', unlocks: 'fort_playspace, GetPlayers' },

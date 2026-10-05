@@ -16,7 +16,7 @@ import { nameField } from '../fields.ts';
 import { moduleForType, typeNamesIn } from '../data/verse-types.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { asStatement, body, f, Slot, stacksIn, visibility, visibilityDropdown } from './shared.ts';
+import { asStatement, f, Slot, stacksIn, visibility, visibilityDropdown } from './shared.ts';
 
 const CLASS_DOC = 'https://dev.epicgames.com/documentation/en-us/fortnite/class-in-verse';
 const MAX_ITEMS = 4;
@@ -27,7 +27,7 @@ const typeField = (initial: string) =>
 
 /** Class/struct blocks on the workspace: name → { kind, fields }. */
 export function typesIn(ws: Workspace | null) {
-  const out = new Map<string, { kind: string; fields: Array<{ name: string; hasDefault: boolean }>; methods: Map<string, number> }>();
+  const out = new Map<string, { kind: string; parent: string; fields: Array<{ name: string; hasDefault: boolean }>; methods: Map<string, number> }>();
   if (!ws) return out;
   for (const t of ws.getBlocksByType('verse_class', false)) {
     const fields: Array<{ name: string; hasDefault: boolean }> = [];
@@ -37,7 +37,7 @@ export function typesIn(ws: Workspace | null) {
       if (m.type === 'verse_field') fields.push({ name: f(m, 'NAME'), hasDefault: true });
       if (m.type === 'verse_function') methods.set(f(m, 'NAME'), f(m, 'PARAMS').trim() ? f(m, 'PARAMS').split(',').length : 0);
     }
-    out.set(f(t, 'NAME'), { kind: f(t, 'KIND'), fields, methods });
+    out.set(f(t, 'NAME'), { kind: f(t, 'KIND'), parent: f(t, 'PARENT').trim(), fields, methods });
   }
   return out;
 }
@@ -94,8 +94,10 @@ export function registerTypeBlocks(): void {
     generate(b, g) {
       const kind = f(b, 'KIND'), spec = f(b, 'SPEC'), parent = f(b, 'PARENT').trim();
       if (kind === 'struct' && parent) g.warn(b, 'Structs can\'t inherit from a parent. Use a class, or clear the parent.');
-      const head = `${f(b, 'NAME')} := ${kind}${spec !== 'none' ? `<${spec}>` : ''}${parent && kind === 'class' ? `(${parent})` : ''}:`;
-      return `${head}\n${body(g, b, 'MEMBERS')}`;
+      const head = `${f(b, 'NAME')} := ${kind}${spec !== 'none' ? `<${spec}>` : ''}${parent && kind === 'class' ? `(${parent})` : ''}`;
+      // A class with nothing of its own (often one that only names a parent) is written with { }.
+      const members = g.statementToCode(b, 'MEMBERS');
+      return members.trim() ? `${head}:\n${members}` : `${head}{}\n`;
     },
   });
 
@@ -168,10 +170,22 @@ export function registerTypeBlocks(): void {
         parts.push(`${name} := ${g.valueToCode(b, `V${i}`, Order.NONE) || '0'}`);
       }
       if (known) {
-        const missing = known.fields.filter(x => !x.hasDefault && !given.includes(x.name)).map(x => x.name);
+        // Fields come from the class and its parents. A parent from Epic's API (or one we can't see)
+        // brings fields we don't know, so then only what we know is checked.
+        const fields = [...known.fields];
+        let allKnown = true;
+        const seen = new Set([type]);
+        for (let p = known.parent; p && allKnown; ) {
+          const parentType = typesIn(b.workspace).get(p) ?? g.project.types.get(p);
+          if (!parentType || seen.has(p)) { allKnown = false; break; }
+          seen.add(p);
+          fields.push(...parentType.fields);
+          p = parentType.parent ?? '';
+        }
+        const missing = fields.filter(x => !x.hasDefault && !given.includes(x.name)).map(x => x.name);
         if (missing.length) g.warn(b, `${type}{…} needs a value for ${missing.join(', ')} (no starting value).`);
-        const unknown = given.filter(n => !known.fields.some(x => x.name === n));
-        if (unknown.length) g.warn(b, `${type} has no field named ${unknown.join(', ')}.`);
+        const unknown = given.filter(n => !fields.some(x => x.name === n));
+        if (unknown.length && allKnown) g.warn(b, `${type} has no field named ${unknown.join(', ')}.`);
       }
       return [`${type}{${parts.join(', ')}}`, Order.ATOMIC];
     },

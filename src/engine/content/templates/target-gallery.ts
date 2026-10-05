@@ -33,7 +33,6 @@ export const targetGallery: Template = {
   ],
   verse: `using { /Fortnite.com/Devices }  # for creative_device
 using { /Verse.org/Simulation }  # for @editable, agent
-using { /UnrealEngine.com/Temporary/Diagnostics }  # for Print
 
 target_gallery := class(creative_device):
 

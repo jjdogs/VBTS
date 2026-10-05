@@ -16,8 +16,8 @@ import { DeviceParser } from './members.ts';
 import { buildTree, countTrailingComments, lastLineOf, splitLines, stripComment } from './tree.ts';
 
 const DEVICE_CLASS = /^(\w+)\s*:=\s*class(?:<\w+>)*\s*\(\s*creative_device\s*\)\s*:$/;
-/** name := class<spec>(parent):  or  name := struct: */
-const TYPE_DECL = /^(\w+)\s*:=\s*(class|struct)(?:<(concrete|unique|final|abstract)>)?(?:\((\w+)\))?\s*:$/;
+/** name := class<spec>(parent):  or  name := struct:  (or with {} for one with no members of its own) */
+const TYPE_DECL = /^(\w+)\s*:=\s*(class|struct)(?:<(concrete|unique|final|abstract)>)?(?:\((\w+)\))?\s*(?::|\{\s*\})$/;
 const ENUM_DECL = /^(\w+)\s*:=\s*enum\s*\{\s*([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*\}$/;
 const USING_LINE = /^using\s*\{\s*([^\s{}]+)\s*\}$/;
 
@@ -28,9 +28,6 @@ export function parseVerse(src: string, project: ProjectContext = emptyProject()
   const lines = splitLines(src);
 
   const trailing = countTrailingComments(lines);
-  if (trailing) {
-    b.report.notes.push(`${trailing} comment${trailing > 1 ? 's' : ''} at the end of a code line ${trailing > 1 ? 'were' : 'was'} dropped. Comments on their own line are kept as comment blocks.`);
-  }
   const subscribed = new Set([...src.matchAll(/\.Subscribe\(\s*(\w+)\s*\)/g)].map(m => m[1]));
   const deviceParser = new DeviceParser(b, expr, subscribed);
 
@@ -92,6 +89,9 @@ export function parseVerse(src: string, project: ProjectContext = emptyProject()
       : b.make('verse_using_custom', { PATH: u.path })));
     if (usings) devices[0].inputs!.USINGS = usings;
   }
-  if (b.report.skipped.length) b.report.notes.push('Code outside a creative_device class was left out. Custom classes arrive in Phase 4.');
+  if (b.report.skipped.length) b.report.notes.push('Code outside your devices and your own classes, structs and enums was left out.');
+  // End-of-line comments are kept on their block (its comment bubble); report any that had no block to go on.
+  const lost = trailing - b.notesKept;
+  if (lost > 0) b.report.notes.push(`${lost} comment${lost > 1 ? 's' : ''} at the end of a code line ${lost > 1 ? 'were' : 'was'} dropped. Comments on their own line, or after a line inside a device or class, are kept.`);
   return { ok: true, state: { blocks: { languageVersion: 0, blocks: [...types, ...devices] } }, report: b.report, sourceSpans: b.spans };
 }

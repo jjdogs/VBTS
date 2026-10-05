@@ -9,7 +9,7 @@ import { deviceInfo, parseAction } from '../catalog.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder, NextLink } from './builder.ts';
 import type { ExpressionParser } from './expressions.ts';
-import { lastLineOf, stripComment, type LineNode } from './tree.ts';
+import { lastLineOf, stripComment, trailingComment, type LineNode } from './tree.ts';
 
 /** What statements can refer to: the device's linked devices, containers and functions. */
 export interface StatementContext {
@@ -106,6 +106,7 @@ export class StatementParser {
         if (made) break;
       }
       if (!made) made = this.keepRaw(input);
+      this.b.note('block' in made && typeof made.block === 'object' ? made.block : made as BlockState, trailingComment(node.text));
       if ('block' in made && typeof made.block === 'object') {
         const used = made.usedNext === true ? 1 : made.usedNext || 0;
         this.b.track(made.block, node.line - 1, lastLineOf(nodes[i + used]) - 1);
@@ -335,6 +336,13 @@ export class StatementParser {
         return { block: this.b.make('verse_if_bind', { VAR: m[1] }, { VALUE: { block: value! }, DO: thenPart!, ELSE: otherwise.stack! }), usedNext: otherwise.used };
       }
       return this.b.make('verse_if_bind', { VAR: m[1] }, { VALUE: { block: value! }, DO: thenPart! });
+    },
+
+    // if (condition) {}  — try something that can fail (like TeleportTo[…]) and carry on either way
+    ({ text }) => {
+      const m = text.match(/^if\s*\((.*)\)\s*\{\s*\}$/);
+      if (!m || /^\s*\w+\s*:=/.test(m[1])) return null;
+      return this.b.make('verse_if', null, { COND: { block: this.expr.parse(m[1])! } });
     },
 
     // if (condition): … with an optional else: (or else if) after it

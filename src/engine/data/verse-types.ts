@@ -24,7 +24,7 @@ const TYPE_MODULES: Record<string, string> = {
   fort_character: '/Fortnite.com/Characters',
   fort_playspace: '/Fortnite.com/Playspaces',
   elimination_result: '/Fortnite.com/Game', damage_result: '/Fortnite.com/Game',
-  device_ai_interaction_result: '/Fortnite.com/Devices',
+  device_ai_interaction_result: '/Fortnite.com/Devices', fort_vehicle: '/Fortnite.com/Vehicles',
   vector3: '/UnrealEngine.com/Temporary/SpatialMath', rotation: '/UnrealEngine.com/Temporary/SpatialMath',
   transform: '/UnrealEngine.com/Temporary/SpatialMath',
   widget: '/UnrealEngine.com/Temporary/UI', canvas: '/UnrealEngine.com/Temporary/UI',

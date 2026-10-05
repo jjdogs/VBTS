@@ -7,7 +7,7 @@ import { moduleForType, typeNamesIn } from '../data/verse-types.ts';
 import { nameField } from '../fields.ts';
 import { escapeString, formatFloat, Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { fieldsIn } from '../workspace.ts';
+import { fieldsIn, rawDeclared } from '../workspace.ts';
 import { asStatement, f, Slot, stacksIn } from './shared.ts';
 
 /** Turns what the user typed into a valid Verse literal of the chosen type. */
@@ -23,19 +23,19 @@ export function registerVariableBlocks(): void {
     type: 'verse_field',
     colour: COLORS.vars,
     explain: {
-      title: 'Variable or constant', doc: DOCS.quick, tip: 'Stores a value on the device. "var" can change later with set.',
-      text: 'Verse values are constant by default. Add var to make one you can change with set. Verse is strict about types: 1 is an int, 1.0 is a float, logic is true/false.',
+      title: 'Variable or constant', doc: DOCS.quick, tip: 'Stores a value on the device. "var" can change later with set; "@editable" can be changed in UEFN\'s Details panel.',
+      text: 'Verse values are constant by default. Add var to make one you can change with set. @editable makes a constant you can tune in UEFN without editing code (like a speed or a distance). Verse is strict about types: 1 is an int, 1.0 is a float, logic is true/false.',
     },
     init() {
       this.appendDummyInput()
-        .appendField(new Blockly.FieldDropdown([['var', 'var'], ['constant', 'const']]), 'KIND')
+        .appendField(new Blockly.FieldDropdown([['var', 'var'], ['constant', 'const'], ['@editable', 'editable']]), 'KIND')
         .appendField(nameField('Score'), 'NAME').appendField(':')
         .appendField(new Blockly.FieldDropdown(['int', 'float', 'logic', 'string'].map(t => [t, t])), 'TYPE')
         .appendField('=').appendField(new Blockly.FieldTextInput('0'), 'VALUE');
       stacksIn(this, [Slot.MEMBER, Slot.FUNCTION]);
     },
     generate: (b) =>
-      `${f(b, 'KIND') === 'var' ? 'var ' : ''}${f(b, 'NAME')}:${f(b, 'TYPE')} = ${literal(f(b, 'TYPE'), f(b, 'VALUE'))}\n`,
+      `${f(b, 'KIND') === 'editable' ? '@editable\n' : f(b, 'KIND') === 'var' ? 'var ' : ''}${f(b, 'NAME')}:${f(b, 'TYPE')} = ${literal(f(b, 'TYPE'), f(b, 'VALUE'))}\n`,
   });
 
   defineBlock({
@@ -66,7 +66,9 @@ export function registerVariableBlocks(): void {
     },
     generate(b, g) {
       const name = f(b, 'NAME');
-      const declared = fieldsIn(b.workspace).find(x => x.name === name);
+      // A var written as raw Verse (a type blocks can't show yet) counts too.
+      const raw = rawDeclared(b.workspace, name);
+      const declared = fieldsIn(b.workspace).find(x => x.name === name) ?? (raw && !raw.isFunction ? { mutable: raw.mutable } : undefined);
       if (!declared) g.warn(b, `No variable named ${name}. Add a "var" block under linked devices & variables.`);
       else if (!declared.mutable) g.warn(b, `${name} is a constant. Change it to var so it can be set.`);
       return `set ${name} ${f(b, 'OP')} ${g.valueToCode(b, 'V', Order.NONE) || '0'}\n`;

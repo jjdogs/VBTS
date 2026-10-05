@@ -88,7 +88,7 @@ src/
       lessons.ts        the guided lessons
       templates/        one file per game-mode template
     data/
-      devices.json      117 Creative devices' events and actions (from Epic's docs)
+      devices.json      156 Creative devices' events and actions (from Epic's docs)
       modules.ts        using-modules, doc links, category colors
       verse-types.ts    value types, literals, parameter lists
 tests/                  automated tests + fixtures
@@ -341,5 +341,6 @@ which runs TypeScript directly, so the code uses only "type-strippable" TypeScri
 
 - When a value can't be converted and falls back to raw Verse, part of it can appear twice in
   the conversion report's raw list. Harmless; the generated code is unaffected.
-- Comments at the end of a code line are dropped by the converter (the report says so).
-  Comments on their own line are kept.
+- A comment at the end of a code line is kept on that line's block (its comment bubble) and
+  written back at the end of the line. Only one on a line with no block of its own (like a class's
+  first line) is dropped, and the conversion report says so.

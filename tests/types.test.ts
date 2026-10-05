@@ -7,7 +7,6 @@ import { engine, generateFrom, reconvert } from './helpers.ts';
 
 const PROGRAM = `using { /Fortnite.com/Devices }  # for creative_device, button_device
 using { /Verse.org/Simulation }  # for @editable, agent
-using { /UnrealEngine.com/Temporary/Diagnostics }  # for Print
 
 game_state := enum{Waiting, Playing, Over}
 

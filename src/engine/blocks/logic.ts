@@ -45,6 +45,11 @@ export function registerLogicBlocks(): void {
     generate(b, g) {
       const cond = g.valueToCode(b, 'COND', Order.NONE);
       if (!cond) g.warn(b, 'if needs a condition.');
+      // Nothing inside: written as if (…) {}, Verse's way to try something that can fail and carry on.
+      if (!g.statementToCode(b, 'DO').trim()) {
+        g.warn(b, 'Nothing runs when this succeeds. That\'s fine for trying something that can fail, like TeleportTo[…]; otherwise drag blocks into it.', 'tip');
+        return `if (${cond || 'true?'}) {}\n`;
+      }
       return `if (${cond || 'true?'}):\n${body(g, b, 'DO')}`;
     },
   });

@@ -8,7 +8,7 @@ import { COLORS, DOCS } from '../data/modules.ts';
 import { deviceOptions, looseDropdown, nameField, prime, rerender, type Option } from '../fields.ts';
 import { Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { deviceTypeFor } from '../workspace.ts';
+import { deviceTypeFor, rawDeclared } from '../workspace.ts';
 import { asStatement, checkAgent, f, Slot, stacksIn } from './shared.ts';
 
 /** Shows the "using Agent/Player" picker only for actions that take an agent. */
@@ -99,7 +99,8 @@ export function registerDeviceBlocks(): void {
     generate(b, g) {
       const dev = f(b, 'DEVICE');
       let method = f(b, 'METHOD');
-      if (!deviceTypeFor(b, dev)) g.warn(b, `No @editable device named ${dev}.`);
+      // An @editable written as raw Verse (e.g. inside your own class) counts too.
+      if (!deviceTypeFor(b, dev) && !rawDeclared(b.workspace, dev)?.editable) g.warn(b, `No @editable device named ${dev}.`);
       if (/\(Agent\)/.test(method)) {
         const who = f(b, 'WHO');
         checkAgent(g, b, who);
@@ -157,7 +158,7 @@ export function registerDeviceBlocks(): void {
     generate(b, g) {
       const dev = f(b, 'DEVICE'), sig = f(b, 'ACTION');
       const type = deviceTypeFor(b, dev);
-      if (!type) g.warn(b, `No @editable device named ${dev}.`);
+      if (!type) { if (!rawDeclared(b.workspace, dev)?.editable) g.warn(b, `No @editable device named ${dev}.`); }
       else if (!deviceInfo(type)!.actions.includes(sig)) g.warn(b, `${dev} is a ${type}, which has no action ${sig}. Pick one from the list.`);
       const { name, params } = parseAction(sig);
       const args = params.map((p, i) => {

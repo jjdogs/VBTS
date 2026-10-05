@@ -27,6 +27,14 @@ export function stripComment(text: string): string {
   return text;
 }
 
+/** The comment at the end of a line of code (`set X = 1 # note` → "note"), or null. */
+export function trailingComment(text: string): string | null {
+  if (text.startsWith('#')) return null; // a comment line, not a comment after code
+  const code = stripComment(text);
+  if (code.length === text.length) return null;
+  return text.slice(code.length).trim().replace(/^#\s?/, '');
+}
+
 /** Normalizes line endings and tabs, then splits into lines. */
 export const splitLines = (src: string): string[] =>
   src.replace(/\r/g, '').replace(/\t/g, '    ').split('\n');

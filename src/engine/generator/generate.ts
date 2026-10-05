@@ -68,7 +68,8 @@ export function generate(ws: Workspace, project: ProjectContext = emptyProject()
       continue;
     }
     seen.add(path);
-    if (!g.needs.has(path)) {
+    // Only for modules Verse Blocks knows: code it can't check (raw Verse) may use any other one.
+    if (!g.needs.has(path) && MODULE_PATHS.includes(path)) {
       g.warn(u, `Nothing here uses ${path} yet. Unused using lines are harmless, but you can remove it.`, 'tip', { label: 'Remove it', kind: 'delete' });
     }
     headLines.push(MARK_START + u.id + MARK_COUNT + '1\n' + `using { ${path} }`);

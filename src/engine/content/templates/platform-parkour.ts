@@ -27,7 +27,6 @@ export const platformParkour: Template = {
   ],
   verse: `using { /Fortnite.com/Devices }  # for creative_device, creative_prop, trigger_device
 using { /Verse.org/Simulation }  # for @editable, player, Sleep and 1 more
-using { /UnrealEngine.com/Temporary/Diagnostics }  # for Print
 using { /Fortnite.com/Characters }  # for GetFortCharacter
 using { /UnrealEngine.com/Temporary/SpatialMath }  # for vector3, transform, IdentityRotation
 

@@ -244,7 +244,7 @@ export class ExpressionParser {
     };
     const multiply = (): BlockState => {
       let left = not();
-      while (is('*')) { p++; left = b.make('verse_arith', { OP: '*' }, { A: { block: left }, B: { block: not() } }); }
+      while (is('*') || is('/')) { const op = tokens[p++].text; left = b.make('verse_arith', { OP: op }, { A: { block: left }, B: { block: not() } }); }
       return left;
     };
     const atom = (): BlockState => {

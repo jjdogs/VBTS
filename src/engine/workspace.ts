@@ -67,6 +67,34 @@ export const fieldsIn = (ws: Workspace | null): PlacedField[] => {
   return [...declared, ...locals];
 };
 
+/**
+ * Names declared in raw Verse member lines (types blocks can't show yet), read from the line:
+ * `var Score:int = 0`, `@editable Trigger:trigger_device = …`, `OnJoin(Agent:agent):void = …`.
+ * The checks count them, so code that only exists as raw Verse isn't reported as missing.
+ */
+export interface RawDeclaration { name: string; editable: boolean; mutable: boolean; isFunction: boolean; params: string }
+const RAW_MEMBERS = ['verse_raw_member', 'verse_raw_member_wrap'];
+export function parseRawDeclaration(code: string): RawDeclaration | null {
+  const line = code.split('\n')[0];
+  const m = line.match(/^\s*((?:@\w+\s+)*)(var\s+)?([A-Za-z_]\w*)\s*((?:<\w+>\s*)*)(\(([^)]*)\))?\s*(?:<\w+>\s*)*(?::|=)/);
+  if (!m) return null;
+  return { name: m[3], editable: /@editable\b/.test(m[1]), mutable: !!m[2], isFunction: m[5] !== undefined, params: m[6] ?? '' };
+}
+export const rawDeclarationsIn = (ws: Workspace | null): RawDeclaration[] =>
+  ws ? RAW_MEMBERS.flatMap(t => ws.getBlocksByType(t, false)).filter(b => b.isEnabled())
+    .map(b => parseRawDeclaration(field(b, 'CODE'))).filter((d): d is RawDeclaration => d !== null) : [];
+export const rawDeclared = (ws: Workspace | null, name: string): RawDeclaration | undefined =>
+  rawDeclarationsIn(ws).find(d => d.name === name);
+
+/** Raw Verse blocks that wrap other blocks (the first line is written as typed). */
+const RAW_WRAPS = ['verse_raw_wrap', 'verse_raw_member_wrap'];
+/** A raw wrapper that defines a function: `GetSubscribe<override>()<transacts>:tuple(…) =`. */
+const rawFunctionHeader = (b: Block): string | null => {
+  if (!RAW_WRAPS.includes(b.type)) return null;
+  const head = field(b, 'CODE').split('\n')[0];
+  return parseRawDeclaration(head)?.isFunction ? head : null;
+};
+
 /** @editable device arrays: name → device type. */
 export const deviceArraysIn = (ws: Workspace | null): PlacedDevice[] =>
   ws ? ws.getBlocksByType('verse_editable_array', false).filter(b => b.isEnabled())
@@ -130,14 +158,16 @@ export function inFailureContext(block: Block): boolean {
 export function inDecides(block: Block): boolean {
   for (const e of enclosing(block)) {
     if (e.block.type === 'verse_function') return field(e.block, 'DECIDES') === 'TRUE';
+    const raw = rawFunctionHeader(e.block);
+    if (raw !== null) return /<decides>/.test(raw);
     if (e.block.type === 'verse_handler' || e.block.type === 'verse_device') return false;
   }
   return false;
 }
 
-/** The function block a block sits in, if any. */
+/** The function block a block sits in, if any (a raw Verse function header counts too). */
 export function enclosingFunction(block: Block): Block | null {
-  for (const e of enclosing(block)) if (e.block.type === 'verse_function') return e.block;
+  for (const e of enclosing(block)) if (e.block.type === 'verse_function' || rawFunctionHeader(e.block) !== null) return e.block;
   return null;
 }
 
@@ -163,6 +193,8 @@ export function inSuspends(block: Block): boolean {
     if (e.block.type === 'verse_device') return e.input === 'ONBEGIN';
     if (e.block.type === 'verse_function') return field(e.block, 'SUSPENDS') === 'TRUE';
     if (e.block.type === 'verse_handler') return false;
+    const raw = rawFunctionHeader(e.block);
+    if (raw !== null) return /<suspends>/.test(raw);
   }
   return false;
 }
@@ -209,6 +241,9 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
     if (name === 'Message' && t === 'verse_handler' && field(e.block, 'PARAM') === 'widget') return true;
     // A function input with that name: WatchPlayer(Player:player), AddPoint(Agent:agent, Team:team)
     if (t === 'verse_function' && new RegExp(`(^|,)\\s*${name}\\s*:`).test(field(e.block, 'PARAMS'))) return true;
+    // …or in a raw Verse function header: Signal<override>(Agent:agent):void =
+    const raw = rawFunctionHeader(e.block);
+    if (raw !== null && new RegExp(`(^|,)\\s*${name}\\s*:`).test(parseRawDeclaration(raw)!.params)) return true;
   }
   return false;
 }
