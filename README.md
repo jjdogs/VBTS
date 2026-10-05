@@ -88,7 +88,7 @@ src/
       lessons.ts        the guided lessons
       templates/        one file per game-mode template
     data/
-      devices.json      117 Creative devices' events and actions (from Epic's docs)
+      devices.json      156 Creative devices' events and actions (from Epic's docs)
       modules.ts        using-modules, doc links, category colors
       verse-types.ts    value types, literals, parameter lists
 tests/                  automated tests + fixtures
