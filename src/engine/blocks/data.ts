@@ -9,7 +9,7 @@
  */
 import Blockly from '../blockly.ts';
 import type { Block } from '../blockly.ts';
-import { DEVICE_TYPES } from '../catalog.ts';
+import { DEVICE_TYPES, deviceModule } from '../catalog.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
 import { KEY_TYPES, hasLiteral, literal, moduleForType, splitList, typeNamesIn, VALUE_TYPES } from '../data/verse-types.ts';
 import { nameField } from '../fields.ts';
@@ -85,7 +85,7 @@ export function registerDataBlocks(): void {
     generate(b, g) {
       const type = f(b, 'DTYPE');
       g.need('/Verse.org/Simulation', '@editable');
-      g.need('/Fortnite.com/Devices', type);
+      g.need(deviceModule(type), type);
       return `@editable\n${f(b, 'NAME')}:[]${type} = array{}\n`;
     },
   });

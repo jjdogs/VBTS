@@ -30,9 +30,11 @@ If you change the engine's output on purpose, run `npm run golden` and review th
 - TypeScript must be type-strippable (Node runs the tests directly): no `enum`, no `namespace`.
 - New block: `defineBlock` in `src/engine/blocks/<category>.ts`, list it in `src/engine/toolbox.ts`,
   add a converter rule in `src/engine/parser/` and a round-trip test. See README → *Common changes*.
-- Device data comes from Epic's API digest via `scripts/extract-devices.py` (see its docstring).
-  The same digest (`github.com/LilWikipedia/UEFNVersePocketWiki`) is the reference for Verse
-  API signatures; dev.epicgames.com may be unreachable from sandboxes.
+- Device data comes from Epic's live Verse API reference
+  (https://dev.epicgames.com/documentation/fortnite/verse-api): `scripts/fetch-verse-api.py` writes
+  `scripts/data/verse-api-devices.json`, then `scripts/extract-devices.py` builds `devices.json`.
+  The weekly *Verse API sync* workflow does both and opens a PR into `dev`. Check signatures there;
+  the Verse book (verselang.github.io/book) covers the language itself.
 
 ## Where things are
 

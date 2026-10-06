@@ -5,11 +5,11 @@
 import raw from './data/devices.json' with { type: 'json' };
 import type { DeviceCatalog, DeviceInfo, EventPayload } from './types.ts';
 
-type RawEntry = { e?: Record<string, string>; m?: string[]; a?: string[] };
+type RawEntry = { e?: Record<string, string>; m?: string[]; a?: string[]; u?: string };
 
 export const CATALOG: DeviceCatalog = {};
 for (const [name, entry] of Object.entries(raw as Record<string, RawEntry>)) {
-  CATALOG[name] = { events: (entry.e ?? {}) as Record<string, EventPayload>, methods: entry.m ?? [], actions: entry.a ?? [] };
+  CATALOG[name] = { events: (entry.e ?? {}) as Record<string, EventPayload>, methods: entry.m ?? [], actions: entry.a ?? [], ...(entry.u ? { module: entry.u } : {}) };
 }
 
 // Props you place and link like devices (not in the device digest): creative_prop can be shown,
@@ -28,6 +28,9 @@ export const DEVICE_TYPES: readonly string[] =
   COMMON.concat(Object.keys(CATALOG).filter(d => !COMMON.includes(d)).sort());
 
 export const deviceInfo = (type: string | undefined): DeviceInfo | undefined => (type ? CATALOG[type] : undefined);
+
+/** The using path a device type needs: /Fortnite.com/Devices, or its own (Patchwork devices). */
+export const deviceModule = (type: string): string => CATALOG[type]?.module ?? '/Fortnite.com/Devices';
 
 /** "SetActiveDuration(Time:float, Agent:agent)" → name and inputs. */
 export function parseAction(sig: string): { name: string; params: Array<{ name: string; type: string }> } {

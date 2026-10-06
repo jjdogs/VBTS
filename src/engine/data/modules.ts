@@ -29,6 +29,7 @@ export const COLORS = {
 /** Modules offered in the "using" dropdown, in the order using lines are written. */
 export const MODULES: readonly ModuleInfo[] = [
   { path: '/Fortnite.com/Devices', text: 'Every Creative device (button_device, trigger_device…) and creative_device itself.', unlocks: 'creative_device, *_device' },
+  { path: '/Fortnite.com/Devices/Patchwork', text: 'The Patchwork music devices: speaker_device, drum_player_device, note_sequencer_device…', unlocks: 'speaker_device, *_device (Patchwork)' },
   { path: '/Verse.org/Simulation', text: 'Core game types: agent, player, Sleep, and the @editable attribute.', unlocks: 'agent, player, Sleep, @editable' },
   { path: '/UnrealEngine.com/Temporary/Diagnostics', text: 'Debug tools: log channels (log.Print with a level) and debug_draw. Plain Print needs no using line.', unlocks: 'log, log_channel, debug_draw' },
   { path: '/Fortnite.com/Characters', text: 'fort_character and GetFortCharacter[] for health, damage and healing.', unlocks: 'fort_character, GetFortCharacter' },

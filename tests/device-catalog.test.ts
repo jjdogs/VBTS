@@ -44,8 +44,18 @@ describe('device catalog', () => {
     assert.ok(cat.prop_manipulator_device.methods.includes('ShowProps()'));
   });
 
+  test('devices newer than the 2024 digest are listed (from Epic\'s live reference)', () => {
+    assert.equal(cat.vehicle_spawner_xwing_device.events.SpawnedEvent, 'fort_vehicle');
+    assert.ok(cat.carryable_spawner_device, 'carryable_spawner_device');
+  });
+
+  test("events that send two values aren't offered with the wrong input", () => {
+    assert.ok(!('ReleasedEvent' in cat.input_trigger_device.events), 'sends (agent, float)');
+    assert.ok(!('RespondingButtonEvent' in cat.popup_dialog_device.events), 'sends (agent, int)');
+  });
+
   test("abstract base devices aren't offered (they can't be placed)", () => {
-    for (const d of ['trigger_base_device', 'vehicle_spawner_device', 'powerup_device', 'effect_volume_device'])
+    for (const d of ['trigger_base_device', 'vehicle_spawner_device', 'powerup_device', 'effect_volume_device', 'patchwork_device'])
       assert.ok(!(d in cat), d);
   });
 });
@@ -74,5 +84,29 @@ garage_device := class(creative_device):
     assert.ok(!r.blocks.includes('verse_raw'), 'no raw Verse blocks');
     assert.ok(r.code.includes('OnBoat(Vehicle:fort_vehicle):void ='));
     assert.ok(r.code.includes('using { /Fortnite.com/Vehicles }'));
+  });
+});
+
+describe('device modules', () => {
+  const band = (usings: string) => `${usings}
+using { /Verse.org/Simulation }
+
+band_device := class(creative_device):
+    @editable
+    Speaker : speaker_device = speaker_device{}
+
+    OnBegin<override>()<suspends>:void =
+        Speaker.Enable()
+`;
+
+  test('a Patchwork device needs its own using line', () => {
+    const r = convert(band('using { /Fortnite.com/Devices }'));
+    assert.ok(r.errors.some(e => e.includes('using { /Fortnite.com/Devices/Patchwork }')), r.errors.join('\n'));
+  });
+
+  test('with it, there is nothing to fix', () => {
+    const r = convert(band('using { /Fortnite.com/Devices }\nusing { /Fortnite.com/Devices/Patchwork }'));
+    assert.deepEqual(r.errors, []);
+    assert.ok(!r.blocks.includes('verse_raw'), 'no raw Verse blocks');
   });
 });
