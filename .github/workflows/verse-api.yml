@@ -72,7 +72,7 @@ jobs:
             echo
             echo "## What changed"
             echo
-            echo "Check new events' types: Epic's reference doesn't show them, so they are read from the event's description."
+            echo "Event types come from the API digest in scripts/data/digest/. Events it doesn't have yet are typed from their description: check those (or copy in a newer Fortnite.digest.verse)."
             echo
             echo '```'
             cat report.txt

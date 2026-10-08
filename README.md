@@ -30,9 +30,11 @@ Before sharing changes: `npm run check && npm test && npm run build`.
 
 **Keeping up with Verse.** Every Monday the *Verse API sync* workflow (`.github/workflows/verse-api.yml`)
 runs both scripts. When Epic's reference changed, it opens a pull request into `dev` listing new
-devices, actions and events. Epic's reference doesn't show what an event sends, so new events' types
-are read from their description: check those before merging. You can also run it by hand from the
-Actions tab.
+devices, actions and events. Epic's reference doesn't show what an event sends, so event types come
+from Epic's API digest in `scripts/data/digest/` (copied from a UEFN project; currently Fortnite 42.30).
+Events newer than the digest have their type read from their description, and the pull request says
+so: check those, and copy in a newer `Fortnite.digest.verse` after big Fortnite updates. You can also
+run it by hand from the Actions tab.
 
 ## Publishing
 
@@ -95,7 +97,7 @@ src/
       lessons.ts        the guided lessons
       templates/        one file per game-mode template
     data/
-      devices.json      197 Creative devices' events and actions (from Epic's docs)
+      devices.json      203 Creative devices' events and actions (from Epic's docs)
       modules.ts        using-modules, doc links, category colors
       verse-types.ts    value types, literals, parameter lists
 tests/                  automated tests + fixtures

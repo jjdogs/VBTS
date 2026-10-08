@@ -13,10 +13,10 @@ After Phase 5, a learner can build the kinds of game modes UEFN creators actuall
 Everything stays in the Verse Blocks style: each block writes real Verse, each has a Learn
 explanation, text converts back into blocks, and mistakes get a plain-English warning.
 
-The API names below come from Epic's Verse API digest (the mirror that
-`scripts/extract-devices.py` already uses). Module paths are the ones in that digest; recheck
-them against UEFN when building, because Epic moves modules between versions. For example,
-SpatialMath may move from `/UnrealEngine.com/Temporary/SpatialMath` to `/Verse.org/SpatialMath`.
+The API names below come from Epic's Verse API digest. The current digests (Fortnite 42.30) are in
+`scripts/data/digest/`: `Fortnite.digest.verse`, `UnrealEngine.digest.verse` (SpatialMath:
+`vector3`, `rotation`, `transform`) and `Verse.digest.verse`. Check names and module paths there
+when building, because Epic moves modules between versions.
 
 ## What's missing today (and blocks all three areas)
 

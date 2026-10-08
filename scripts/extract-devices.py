@@ -14,18 +14,21 @@ For each Creative device it keeps:
 Failable (<decides>) and <suspends> actions are skipped, and so are abstract base devices
 (they can't be placed).
 
-The reference shows every event's type as "listenable(payload)", so what an event sends is kept
-from the current devices.json, or read from the event's description for new events. New events
-and anything else worth checking are printed, so a person can review them.
+The reference shows every event's type as "listenable(payload)", so what an event sends comes from
+Epic's API digest (scripts/data/digest/Fortnite.digest.verse, copied from a UEFN project). Events
+newer than the digest keep their type from the current devices.json, or have it read from their
+description. New events and anything else worth checking are printed, so a person can review them.
 """
 import json, re, sys
 
 SNAPSHOT = sys.argv[1] if len(sys.argv) > 1 else 'scripts/data/verse-api-devices.json'
 OUT = 'src/engine/data/devices.json'
+DIGEST = 'scripts/data/digest/Fortnite.digest.verse'
+HANDLERS = 'src/engine/data/handlers.ts'
 DEFAULT_MODULE = '/Fortnite.com/Devices'
 
-# Base classes you can't place. The reference doesn't mark a class abstract, so these are
-# known ones (from Epic's API digest) plus any device whose description starts "Base class".
+# Base classes you can't place. The reference doesn't mark a class abstract, so these are the ones
+# the digest marks <abstract> (these, when it was read), plus any device whose description starts "Base class".
 ABSTRACT = {
     'base_item_spawner_device', 'effect_volume_device', 'gameplay_camera_device', 'gameplay_controls_device',
     'physics_object_base_device', 'powerup_device', 'prop_spawner_base_device', 'storm_controller_device',
@@ -50,6 +53,42 @@ SENDS = [
 ]
 
 
+def read_digest(path: str) -> dict:
+    """Every class in the digest: {name: {abstract, parents, events: {name: payload}}}."""
+    classes, open_classes = {}, []  # open_classes: (indent, name) of the classes the line is inside
+    for line in open(path, encoding='utf-8'):
+        code = line.strip()
+        if not code or code.startswith(('#', '@', '<#')):
+            continue
+        indent = len(line) - len(line.lstrip(' '))
+        while open_classes and indent <= open_classes[-1][0]:
+            open_classes.pop()
+        # trigger_device<public> := class<concrete><final>(trigger_base_device):
+        m = re.match(r'(?:\([^)]*:\))?(\w+)(?:<\w+>)* := class((?:<\w+>)*)(?:\(([^)]*)\))?:', code)
+        if m:
+            parents = [p.strip().rsplit(':)', 1)[-1] for p in (m.group(3) or '').split(',') if p.strip()]
+            classes[m.group(1)] = {'abstract': '<abstract>' in m.group(2), 'parents': parents, 'events': {}}
+            open_classes.append((indent, m.group(1)))
+            continue
+        # TriggeredEvent<public>:listenable(?agent) = external {}
+        m = re.match(r'(\w+)(?:<\w+>)*:listenable\((.*)\) = external', code)
+        if m and open_classes:
+            classes[open_classes[-1][1]]['events'][m.group(1)] = m.group(2)
+    return classes
+
+
+def digest_events(name: str) -> dict:
+    """A class's events and their payloads, inherited ones included."""
+    info = digest.get(name)
+    if not info:
+        return {}
+    events = {}
+    for parent in info['parents']:
+        events.update(digest_events(parent))
+    events.update(info['events'])
+    return events
+
+
 def described(doc: str):
     """The type an event's description says it sends, or None if it isn't clear."""
     doc = re.sub(r"[`']", ' ', doc)
@@ -62,6 +101,14 @@ try:
 except FileNotFoundError:
     previous = {}
 review = []
+try:
+    digest = read_digest(DIGEST)
+except FileNotFoundError:
+    digest = {}
+    review.append(f'{DIGEST} not found: event types are read from descriptions')
+ABSTRACT |= {name for name, info in digest.items() if info['abstract'] and name.endswith('_device')}
+# The types a handler block can receive ('agent', '?agent', 'player'…); 'none' is nothing.
+RECEIVABLE = set(re.findall(r"type: '([^']+)'", open(HANDLERS, encoding='utf-8').read())) | {'none'}
 # Inherited events have the same name and description on every device that has them, so a known
 # type carries over (every vehicle spawner's DestroyedEvent: "Signaled when a vehicle is destroyed.").
 same_event: dict = {}
@@ -73,8 +120,20 @@ for _device, _entry in previous.items():
 
 
 def sends(device: str, event: str, doc: str) -> str:
-    guess = described(doc)
     known = previous.get(device, {}).get('e', {}).get(event)
+    payload = digest_events(device).get(event)
+    if payload is not None:
+        t = 'none' if payload == 'tuple()' else payload
+        if t not in RECEIVABLE:
+            if known:
+                review.append(f'{device}.{event}: sends {payload} (from the digest), blocks can\'t receive it yet, left out')
+            return ''
+        if known and known != t:
+            review.append(f'{device}.{event}: sends {t} (from the digest), was {known}')
+        return t
+    if digest:
+        review.append(f'{device}.{event}: not in the digest (send a newer one), type from its description')
+    guess = described(doc)
     if known and guess != '':
         return known
     inherited = same_event.get((event, doc), set())
@@ -124,7 +183,8 @@ for name, info in snapshot.items():
             if all(re.fullmatch(SIMPLE_PARAM, p) for p in params):
                 with_inputs.append(f"{fn}({', '.join(params)})")
     old = previous.get(name, {})
-    if events or methods or with_inputs:
+    # A device stays listed once it is (saved projects may use it), even if nothing is left to offer.
+    if events or methods or with_inputs or name in previous:
         entry = {'e': {k: events[k] for k in keep_order(list(old.get('e', {})), list(events))},
                  'm': keep_order(old.get('m', []), list(dict.fromkeys(methods)))}
         actions = keep_order(old.get('a', []), list(dict.fromkeys(with_inputs)))
@@ -135,6 +195,10 @@ for name, info in snapshot.items():
         catalog[name] = entry
 
 # Report what changed, so the pull request says it.
+if digest:
+    newer = sorted(name for name in snapshot if name not in digest)
+    if newer:
+        review.append(f'not in the digest (send a newer one): {", ".join(newer)}')
 for name in sorted(set(previous) | set(catalog)):
     if name in base_classes and name in previous:
         review.append(f'{name}: left out, it is a base class ("{snapshot[name]["doc"]}")')
@@ -144,7 +208,8 @@ for name in sorted(set(previous) | set(catalog)):
         review.append(f'{name}: new device')
     else:
         for key, label in (('m', 'action'), ('a', 'action'), ('e', 'event')):
-            gone = [x for x in previous[name].get(key, []) if x not in catalog[name].get(key, [])]
+            gone = [x for x in previous[name].get(key, []) if x not in catalog[name].get(key, [])
+                    and not (key == 'e' and x in snapshot[name]['events'])]  # left out above, with the reason
             if gone:
                 review.append(f'{name}: {label}s no longer in the reference: {", ".join(gone)}')
 

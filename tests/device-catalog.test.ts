@@ -54,6 +54,19 @@ describe('device catalog', () => {
     assert.ok(!('RespondingButtonEvent' in cat.popup_dialog_device.events), 'sends (agent, int)');
   });
 
+  test("events send what Epic's API digest declares", () => {
+    assert.equal(cat.channel_device.events.ReceivedTransmitEvent, '?agent', 'was: nothing');
+    assert.equal(cat.hud_message_device.events.ShowMessageEvent, 'agent', 'was: ?agent');
+    assert.equal(cat.bank_vault_device.events.OpenEvent, '?agent', 'was: agent');
+    assert.equal(cat.conversation_device.events.CancelEvent, 'agent', 'was: nothing');
+    assert.equal(cat.disguise_device.events.ApplyDisguiseEvent, 'player');
+    assert.ok(!('OnConversationEvent' in cat.conversation_device.events), 'sends (agent, int)');
+  });
+
+  test('a device stays listed when nothing is left to offer (saved projects may use it)', () => {
+    assert.ok(cat.stat_creator_device);
+  });
+
   test("abstract base devices aren't offered (they can't be placed)", () => {
     for (const d of ['trigger_base_device', 'vehicle_spawner_device', 'powerup_device', 'effect_volume_device', 'patchwork_device'])
       assert.ok(!(d in cat), d);
