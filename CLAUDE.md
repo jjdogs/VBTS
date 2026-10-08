@@ -32,9 +32,11 @@ If you change the engine's output on purpose, run `npm run golden` and review th
   add a converter rule in `src/engine/parser/` and a round-trip test. See README → *Common changes*.
 - Device data comes from Epic's live Verse API reference
   (https://dev.epicgames.com/documentation/fortnite/verse-api): `scripts/fetch-verse-api.py` writes
-  `scripts/data/verse-api-devices.json`, then `scripts/extract-devices.py` builds `devices.json`.
+  `scripts/data/verse-api-devices.json`, then `scripts/extract-devices.py` builds `devices.json`, taking
+  event types from the API digests in `scripts/data/digest/` (the owner copies them from UEFN).
   The weekly *Verse API sync* workflow does both and opens a PR into `dev`. Check signatures there;
-  the Verse book (verselang.github.io/book) covers the language itself.
+  the digests have every signature (`UnrealEngine.digest.verse` for SpatialMath); the Verse book
+  (verselang.github.io/book) covers the language itself.
 
 ## Where things are
 
