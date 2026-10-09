@@ -99,4 +99,4 @@ Left as-is during the TypeScript move, to be fixed deliberately later:
   back at the end of the line. Only one on a line with no block of its own (like a class's first
   line) is dropped, and the conversion report says so.
 - The Sleep block takes a typed number, so `Sleep(GetRandomFloat(1.0, 3.0))` stays raw Verse (it
-  still works).
+  still works). Planned in [Roadmap → 8](roadmap.md#8-waiting-for-things-small-to-medium).

@@ -41,7 +41,7 @@ Before sharing changes: `npm run check && npm test && npm run build`.
 | [Development](docs/development.md) | Commands, how the code is organised, adding blocks, lessons and templates, tests |
 | [Verse API data](docs/verse-api.md) | Where device data comes from, Epic's API digests, the weekly Verse API sync |
 | [Releasing](docs/releasing.md) | Branches, CI, publishing to GitHub Pages, the preview |
-| [Roadmap](docs/roadmap.md) | What's done and what's next ([Phase 5 plan](docs/plans/phase-5.md)) |
+| [Roadmap](docs/roadmap.md) | Where it stands and what's next: lessons for the newest blocks, waiting for events, saving progress, props, more UI |
 
 The one rule for the code: **`src/engine` never touches the page**, and the UI only uses what
 `src/engine/index.ts` exports. See [Development](docs/development.md).
