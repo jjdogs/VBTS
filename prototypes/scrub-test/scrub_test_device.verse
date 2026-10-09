@@ -1,5 +1,6 @@
 # Scrub test: a camera looks at the dish; holding left click turns the sponge into a cursor.
-# Move the mouse while holding and the sponge moves across the dish (up = away from you).
+# Move the mouse while holding and the sponge moves across the dish (up = away from you), and the
+# camera drifts a little with it, like your head following your hand.
 # Rub the sponge over a grime spot to clean it; when every spot is gone, the dish is clean.
 # Setup and what to look for: README.md next to this file.
 
@@ -21,6 +22,12 @@ scrub_test_device := class(creative_device):
     Camera:gameplay_camera_fixed_point_device = gameplay_camera_fixed_point_device{}
     @editable
     UseCamera:logic = true
+    # How far the camera drifts with the sponge (0.2 = a fifth of the sponge's movement, 0.0 = still)
+    @editable
+    CameraFollow:float = 0.2
+    # How softly the camera catches up (0.05 = slow and floaty, 0.5 = snappy)
+    @editable
+    CameraSmoothing:float = 0.15
 
     # The dish: the sponge stays on it
     @editable
@@ -64,6 +71,15 @@ scrub_test_device := class(creative_device):
     var Rubbed:[]float = array{}
     var SpotsLeft:int = 0
     var SpongeWarned:logic = false
+    # Where the camera started, and how far it has drifted from there
+    var CameraHome:vector3 = vector3{}
+    var CameraTurn:rotation = IdentityRotation()
+    var CameraDriftX:float = 0.0
+    var CameraDriftY:float = 0.0
+    var CameraWarned:logic = false
+    # Where the sponge started (the camera drifts relative to this)
+    var SpongeStartX:float = 0.0
+    var SpongeStartY:float = 0.0
 
     OnBegin<override>()<suspends>:void =
         DishSpot := Dish.GetTransform().Translation
@@ -71,6 +87,10 @@ scrub_test_device := class(creative_device):
         set SpongeX = SpongeSpot.X - DishSpot.X
         set SpongeY = SpongeSpot.Y - DishSpot.Y
         set SpongeLift = SpongeSpot.Z - DishSpot.Z
+        set SpongeStartX = SpongeX
+        set SpongeStartY = SpongeY
+        set CameraHome = Camera.GetTransform().Translation
+        set CameraTurn = Camera.GetTransform().Rotation
         set Rubbed = for (Grime : GrimeLayers):
             0.0
         set SpotsLeft = GrimeLayers.Length
@@ -144,6 +164,8 @@ scrub_test_device := class(creative_device):
                     set Frames += 1
                     if (ShowDebug?, Mod[Frames, 30] = 0):
                         Print("view turned {Moved / Sensitivity}°  sponge at ({SpongeX}, {SpongeY})  spots left {SpotsLeft}")
+                if (UseCamera?):
+                    DriftCamera()
                 set LastYaw = Yaw
                 set LastPitch = Pitch
                 set HasLast = true
@@ -164,6 +186,16 @@ scrub_test_device := class(creative_device):
         else if (not SpongeWarned?):
             set SpongeWarned = true
             Print("SPONGE: can't move there. Raise the sponge a little above the dish.", ?Duration := 8.0)
+
+    # Eases the camera towards a point a little way along the sponge's movement
+    DriftCamera():void =
+        set CameraDriftX += ((SpongeX - SpongeStartX) * CameraFollow - CameraDriftX) * CameraSmoothing
+        set CameraDriftY += ((SpongeY - SpongeStartY) * CameraFollow - CameraDriftY) * CameraSmoothing
+        Target := vector3{X := CameraHome.X + CameraDriftX, Y := CameraHome.Y + CameraDriftY, Z := CameraHome.Z}
+        if (not Camera.TeleportTo[Target, CameraTurn]):
+            if (not CameraWarned?):
+                set CameraWarned = true
+                Print("CAMERA: can't move. Make sure nothing is right next to it.", ?Duration := 8.0)
 
     # Rubs every grime spot the sponge is over; a spot rubbed enough disappears
     RubGrime(Moved:float):void =

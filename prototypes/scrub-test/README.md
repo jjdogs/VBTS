@@ -2,7 +2,8 @@
 
 A UEFN test for the Pizza path's dish-washing minigame. A fixed camera looks at the dish; while the
 player holds left click, the sponge follows the mouse across the dish like a cursor (mouse up moves
-it up the dish, mouse right moves it right). Rubbing the sponge over a grime spot cleans it. Everything
+it up the dish, mouse right moves it right), and the camera drifts a little with the sponge, like
+your head following your hand. Rubbing the sponge over a grime spot cleans it. Everything
 it uses is in the Fortnite 42.30 digests, and none of it is experimental.
 
 **How it works.** Verse can't attach a prop to the player's hand or read the mouse directly, but it
@@ -41,7 +42,8 @@ camera wasn't tested properly yet; this version needs it.
 | 2. Sponge moves | Holding left click and moving the mouse: does the sponge move? The debug line shows `view turned …°`: is it above 0 while you move? |
 | 3. Directions | Does mouse up move the sponge away from you, and mouse right move it right? If not, tick **InvertUpDown** / **InvertLeftRight**. |
 | 4. Cleaning | Rub over a grime spot: does it disappear after a while? Does "Sparkling clean!" appear at the end? |
-| 5. Feel | Try **Sensitivity** (1 to 6) and **RubNeeded** (50 to 300). Too fast, too slow, too much rubbing? |
+| 5. Camera drift | Does the camera ease along with the sponge and settle back? Try **CameraFollow** (0.1 to 0.4) and **CameraSmoothing** (0.05 to 0.5). Set CameraFollow to 0.0 to compare with a still camera. |
+| 6. Feel | Try **Sensitivity** (1 to 6) and **RubNeeded** (50 to 300). Too fast, too slow, too much rubbing? |
 
 If the view switches to the camera but `view turned` stays at 0, the fixed camera stops the mouse
 from turning the view. Then untick **UseCamera** and try again: the sponge then follows your own
