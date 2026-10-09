@@ -1,6 +1,6 @@
-# Scrub test: does "scrub the dish in circles" work and feel good in UEFN?
-# Stand in the sink zone, hold left click (fire) and move the mouse in circles.
-# Every full circle counts; every few circles one grime layer on the dish disappears.
+# Scrub test: a camera looks at the dish; holding left click turns the sponge into a cursor.
+# Move the mouse while holding and the sponge moves across the dish (up = away from you).
+# Rub the sponge over a grime spot to clean it; when every spot is gone, the dish is clean.
 # Setup and what to look for: README.md next to this file.
 
 using { /Fortnite.com/Devices }
@@ -12,53 +12,68 @@ using { /UnrealEngine.com/Temporary/SpatialMath }
 
 scrub_test_device := class(creative_device):
 
-    # Where the player stands to wash (a Mutator Zone around the sink)
+    # Where the player stands to wash (a Mutator Zone in front of the sink)
     @editable
     SinkZone:mutator_zone_device = mutator_zone_device{}
 
-    # Optional: a fixed camera looking at the dish (turn on UseCamera to try it)
+    # A fixed camera looking at the dish. Turn UseCamera off to use the player's own view.
     @editable
     Camera:gameplay_camera_fixed_point_device = gameplay_camera_fixed_point_device{}
     @editable
-    UseCamera:logic = false
+    UseCamera:logic = true
 
-    # The dish: the sponge circles around its centre
+    # The dish: the sponge stays on it
     @editable
     Dish:creative_prop = creative_prop{}
-    # The sponge: it moves around the dish while you scrub
+    # The sponge: place it just above the dish (not touching it)
     @editable
     Sponge:creative_prop = creative_prop{}
-    # Grime props on the dish (thin, dirty-looking pieces). One disappears per stage.
+    # Grime spots on the dish. Rub the sponge over each one to clean it.
     @editable
     GrimeLayers:[]creative_prop = array{}
 
-    # Only scrub while holding fire (left click). Turn off if holding isn't detected.
+    # How far the sponge moves (cm) for each degree the mouse turns the view
     @editable
-    RequireHold:logic = true
-    # Full circles needed to clean one grime layer
+    Sensitivity:float = 3.0
+    # How far from the dish's centre the sponge can go (cm)
     @editable
-    CirclesPerLayer:int = 3
-    # How far the view must turn (degrees) in one tick to count as moving
+    DishRadius:float = 40.0
+    # How close (cm) the sponge must be to a grime spot to rub it
     @editable
-    MinSpeed:float = 0.4
-    # How far the sponge sits from the dish's centre (cm)
+    RubReach:float = 15.0
+    # How much rubbing (cm of sponge movement) cleans one spot
     @editable
-    SpongeRadius:float = 20.0
-    # Show numbers on screen while testing
+    RubNeeded:float = 150.0
+    # Flip the directions if the sponge moves the wrong way
+    @editable
+    InvertUpDown:logic = false
+    @editable
+    InvertLeftRight:logic = false
+    # Show what's happening on screen while testing
     @editable
     ShowDebug:logic = true
 
     var Inside:logic = false
     var Holding:logic = false
     var Subscribed:logic = false
-    var Circles:int = 0
-    var LayersCleaned:int = 0
-    # How far above the dish the sponge was placed (kept while it moves)
+    # Where the sponge is, relative to the dish's centre, and how high above it
+    var SpongeX:float = 0.0
+    var SpongeY:float = 0.0
     var SpongeLift:float = 0.0
+    # How much each grime spot has been rubbed (-1.0 once it's clean)
+    var Rubbed:[]float = array{}
+    var SpotsLeft:int = 0
     var SpongeWarned:logic = false
 
     OnBegin<override>()<suspends>:void =
-        set SpongeLift = Sponge.GetTransform().Translation.Z - Dish.GetTransform().Translation.Z
+        DishSpot := Dish.GetTransform().Translation
+        SpongeSpot := Sponge.GetTransform().Translation
+        set SpongeX = SpongeSpot.X - DishSpot.X
+        set SpongeY = SpongeSpot.Y - DishSpot.Y
+        set SpongeLift = SpongeSpot.Z - DishSpot.Z
+        set Rubbed = for (Grime : GrimeLayers):
+            0.0
+        set SpotsLeft = GrimeLayers.Length
         SinkZone.AgentEntersEvent.Subscribe(OnEnterSink)
         SinkZone.AgentExitsEvent.Subscribe(OnExitSink)
 
@@ -68,7 +83,7 @@ scrub_test_device := class(creative_device):
             Camera.AddTo(Agent)
         ListenForFire(Agent)
         spawn{ScrubLoop(Agent)}
-        Print("At the sink: hold left click and move the mouse in circles")
+        Print("At the sink: hold left click and move the mouse to move the sponge")
 
     OnExitSink(Agent:agent):void =
         set Inside = false
@@ -87,102 +102,87 @@ scrub_test_device := class(creative_device):
 
     OnFirePressed(Player:player, Value:logic):void =
         set Holding = true
-        if (ShowDebug?):
-            Print("Fire held")
 
     OnFireReleased(Player:player, HeldFor:float):void =
         set Holding = false
-        if (ShowDebug?):
-            Print("Fire released after {HeldFor} s")
 
-    # Reads where the player looks 20 times a second. Moving the mouse in a circle makes the
-    # direction of that movement turn all the way round; each full turn is one scrub.
+    # Every frame: how far did the view turn? While holding, move the sponge that much.
     ScrubLoop(Agent:agent)<suspends>:void =
+        # "Up" and "right" on the screen, as directions across the dish: from the camera's
+        # direction, or the player's own view when there's no camera
+        var FacingYaw:float = 0.0
+        if (UseCamera?, CameraAngles := Camera.GetTransform().Rotation.GetYawPitchRollDegrees(), CameraYaw := CameraAngles[0]):
+            set FacingYaw = CameraYaw
+        else if (FortChar := Agent.GetFortCharacter[], ViewAngles := FortChar.GetViewRotation().GetYawPitchRollDegrees(), ViewYaw := ViewAngles[0]):
+            set FacingYaw = ViewYaw
+        Radians := FacingYaw * PiFloat / 180.0
+        UpX := Cos(Radians)
+        UpY := Sin(Radians)
+        RightX := 0.0 - Sin(Radians)
+        RightY := Cos(Radians)
+
         var LastYaw:float = 0.0
         var LastPitch:float = 0.0
         var HasLast:logic = false
-        var LastDirection:float = 0.0
-        var HasDirection:logic = false
-        var Turned:float = 0.0
-        var SlowTicks:int = 0
-        var Ticks:int = 0
+        var Frames:int = 0
         loop:
-            Sleep(0.05)
+            Sleep(0.0)
             if (not Inside?):
                 break
-            if (FortChar := Agent.GetFortCharacter[]):
-                Angles := FortChar.GetViewRotation().GetYawPitchRollDegrees()
-                if (Yaw := Angles[0], Pitch := Angles[1]):
-                    if (HasLast?):
-                        DYaw := WrapDegrees(Yaw - LastYaw)
-                        DPitch := Pitch - LastPitch
-                        Speed := Sqrt(DYaw * DYaw + DPitch * DPitch)
-                        if (Speed > MinSpeed, (not RequireHold? or Holding?)):
-                            set SlowTicks = 0
-                            Direction := ArcTan(DPitch, DYaw)
-                            if (HasDirection?):
-                                set Turned += WrapRadians(Direction - LastDirection)
-                            set LastDirection = Direction
-                            set HasDirection = true
-                            MoveSponge(Direction)
-                            if (AbsF(Turned) >= 2.0 * PiFloat):
-                                set Turned = 0.0
-                                CircleDone()
-                        else:
-                            # Stopped (or let go) for a moment: start the circle again
-                            set SlowTicks += 1
-                            if (SlowTicks > 4):
-                                set HasDirection = false
-                                set Turned = 0.0
-                        set Ticks += 1
-                        if (ShowDebug?, Mod[Ticks, 10] = 0):
-                            Print("speed {Speed}  circle {Turned * 100.0 / (2.0 * PiFloat)}%")
-                    set LastYaw = Yaw
-                    set LastPitch = Pitch
-                    set HasLast = true
+            if (FortChar := Agent.GetFortCharacter[], Angles := FortChar.GetViewRotation().GetYawPitchRollDegrees(), Yaw := Angles[0], Pitch := Angles[1]):
+                if (HasLast?, Holding?):
+                    var Across:float = WrapDegrees(Yaw - LastYaw) * Sensitivity
+                    var Along:float = (Pitch - LastPitch) * Sensitivity
+                    if (InvertLeftRight?):
+                        set Across = 0.0 - Across
+                    if (InvertUpDown?):
+                        set Along = 0.0 - Along
+                    Moved := Sqrt(Across * Across + Along * Along)
+                    if (Moved > 0.0):
+                        MoveSponge(SpongeX + RightX * Across + UpX * Along, SpongeY + RightY * Across + UpY * Along)
+                        RubGrime(Moved)
+                    set Frames += 1
+                    if (ShowDebug?, Mod[Frames, 30] = 0):
+                        Print("view turned {Moved / Sensitivity}°  sponge at ({SpongeX}, {SpongeY})  spots left {SpotsLeft}")
+                set LastYaw = Yaw
+                set LastPitch = Pitch
+                set HasLast = true
 
-    CircleDone():void =
-        set Circles += 1
-        if (ShowDebug?):
-            Print("Circle {Circles}")
-        if (Mod[Circles, CirclesPerLayer] = 0, Layer := GrimeLayers[LayersCleaned]):
-            Layer.Hide()
-            set LayersCleaned += 1
-            if (LayersCleaned = GrimeLayers.Length):
-                Print("Sparkling clean!")
-            else:
-                Print("Cleaner... {GrimeLayers.Length - LayersCleaned} to go")
+    # Moves the sponge to (X, Y) from the dish's centre, kept inside the dish
+    MoveSponge(X:float, Y:float):void =
+        var NewX:float = X
+        var NewY:float = Y
+        FromCentre := Sqrt(X * X + Y * Y)
+        if (FromCentre > DishRadius):
+            set NewX = X * DishRadius / FromCentre
+            set NewY = Y * DishRadius / FromCentre
+        DishSpot := Dish.GetTransform().Translation
+        Target := vector3{X := DishSpot.X + NewX, Y := DishSpot.Y + NewY, Z := DishSpot.Z + SpongeLift}
+        if (Sponge.TeleportTo[Target, Sponge.GetTransform().Rotation]):
+            set SpongeX = NewX
+            set SpongeY = NewY
+        else if (not SpongeWarned?):
+            set SpongeWarned = true
+            Print("SPONGE: can't move there. Raise the sponge a little above the dish.", ?Duration := 8.0)
 
-    # Puts the sponge on the dish, on the side the mouse is moving towards
-    MoveSponge(Direction:float):void =
-        Center := Dish.GetTransform().Translation
-        # Same height above the dish as where you placed the sponge (so it doesn't end up inside it)
-        Offset := vector3{X := Cos(Direction) * SpongeRadius, Y := Sin(Direction) * SpongeRadius, Z := SpongeLift}
-        if (not Sponge.TeleportTo[Center + Offset, Sponge.GetTransform().Rotation]):
-            if (not SpongeWarned?):
-                set SpongeWarned = true
-                Print("SPONGE: can't move there. Raise the sponge a little above the dish, or lower SpongeRadius.", ?Duration := 8.0)
+    # Rubs every grime spot the sponge is over; a spot rubbed enough disappears
+    RubGrime(Moved:float):void =
+        SpongeSpot := Sponge.GetTransform().Translation
+        for (Index -> Grime : GrimeLayers):
+            if (Old := Rubbed[Index], Old >= 0.0, DistanceXY(SpongeSpot, Grime.GetTransform().Translation) <= RubReach, set Rubbed[Index] = Old + Moved):
+                if (Old + Moved >= RubNeeded, set Rubbed[Index] = -1.0):
+                    Grime.Hide()
+                    set SpotsLeft -= 1
+                    if (SpotsLeft = 0):
+                        Print("Sparkling clean!")
+                    else:
+                        Print("Spot clean! {SpotsLeft} to go")
 
-    # Turning from 179° to -179° is a 2° turn, not 358°.
-    # <transacts>: these can be used inside an if ( ) condition.
+    # Turning from 179° to -179° is a 2° turn, not 358°
     WrapDegrees(D:float)<transacts>:float =
         var Result:float = D
         if (D > 180.0):
             set Result = D - 360.0
         if (D < -180.0):
             set Result = D + 360.0
-        Result
-
-    WrapRadians(R:float)<transacts>:float =
-        var Result:float = R
-        if (R > PiFloat):
-            set Result = R - 2.0 * PiFloat
-        if (R < -PiFloat):
-            set Result = R + 2.0 * PiFloat
-        Result
-
-    AbsF(X:float)<transacts>:float =
-        var Result:float = X
-        if (X < 0.0):
-            set Result = 0.0 - X
         Result
