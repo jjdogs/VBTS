@@ -157,8 +157,9 @@ scrub_test_device := class(creative_device):
             if (ShowDebug?):
                 Print("The sponge couldn't move there")
 
-    # Turning from 179° to -179° is a 2° turn, not 358°
-    WrapDegrees(D:float):float =
+    # Turning from 179° to -179° is a 2° turn, not 358°.
+    # <transacts>: these can be used inside an if ( ) condition.
+    WrapDegrees(D:float)<transacts>:float =
         var Result:float = D
         if (D > 180.0):
             set Result = D - 360.0
@@ -166,7 +167,7 @@ scrub_test_device := class(creative_device):
             set Result = D + 360.0
         Result
 
-    WrapRadians(R:float):float =
+    WrapRadians(R:float)<transacts>:float =
         var Result:float = R
         if (R > PiFloat):
             set Result = R - 2.0 * PiFloat
@@ -174,7 +175,7 @@ scrub_test_device := class(creative_device):
             set Result = R + 2.0 * PiFloat
         Result
 
-    AbsF(X:float):float =
+    AbsF(X:float)<transacts>:float =
         var Result:float = X
         if (X < 0.0):
             set Result = 0.0 - X
