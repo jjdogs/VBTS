@@ -91,6 +91,7 @@ src/
       teams.ts             the team collection's questions
       ui.ts                canvas position presets
 tests/                     automated tests; fixtures/ holds golden.json and sample .verse files
+prototypes/                Verse to try in UEFN before building blocks or lessons on it (scrub-test/)
 scripts/
   fetch-verse-api.py       reads Epic's Verse API reference (npm run api)
   extract-devices.py       builds devices.json (npm run devices)
