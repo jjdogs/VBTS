@@ -5,7 +5,7 @@
 import Blockly from '../blockly.ts';
 import type { Block } from '../blockly.ts';
 import { deviceInfo } from '../catalog.ts';
-import { handlerParamFor, handlerSignature, HANDLER_INPUTS, VALUE_EVENTS } from '../data/handlers.ts';
+import { handlerInputs, handlerParamFor, handlerSignature, HANDLER_INPUTS, payloadCount, VALUE_EVENTS } from '../data/handlers.ts';
 import { COLORS, DOCS } from '../data/modules.ts';
 import { moduleForType } from '../data/verse-types.ts';
 import { deviceOptions, looseDropdown, nameField, prime, type Option } from '../fields.ts';
@@ -28,7 +28,8 @@ function checkHandler(g: VerseGenerator, b: Block, ev: string, sends: string | u
     // Any function that takes what the event sends works as a handler, including one written as raw Verse.
     const fn = functionsIn(b.workspace).find(x => x.name === name);
     if (fn) {
-      if (sends === 'none' ? fn.params !== 0 : sends && fn.params !== 1) g.warn(b, `${ev} sends ${sends === 'none' ? 'nothing' : sends}, so ${name} must take ${sends === 'none' ? 'no inputs' : 'one input'}.`);
+      const count = sends ? payloadCount(sends) : fn.params;
+      if (fn.params !== count) g.warn(b, `${ev} sends ${sends === 'none' ? 'nothing' : sends}, so ${name} must take ${count === 0 ? 'no inputs' : count === 1 ? 'one input' : `${count} inputs`}.`);
       return;
     }
     if (rawDeclared(b.workspace, name)?.isFunction) return;
@@ -63,9 +64,11 @@ export function registerEventBlocks(): void {
     },
     generate(b, g) {
       const param = f(b, 'PARAM');
-      const type = HANDLER_INPUTS[param]?.type.replace(/^\?/, '');
-      const m = type ? moduleForType(type) : null;
-      if (m) g.need(m, type);
+      for (const input of handlerInputs(param)) {
+        const type = input.type.replace(/^\?/, '');
+        const m = moduleForType(type);
+        if (m) g.need(m, type);
+      }
       return `${f(b, 'NAME')}(${handlerSignature(param)}):void =\n${body(g, b, 'DO')}`; // style guide 3.2: space around =
     },
   });

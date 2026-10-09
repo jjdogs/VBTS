@@ -155,7 +155,8 @@ export class ExpressionParser {
       const m = tokens[p + 1]?.text ?? '';
       return (m === 'GetAgent' && is('[', p + 2) && is(']', p + 3)) || (m === 'GetTeams' && is('(', p + 2) && is(')', p + 3))
         || (m in TEAM_OPS && is('[', p + 2))
-        || (m === 'GetTransform' && is('(', p + 2) && is(')', p + 3)) || (m === 'TeleportTo' && is('[', p + 2));
+        || (m === 'GetTransform' && is('(', p + 2) && is(')', p + 3)) || (m === 'TeleportTo' && is('[', p + 2))
+        || (m === 'GetAnimationController' && is('[', p + 2) && is(']', p + 3));
     };
     /** Wraps a value in the calls that follow it: Eliminator.GetAgent[], Teams.GetTeam[Agent]… */
     const postfix = (block: BlockState): BlockState => {
@@ -182,6 +183,7 @@ export class ExpressionParser {
         const m = tokens[p + 1].text;
         if (m === 'GetAgent') { p += 4; block = b.make('verse_char_agent', null, { CHAR: { block } }); continue; }
         if (m === 'GetTeams') { p += 4; block = b.make('verse_all_teams', null, { TEAMS: { block } }); continue; }
+        if (m === 'GetAnimationController') { p += 4; block = b.make('verse_anim_controller', null, { PROP: { block } }); continue; }
         if (m === 'GetTransform') {
           p += 4;
           // .Translation / .Rotation / .Scale, then maybe .X / .Y / .Z of the position
@@ -305,6 +307,17 @@ export class ExpressionParser {
           }
           if (values.length !== 2) throw new NoBlocksFor('a distance takes two positions');
           return b.make('verse_distance', { KIND: fn }, { A: { block: values[0] }, B: { block: values[1] } });
+        }
+        // GetRandomFloat(1.0, 3.0) and Shuffle(Targets) (/Verse.org/Random)
+        if (tk.text === 'GetRandomFloat' && is('(', p + 1)) {
+          p += 2;
+          const lo = or(); expect(','); const hi = or(); expect(')');
+          return b.make('verse_random_float', null, { LO: { block: lo }, HI: { block: hi } });
+        }
+        if (tk.text === 'Shuffle' && is('(', p + 1)) {
+          p += 2;
+          const list = or(); expect(')');
+          return postfix(b.make('verse_shuffle', null, { LIST: { block: list } }));
         }
         if (tk.text === 'GetRandomInt' && is('(', p + 1)) {
           p += 2;

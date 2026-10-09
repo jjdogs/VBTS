@@ -4,6 +4,7 @@
  * These rules power the warnings (e.g. "No Agent here") and the smart dropdowns.
  */
 import type { Block, Workspace } from './blockly.ts';
+import { handlerInputs } from './data/handlers.ts';
 
 export interface PlacedDevice { name: string; type: string }
 /** param: a HANDLER_INPUTS key (agent, maybe, none, player, elimination…). */
@@ -42,7 +43,7 @@ export const functionsIn = (ws: Workspace | null): PlacedFunction[] =>
       returns: field(b, 'RET') || 'void',
       params: countParams(field(b, 'PARAMS')),
     })),
-    ...handlersIn(ws).map(h => ({ name: h.name, suspends: false, decides: false, returns: 'void', params: h.param === 'none' ? 0 : 1 })),
+    ...handlersIn(ws).map(h => ({ name: h.name, suspends: false, decides: false, returns: 'void', params: handlerInputs(h.param).length })),
   ] : [];
 
 /** How many inputs a function's parameter text declares ("A:int, B:int" → 2). */
@@ -222,11 +223,10 @@ export function hasInScope(block: Block, name: ScopeName): boolean {
   if (localAbove(block, name)) return true;
   for (const e of enclosing(block)) {
     const t = e.block.type;
-    if (name === 'Agent' && t === 'verse_handler' && field(e.block, 'PARAM') === 'agent') return true;
+    // A handler's Agent, MaybeAgent or Player input (including handlers of events that send several values)
+    if (['Agent', 'MaybeAgent', 'Player'].includes(name) && t === 'verse_handler' && handlerInputs(field(e.block, 'PARAM')).some(i => i.name === name)) return true;
     if (name === 'Agent' && t === 'verse_unwrap_agent') return true;
-    if (name === 'MaybeAgent' && t === 'verse_handler' && field(e.block, 'PARAM') === 'maybe') return true;
     if (name === 'Player' && t === 'verse_for_players') return true;
-    if (name === 'Player' && t === 'verse_handler' && field(e.block, 'PARAM') === 'player') return true;
     // if (Player := player[Agent]):  — any "if it exists" that names the value
     if (t === 'verse_if_bind' && e.input === 'DO' && field(e.block, 'VAR') === name) return true;
     // if (Player := player[Agent], …):  — a name made in the condition, used in the then part

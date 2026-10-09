@@ -12,6 +12,9 @@ import type { ExpressionParser } from './expressions.ts';
 import { lastLineOf, stripComment, trailingComment, type LineNode } from './tree.ts';
 
 /** What statements can refer to: the device's linked devices, containers and functions. */
+/** The type a name bound from Prop.GetAnimationController[] holds (tracked like a device). */
+const ANIMATION_CONTROLLER = 'animation_controller';
+
 export interface StatementContext {
   /** @editable slot name (or a loop variable holding one device) → device type */
   devices: Record<string, string>;
@@ -244,6 +247,38 @@ export class StatementParser {
       return this.b.make('verse_move_to', null, { THING: { block: thing! }, POS: { block: pos! }, ROT: { block: rot! }, TIME: { block: time! } });
     },
 
+    // Agent.Respawn(Position, Rotation) and Player.SendToLobby() (FortPlayerUtilities)
+    ({ text }) => {
+      const m = text.match(/^(.+)\.Respawn\((.+)\)$/);
+      if (!m) return null;
+      const parts = splitArgs(m[2]);
+      if (parts.length !== 2) return null;
+      const [who, pos, rot] = [m[1], ...parts].map(t => this.expr.parse(t));
+      return this.b.make('verse_respawn', null, { WHO: { block: who! }, POS: { block: pos! }, ROT: { block: rot! } });
+    },
+    ({ text }) => {
+      const m = text.match(/^(.+)\.SendToLobby\(\)$/);
+      return m ? this.b.make('verse_send_to_lobby', null, { WHO: { block: this.expr.parse(m[1])! } }) : null;
+    },
+
+    // Animation.SetAnimation(array{keyframe_delta{DeltaLocation := …, DeltaRotation := …, Time := …}}, ?Mode := animation_mode.PingPong)
+    ({ text }) => {
+      const m = text.match(/^(\w+)\.SetAnimation\(array\s*\{\s*keyframe_delta\s*\{(.+)\}\s*\}\s*,\s*\?Mode\s*:=\s*animation_mode\.(PingPong|OneShot)\s*\)$/);
+      if (!m) return null;
+      const parts = splitArgs(m[2]).map(part => part.match(/^(\w+)\s*:=\s*(.+)$/));
+      const names = parts.map(part => part?.[1]);
+      if (names.join() !== 'DeltaLocation,DeltaRotation,Time') return null;
+      const [pos, rot, time] = parts.map(part => this.expr.parse(part![2]));
+      return this.b.make('verse_anim_set', { MODE: m[3] },
+        { CTRL: { block: this.expr.parse(m[1])! }, POS: { block: pos! }, ROT: { block: rot! }, TIME: { block: time! } });
+    },
+    // Animation.Play() / Pause() / Stop() — on a name bound from GetAnimationController[]
+    ({ text }) => {
+      const m = text.match(/^(\w+)\.(Play|Pause|Stop)\(\)$/);
+      if (!m || this.knownDevice(m[1]) !== ANIMATION_CONTROLLER) return null;
+      return this.b.make('verse_anim_control', { ACTION: m[2] }, { CTRL: { block: this.expr.parse(m[1])! } });
+    },
+
     // Device.Action(values) — a device action with inputs, matched by its number of inputs
     ({ text }) => {
       const m = text.match(/^(\w+)\.(\w+)\((.+)\)$/);
@@ -329,7 +364,9 @@ export class StatementParser {
       const value = this.expr.parse(m[2]);
       // Binding an item of a device array makes the name usable as that device inside.
       const item = m[2].match(/^(\w+)\[/);
-      const inner = this.scoped(m[1], item ? this.ctx.deviceArrays[item[1]] : undefined);
+      // …and binding a prop's animation controller lets its play / pause / stop become blocks.
+      const animation = /\.GetAnimationController\[\]$/.test(m[2].trim()) ? ANIMATION_CONTROLLER : undefined;
+      const inner = this.scoped(m[1], item ? this.ctx.deviceArrays[item[1]] : animation);
       const thenPart = this.b.chain(inner.parse(node.children));
       const otherwise = this.elseOf(rest);
       if (otherwise) {
