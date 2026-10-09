@@ -153,14 +153,29 @@ scrub_test_device := class(creative_device):
     MoveSponge(Direction:float):void =
         Center := Dish.GetTransform().Translation
         Offset := vector3{X := Cos(Direction) * SpongeRadius, Y := Sin(Direction) * SpongeRadius, Z := 5.0}
-        if (Sponge.TeleportTo[Center + Offset, Sponge.GetTransform().Rotation]) {}
+        if (not Sponge.TeleportTo[Center + Offset, Sponge.GetTransform().Rotation]):
+            if (ShowDebug?):
+                Print("The sponge couldn't move there")
 
     # Turning from 179° to -179° is a 2° turn, not 358°
     WrapDegrees(D:float):float =
-        if (D > 180.0) then D - 360.0 else if (D < -180.0) then D + 360.0 else D
+        var Result:float = D
+        if (D > 180.0):
+            set Result = D - 360.0
+        if (D < -180.0):
+            set Result = D + 360.0
+        Result
 
     WrapRadians(R:float):float =
-        if (R > PiFloat) then R - 2.0 * PiFloat else if (R < -PiFloat) then R + 2.0 * PiFloat else R
+        var Result:float = R
+        if (R > PiFloat):
+            set Result = R - 2.0 * PiFloat
+        if (R < -PiFloat):
+            set Result = R + 2.0 * PiFloat
+        Result
 
     AbsF(X:float):float =
-        if (X < 0.0) then -X else X
+        var Result:float = X
+        if (X < 0.0):
+            set Result = 0.0 - X
+        Result
