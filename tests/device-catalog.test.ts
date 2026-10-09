@@ -100,6 +100,54 @@ garage_device := class(creative_device):
   });
 });
 
+describe('value events from the digest', () => {
+  test('participants joining, a character jumping and being healed convert to blocks and back', () => {
+    const src = `using { /Fortnite.com/Devices }
+using { /Fortnite.com/Characters }
+using { /Fortnite.com/Game }
+using { /Verse.org/Simulation }
+
+jump_device := class(creative_device):
+
+    OnBegin<override>()<suspends>:void =
+        GetPlayspace().ParticipantAddedEvent().Subscribe(OnJoined)
+
+    OnJoined(Agent:agent):void =
+        if (FortChar := Agent.GetFortCharacter[]):
+            FortChar.JumpedEvent().Subscribe(OnJumped)
+            FortChar.HealedEvent().Subscribe(OnHealed)
+
+    OnJumped(Character:fort_character):void =
+        Print("jump")
+
+    OnHealed(Result:healing_result):void =
+        Print("healed")
+`;
+    const r = convert(src);
+    assert.deepEqual(r.errors, []);
+    assert.ok(!r.blocks.includes('verse_raw'), 'no raw Verse blocks');
+    assert.ok(r.blocks.includes('"PARAM":"character"') && r.blocks.includes('"PARAM":"healing"'), 'event handler blocks, not plain functions');
+    assert.equal(r.code, src);
+  });
+
+  test('a handler with the wrong input is flagged', () => {
+    const r = convert(`using { /Fortnite.com/Devices }
+using { /Fortnite.com/Characters }
+using { /Verse.org/Simulation }
+
+jump_device := class(creative_device):
+
+    OnBegin<override>()<suspends>:void =
+        GetPlayspace().PlayerAddedEvent().Subscribe(OnJoined)
+
+    OnJoined(Player:player):void =
+        if (FortChar := Player.GetFortCharacter[]):
+            FortChar.JumpedEvent().Subscribe(OnJoined)
+`);
+    assert.ok(r.errors.some(e => e.includes('JumpedEvent')), r.errors.join('\n'));
+  });
+});
+
 describe('device modules', () => {
   const band = (usings: string) => `${usings}
 using { /Verse.org/Simulation }

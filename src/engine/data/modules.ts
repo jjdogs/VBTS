@@ -30,20 +30,22 @@ export const COLORS = {
 export const MODULES: readonly ModuleInfo[] = [
   { path: '/Fortnite.com/Devices', text: 'Every Creative device (button_device, trigger_device…) and creative_device itself.', unlocks: 'creative_device, *_device' },
   { path: '/Fortnite.com/Devices/Patchwork', text: 'The Patchwork music devices: speaker_device, drum_player_device, note_sequencer_device…', unlocks: 'speaker_device, *_device (Patchwork)' },
-  { path: '/Verse.org/Simulation', text: 'Core game types: agent, player, Sleep, and the @editable attribute.', unlocks: 'agent, player, Sleep, @editable' },
+  { path: '/Verse.org/Simulation', text: 'Core game types: agent, player, team, Sleep, GetSimulationElapsedTime, and the @editable attribute.', unlocks: 'agent, player, team, Sleep, @editable' },
   { path: '/UnrealEngine.com/Temporary/Diagnostics', text: 'Debug tools: log channels (log.Print with a level) and debug_draw. Plain Print needs no using line.', unlocks: 'log, log_channel, debug_draw' },
   { path: '/Fortnite.com/Characters', text: 'fort_character and GetFortCharacter[] for health, damage and healing.', unlocks: 'fort_character, GetFortCharacter' },
   { path: '/Verse.org/Random', text: 'Random numbers: GetRandomInt, GetRandomFloat, Shuffle.', unlocks: 'GetRandomInt, GetRandomFloat' },
   { path: '/Fortnite.com/Playspaces', text: 'fort_playspace: the game session, its players and teams.', unlocks: 'fort_playspace, GetPlayers' },
   { path: '/Fortnite.com/Game', text: 'Game events and results, such as elimination and damage results.', unlocks: 'elimination_result, damage_result' },
-  { path: '/Fortnite.com/Teams', text: 'Teams and team collections.', unlocks: 'fort_team_collection' },
-  { path: '/Fortnite.com/UI', text: 'Fortnite-styled widgets such as button_loud and button_regular.', unlocks: 'button_loud, button_regular' },
-  { path: '/UnrealEngine.com/Temporary/UI', text: 'Custom UI: canvas, text_block, GetPlayerUI.', unlocks: 'canvas, text_block, player_ui' },
-  { path: '/UnrealEngine.com/Temporary/SpatialMath', text: 'Positions and rotations: vector3, rotation, transform.', unlocks: 'vector3, rotation, transform' },
+  { path: '/Fortnite.com/Teams', text: 'fort_team_collection: who is on which team (GetTeams, GetTeam[], AddToTeam[]). The team type itself is in /Verse.org/Simulation.', unlocks: 'fort_team_collection' },
+  { path: '/Fortnite.com/UI', text: 'Fortnite-styled widgets: text_block, button_loud, button_regular, button_quiet, slider_regular.', unlocks: 'text_block, button_loud, button_regular' },
+  { path: '/UnrealEngine.com/Temporary/UI', text: 'Custom UI: canvas, widget, player_ui and GetPlayerUI[] to show widgets on a player\'s screen.', unlocks: 'canvas, widget, player_ui' },
+  { path: '/UnrealEngine.com/Temporary/SpatialMath', text: 'Positions and rotations: vector3, rotation, transform, Distance. Devices and props take these types. /Verse.org/SpatialMath has its own vector3 and rotation, so don\'t use both.', unlocks: 'vector3, rotation, transform' },
   { path: '/Verse.org/Colors', text: 'The color type and color helpers.', unlocks: 'color' },
   { path: '/Verse.org/Simulation/Tags', text: 'Gameplay tags for finding devices by tag.', unlocks: 'tag' },
   { path: '/Fortnite.com/Vehicles', text: 'Vehicle types and helpers.', unlocks: 'fort_vehicle' },
   { path: '/Fortnite.com/AI', text: 'AI behaviors for NPCs and guards.', unlocks: 'npc_behavior' },
+  { path: '/Fortnite.com/FortPlayerUtilities', text: 'Player helpers: Agent.Respawn(Position, Rotation), Player.SendToLobby(), and spectator checks.', unlocks: 'Respawn, SendToLobby' },
+  { path: '/Fortnite.com/Devices/CreativeAnimation', text: 'Keyframe animation for props: Prop.GetAnimationController[] and animation_controller.', unlocks: 'animation_controller' },
 ];
 
 export const MODULE_PATHS: readonly string[] = MODULES.map(m => m.path);

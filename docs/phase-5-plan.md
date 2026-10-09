@@ -73,7 +73,7 @@ The original plan for 5.0:
    the current block's saved format so old projects load.
 4. **Value types and modules**: add the new types to `data/verse-types.ts`
    (`VALUE_TYPES`, `moduleForType`), so declaring them adds the right `using` line:
-   - `team` → `/Fortnite.com/Teams`
+   - `team` → `/Verse.org/Simulation` (the Fortnite 42.30 digest; `fort_team_collection` is in `/Fortnite.com/Teams`)
    - `fort_character` → `/Fortnite.com/Characters`
    - `vector3`, `rotation`, `transform` → SpatialMath
    - `canvas`, `widget` → `/UnrealEngine.com/Temporary/UI`
