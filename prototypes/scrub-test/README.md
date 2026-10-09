@@ -19,7 +19,8 @@ sponge prop moves around the dish as you scrub.
 2. **The sink**: place a counter or sink, and a **Mutator Zone** covering where the player stands
    in front of it.
 3. **The dish**: place a plate (any gallery prop, e.g. a round table top or plate) on the sink.
-4. **The sponge**: place a small prop (a cube scaled down, or a bar of soap) on the dish.
+4. **The sponge**: place a small prop (a cube scaled down, or a bar of soap) just *above* the dish,
+   not touching it. It keeps that height while it moves; if it touches the dish it can't move.
 5. **Grime**: place 3 thin, dirty-looking props on the dish (e.g. flattened brown or green
    shapes from the galleries).
 6. **The device**: drag `scrub_test_device` from the Content Browser into the level. In its

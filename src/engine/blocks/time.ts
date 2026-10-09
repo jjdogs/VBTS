@@ -6,7 +6,7 @@ import { COLORS, DOCS } from '../data/modules.ts';
 import { looseDropdown, prime, type Option } from '../fields.ts';
 import { formatFloat } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { functionsIn, inSuspends, liveWorkspace } from '../workspace.ts';
+import { functionsIn, inSuspends, liveWorkspace, rawDeclared } from '../workspace.ts';
 import { asStatement, body, f, Slot } from './shared.ts';
 
 export function registerTimeBlocks(): void {
@@ -46,7 +46,7 @@ export function registerTimeBlocks(): void {
     generate(b, g) {
       const name = f(b, 'NAME');
       const fn = functionsIn(b.workspace).find(x => x.name === name);
-      if (!fn) g.warn(b, `No function named ${name}.`);
+      if (!fn) { if (!rawDeclared(b.workspace, name)?.isFunction) g.warn(b, `No function named ${name}.`); }
       else if (!fn.suspends) g.warn(b, `spawn needs a <suspends> function; tick <suspends> on ${name}.`);
       return `spawn{${name}()}\n`;
     },

@@ -103,4 +103,32 @@ test('a method result with four inputs becomes blocks', () => {
   assert.ok(parsed.ok);
   assert.deepEqual(parsed.report.raw, []);
   assert.ok(r.code.includes('Pet.Pick(1, 2, 3, 4)'));
+
+  test('calling a function kept as raw Verse is not reported as missing', () => {
+    // Function blocks have no <transacts> option, so this helper stays raw Verse; calls to it are fine in UEFN.
+    const src = `using { /Fortnite.com/Devices }
+using { /Verse.org/Simulation }
+
+helper_device := class(creative_device):
+
+    OnBegin<override>()<suspends>:void =
+        if (AbsF(-2.0) > 1.0):
+            Print("big")
+        spawn{Wait()}
+
+    Wait()<suspends><transacts>:void =
+        Sleep(1.0)
+
+    AbsF(X:float)<transacts>:float =
+        var Result:float = X
+        if (X < 0.0):
+            set Result = 0.0 - X
+        Result
+`;
+    const parsed = engine.parseVerse(src);
+    assert.ok(parsed.ok);
+    const r = generateFrom(parsed.state);
+    assert.deepEqual(r.warnings.filter(w => w.msg.startsWith('No function named')).map(w => w.msg), []);
+    assert.equal(r.code, src);
+  });
 });

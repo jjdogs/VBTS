@@ -9,7 +9,7 @@ import { moduleForType, parseParams, RETURN_TYPES, typeNamesIn } from '../data/v
 import { looseDropdown, nameField, prime, rerender, type Option } from '../fields.ts';
 import { Order, type VerseGenerator } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
-import { enclosingFunction, functionsIn, inDecides, inFailureContext, inSuspends, liveWorkspace, type PlacedFunction } from '../workspace.ts';
+import { enclosingFunction, functionsIn, inDecides, inFailureContext, inSuspends, liveWorkspace, rawDeclared, type PlacedFunction } from '../workspace.ts';
 import { checkFailable, FAILABLE } from './data.ts';
 import { COND } from './logic.ts';
 import { asStatement, body, f, Slot, stacksIn, visibility, visibilityDropdown } from './shared.ts';
@@ -63,7 +63,11 @@ function callCode(b: Block, g: VerseGenerator, open: string, close: string): str
 function checkCall(g: VerseGenerator, b: Block, want: 'any' | 'value' | 'decides'): PlacedFunction | undefined {
   const name = f(b, 'NAME');
   const fn = functionsIn(b.workspace).find(x => x.name === name);
-  if (!fn) { g.warn(b, `No function named ${name}.`); return undefined; }
+  if (!fn) {
+    // A function kept as raw Verse (e.g. Wrap(D:float)<transacts>:float =) exists too; it just can't be checked.
+    if (!rawDeclared(b.workspace, name)?.isFunction) g.warn(b, `No function named ${name}.`);
+    return undefined;
+  }
   const given = [1, 2, 3].filter(i => b.getInputTargetBlock(`A${i}`)).length;
   if (given !== fn.params) g.warn(b, `${name} takes ${fn.params} input${fn.params === 1 ? '' : 's'}, but ${given} ${given === 1 ? 'is' : 'are'} plugged in.`);
   if (want !== 'decides' && fn.decides) g.warn(b, `${name} is <decides> (it can fail), so call it with square brackets: use the "try" call block inside an if.`);
