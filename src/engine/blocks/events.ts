@@ -115,7 +115,7 @@ export function registerEventBlocks(): void {
     explain: {
       title: 'Subscribe to a value\'s event', doc: DOCS.api,
       tip: 'Connects an event of the game, a character or a button to your handler.',
-      text: 'Some events belong to a value instead of a linked device, and are called like functions: GetPlayspace().PlayerAddedEvent() when a player joins, FortChar.EliminatedEvent() when a character is eliminated, MyButton.OnClick() when a UI button is clicked. Plug in the value, pick the event, and the handler that runs; its input must match what the event sends (a player, a Result or a Message).',
+      text: 'Some events belong to a value instead of a linked device, and are called like functions: GetPlayspace().PlayerAddedEvent() when a player joins, FortChar.EliminatedEvent() when a character is eliminated, MyButton.OnClick() when a UI button is clicked, FortChar.JumpedEvent() when a character jumps. Plug in the value, pick the event, and the handler that runs; its input must match what the event sends (a player, an agent, a character, a Result or a Message).',
     },
     init() {
       this.appendValueInput('SOURCE').appendField('when');

@@ -17,13 +17,13 @@ export const RETURN_TYPES = ['void', ...VALUE_TYPES] as const;
 /** Types that have no literal you can type (players and agents come from the game). */
 export const hasLiteral = (type: string) => ['int', 'float', 'logic', 'string'].includes(type);
 
-/** The module each type that needs a using line lives in (from Epic's API digest). */
-const TYPE_MODULES: Record<string, string> = {
+/** The module each type that needs a using line lives in (from Epic's API digest; tests/digest.test.ts checks it). */
+export const TYPE_MODULES: Record<string, string> = {
   agent: '/Verse.org/Simulation', player: '/Verse.org/Simulation',
-  team: '/Fortnite.com/Teams', fort_team_collection: '/Fortnite.com/Teams',
+  team: '/Verse.org/Simulation', fort_team_collection: '/Fortnite.com/Teams',
   fort_character: '/Fortnite.com/Characters',
   fort_playspace: '/Fortnite.com/Playspaces',
-  elimination_result: '/Fortnite.com/Game', damage_result: '/Fortnite.com/Game',
+  elimination_result: '/Fortnite.com/Game', damage_result: '/Fortnite.com/Game', healing_result: '/Fortnite.com/Game',
   device_ai_interaction_result: '/Fortnite.com/Devices', fort_vehicle: '/Fortnite.com/Vehicles',
   vector3: '/UnrealEngine.com/Temporary/SpatialMath', rotation: '/UnrealEngine.com/Temporary/SpatialMath',
   transform: '/UnrealEngine.com/Temporary/SpatialMath',

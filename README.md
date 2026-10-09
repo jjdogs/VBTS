@@ -340,6 +340,9 @@ checks that every template converts into real blocks.
 - `tests/converter-gaps.test.ts` covers text with values anywhere, several parts in one if,
   else if chains and general chains: each round-trips exactly.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
+- `tests/digest.test.ts` checks the Verse the blocks write against Epic's API digests
+  (`scripts/data/digest/`): every type's module, the using list, value events, and each function's
+  signature. After copying in a newer digest, it says what moved or changed.
 
 If you change the output **on purpose**, run `npm run golden`, then review the changes to
 `golden.json` (e.g. `git diff`) before committing. Tests use Node's built-in test runner,

@@ -54,7 +54,9 @@ describe('new value types', () => {
     assert.deepEqual(r.raw, []);
     assert.ok(r.blocks.includes('"verse_array_field"') && r.blocks.includes('"verse_map_field"'));
     assert.match(r.code, /using \{ \/UnrealEngine\.com\/Temporary\/SpatialMath \}/);
-    assert.match(r.code, /using \{ \/Fortnite\.com\/Teams \}/);
+    // team is declared in /Verse.org/Simulation (Fortnite 42.30 digest), not /Fortnite.com/Teams
+    assert.match(r.code, /using \{ \/Verse\.org\/Simulation \}/);
+    assert.doesNotMatch(r.code, /using \{ \/Fortnite\.com\/Teams \}/);
     stable(r.code);
   });
 });

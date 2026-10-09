@@ -26,10 +26,10 @@ export const teamElimination: Template = {
     'Give players weapons (starting inventory or an Item Granter), then Launch Session to play.',
   ],
   verse: `using { /Fortnite.com/Devices }  # for creative_device, end_game_device, hud_message_device
-using { /Verse.org/Simulation }  # for @editable, player, agent
+using { /Verse.org/Simulation }  # for @editable, player, agent, team
 using { /Fortnite.com/Characters }  # for GetFortCharacter, GetAgent
 using { /Fortnite.com/Game }  # for elimination_result
-using { /Fortnite.com/Teams }  # for team, teams
+using { /Fortnite.com/Teams }  # for the team collection (GetTeams, GetTeam)
 
 team_elimination := class(creative_device):
 
