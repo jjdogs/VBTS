@@ -7,6 +7,7 @@ import { COLORS, DOCS } from '../data/modules.ts';
 import { formatFloat, Order } from '../generator/verse-generator.ts';
 import { defineBlock } from '../registry.ts';
 import { fieldsIn, inFailureContext } from '../workspace.ts';
+import { floatInput } from './movement.ts';
 import { f } from './shared.ts';
 
 /** True when a value is surely an int: an int number, an int variable, or math on ints. */
@@ -97,6 +98,47 @@ export function registerMathBlocks(): void {
     generate(b, g) {
       g.need('/Verse.org/Random', 'GetRandomInt');
       return [`GetRandomInt(${g.valueToCode(b, 'LO', Order.NONE) || '0'}, ${g.valueToCode(b, 'HI', Order.NONE) || '0'})`, Order.ATOMIC];
+    },
+  });
+
+  defineBlock({
+    type: 'verse_random_float',
+    colour: COLORS.math,
+    explain: {
+      title: 'Random decimal', doc: DOCS.api,
+      tip: 'GetRandomFloat(Low, High): a random float between two values.',
+      text: 'GetRandomFloat gives a random decimal number (a float) between Low and High, such as a random wait: Sleep(GetRandomFloat(1.0, 3.0)). Both ends are floats, so write 1.0, not 1. Lives in /Verse.org/Random; the generator adds the using line.',
+    },
+    init() {
+      this.appendValueInput('LO').appendField('random decimal from');
+      this.appendValueInput('HI').appendField('to');
+      this.setInputsInline(true);
+      this.setOutput(true, 'Number');
+    },
+    generate(b, g) {
+      g.need('/Verse.org/Random', 'GetRandomFloat');
+      return [`GetRandomFloat(${floatInput(g, b, 'LO', 'Low')}, ${floatInput(g, b, 'HI', 'High')})`, Order.ATOMIC];
+    },
+  });
+
+  defineBlock({
+    type: 'verse_shuffle',
+    colour: COLORS.data,
+    explain: {
+      title: 'Shuffle', doc: DOCS.api,
+      tip: 'Shuffle(Array): the same items in a random order.',
+      text: 'Shuffle gives a new array with the same items in a random order; the original is unchanged. Loop over it to visit things in a random order, or store it: set Order = Shuffle(Targets). Lives in /Verse.org/Random.',
+    },
+    init() {
+      this.appendValueInput('LIST').appendField('shuffled');
+      this.setInputsInline(true);
+      this.setOutput(true);
+    },
+    generate(b, g) {
+      g.need('/Verse.org/Random', 'Shuffle');
+      const list = g.valueToCode(b, 'LIST', Order.NONE);
+      if (!list) g.warn(b, 'Plug in the array to shuffle.');
+      return [`Shuffle(${list || 'array{}'})`, Order.ATOMIC];
     },
   });
 }

@@ -108,7 +108,11 @@ except FileNotFoundError:
     review.append(f'{DIGEST} not found: event types are read from descriptions')
 ABSTRACT |= {name for name, info in digest.items() if info['abstract'] and name.endswith('_device')}
 # The types a handler block can receive ('agent', '?agent', 'player'…); 'none' is nothing.
-RECEIVABLE = set(re.findall(r"type: '([^']+)'", open(HANDLERS, encoding='utf-8').read())) | {'none'}
+_handlers = open(HANDLERS, encoding='utf-8').read()
+RECEIVABLE = set(re.findall(r"type: '([^']+)'", _handlers)) | {'none'}
+# several('label', ['Agent', 'agent'], ['Value', 'int']) receives tuple(agent, int)
+RECEIVABLE |= {'tuple(%s)' % ', '.join(re.findall(r", '([^']+)'\]", line))
+               for line in _handlers.splitlines() if ': several(' in line}
 # Inherited events have the same name and description on every device that has them, so a known
 # type carries over (every vehicle spawner's DestroyedEvent: "Signaled when a vehicle is destroyed.").
 same_event: dict = {}

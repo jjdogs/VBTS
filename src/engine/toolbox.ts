@@ -53,6 +53,11 @@ export const TOOLBOX: Toolbox = {
       block('verse_cast', { inputs: { VALUE: { block: { type: 'verse_agent_value' } } } }),
       block('verse_playspace'),
       block('verse_players'),
+      label('Respawn someone, or send a player back to the lobby'),
+      block('verse_respawn', { inputs: { WHO: { block: { type: 'verse_agent_value' } },
+        POS: { block: { type: 'verse_transform_of', fields: { PART: 'Translation' }, inputs: { THING: { block: { type: 'verse_get', fields: { NAME: 'StartPad' } } } } } },
+        ROT: { block: { type: 'verse_identity_rotation' } } } }),
+      block('verse_send_to_lobby', { inputs: { WHO: { block: { type: 'verse_agent_value', fields: { WHO: 'Player' } } } } }),
       label('Eliminations (inside a handler that receives an elimination)'),
       block('verse_eliminated'),
       block('verse_if_bind', { fields: { VAR: 'Eliminator' }, inputs: { VALUE: { block: { type: 'verse_eliminator' } } } }),
@@ -74,6 +79,8 @@ export const TOOLBOX: Toolbox = {
       block('verse_number'), block('verse_number', { fields: { NUM: 1.5, TYPE: 'float' } }),
       block('verse_arith', { inputs: { A: number(1), B: number(1) } }), block('verse_random'),
       block('verse_random_range', { inputs: { LO: number(0), HI: { block: { type: 'verse_arith', fields: { OP: '-' }, inputs: { A: { block: { type: 'verse_length', fields: { NAME: 'Targets' } } }, B: number(1) } } } } }),
+      block('verse_random_float', { inputs: { LO: number(1, 'float'), HI: number(3, 'float') } }),
+      block('verse_shuffle', { inputs: { LIST: { block: { type: 'verse_get', fields: { NAME: 'Targets' } } } } }),
     ]),
     category('Text', COLORS.text, [
       block('verse_print', { inputs: { TEXT: { shadow: { type: 'verse_text' } } } }),
@@ -158,6 +165,15 @@ export const TOOLBOX: Toolbox = {
         THING: { block: { type: 'verse_get', fields: { NAME: 'Platform' } } },
         POS: { block: { type: 'verse_vector', inputs: { X: number(0, 'float'), Y: number(0, 'float'), Z: number(500, 'float') } } },
         ROT: { block: { type: 'verse_identity_rotation' } }, TIME: number(2, 'float') } }),
+      label('Prop animation: get the prop\'s animation (can fail), give it a move, then play it. Nothing waits.'),
+      block('verse_if_bind', { fields: { VAR: 'Animation' }, inputs: {
+        VALUE: { block: { type: 'verse_anim_controller', inputs: { PROP: { block: { type: 'verse_get', fields: { NAME: 'Platform' } } } } } },
+        DO: { block: { type: 'verse_anim_set', fields: { MODE: 'PingPong' }, inputs: {
+          CTRL: { block: { type: 'verse_get', fields: { NAME: 'Animation' } } },
+          POS: { block: { type: 'verse_vector', inputs: { X: number(0, 'float'), Y: number(0, 'float'), Z: number(300, 'float') } } },
+          ROT: { block: { type: 'verse_identity_rotation' } }, TIME: number(2, 'float') },
+          next: { block: { type: 'verse_anim_control', fields: { ACTION: 'Play' }, inputs: { CTRL: { block: { type: 'verse_get', fields: { NAME: 'Animation' } } } } } } } } } }),
+      block('verse_anim_control', { fields: { ACTION: 'Pause' }, inputs: { CTRL: { block: { type: 'verse_get', fields: { NAME: 'Animation' } } } } }),
     ]),
     category('UI', COLORS.ui, [
       label('UI belongs to a player: turn the agent into a player, then get their UI (both can fail)'),

@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
-import { HANDLER_INPUTS, VALUE_EVENTS } from '../src/engine/data/handlers.ts';
+import { handlerInputs, HANDLER_INPUTS, VALUE_EVENTS } from '../src/engine/data/handlers.ts';
 import { MODULES } from '../src/engine/data/modules.ts';
 import { TEAM_OPS } from '../src/engine/data/teams.ts';
 import { TYPE_MODULES } from '../src/engine/data/verse-types.ts';
@@ -64,8 +64,11 @@ describe('the API digests', () => {
   });
 
   test('handler inputs are real types', () => {
-    for (const { type } of Object.values(HANDLER_INPUTS)) {
-      if (type) assert.ok(declared(type.replace(/^\?/, ''), isType).length, type);
+    for (const param of Object.keys(HANDLER_INPUTS)) {
+      for (const { type } of handlerInputs(param)) {
+        const plain = type.replace(/^\?/, '');
+        if (!['int', 'float', 'logic', 'string'].includes(plain)) assert.ok(declared(plain, isType).length, type); // built into Verse
+      }
     }
   });
 
@@ -110,6 +113,20 @@ describe('the Verse blocks write matches the digests', () => {
     ['InputMode', 'player_ui_slot', ':ui_input_mode'],
     ['SetText', 'text_base', '(InText:message):void'],
     ['SetText', 'hud_message_device', '(Text:message):void'],
+    ['GetRandomFloat', '/Verse.org/Random', '(Low:float, High:float)<transacts>:float'],
+    ['Shuffle', '/Verse.org/Random', '(Input:[]t where t:type)<transacts>:[]t'],
+    ['Respawn', '/Fortnite.com/FortPlayerUtilities', '(InAgent:agent).Respawn<native><public>(RespawnPosition:(/UnrealEngine.com/Temporary/SpatialMath:)vector3, RespawnRotation:(/UnrealEngine.com/Temporary/SpatialMath:)rotation)'],
+    ['SendToLobby', '/Fortnite.com/FortPlayerUtilities', '(InPlayer:player).SendToLobby<native><public>()'],
+    ['GetAnimationController', '/Fortnite.com/Devices/CreativeAnimation', '(Prop:creative_prop).GetAnimationController<public>()<transacts><decides>:animation_controller'],
+    ['SetAnimation', 'animation_controller', '(Keyframes:[]keyframe_delta, ?Mode:animation_mode):void'],
+    ['Play', 'animation_controller', '():void'],
+    ['Pause', 'animation_controller', '():void'],
+    ['Stop', 'animation_controller', '():void'],
+    ['DeltaLocation', 'keyframe_delta', ':(/UnrealEngine.com/Temporary/SpatialMath:)vector3'],
+    ['DeltaRotation', 'keyframe_delta', ':(/UnrealEngine.com/Temporary/SpatialMath:)rotation'],
+    ['Time', 'keyframe_delta', ':float'],
+    ['PingPong', 'animation_mode', 'PingPong'],
+    ['OneShot', 'animation_mode', 'OneShot'],
   ];
   for (const [name, where, has] of API) {
     test(`${where} ${name}`, () => {

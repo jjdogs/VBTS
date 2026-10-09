@@ -223,14 +223,22 @@ for members nothing outside the class uses, with a one-click fix.
 ## Players, movement and UI (Phase 5)
 
 - **Events of values**: a player joining (`GetPlayspace().PlayerAddedEvent()`), a character being
-  eliminated (`FortChar.EliminatedEvent()`), a button clicked (`Button.OnClick()`); handlers can
-  receive a player, an elimination Result, damage, a button click Message or an AI result.
+  eliminated (`FortChar.EliminatedEvent()`), jumping, crouching, sprinting, healing and shield
+  events, AI participants joining, a button clicked (`Button.OnClick()`); handlers can receive a
+  player, an agent, a character, an elimination, damage or healing Result, a button click Message
+  or an AI result.
+- **Events that send several values** (the Popup Dialog's button, the Input Trigger's hold time, a
+  stat's new value…): the handler gets one input per value, `OnChoice(Agent:agent, Value:int)`.
 - **Local values** in functions (`Name := value`, `var Name:type = value`), casts
   (`player[Agent]`), and device actions with inputs (`Score.SetScoreAward(10)`).
 - **Teams**: the team collection's GetTeam / GetAgents / IsOnTeam / AddToTeam (failable), every
-  player, elimination results and a character's agent, health and shield.
+  player, elimination results and a character's agent, health and shield. Respawning an agent at a
+  position (`Agent.Respawn(…)`) and sending a player to the lobby (`Player.SendToLobby()`).
 - **Movement**: positions (`vector3`), rotations, where things are (`GetTransform()`), distances,
-  teleporting and moving props over time; `creative_prop` can be linked.
+  teleporting and moving props over time; `creative_prop` can be linked. Prop animation
+  (CreativeAnimation): a prop's animation controller, a keyframe move played once or back and
+  forth, and play / pause / stop.
+- **Random**: random whole numbers and decimals (`GetRandomFloat`), and shuffling an array.
 - **UI**: a player's UI, text and button widgets on a canvas at a preset position, clickable
   widgets, changing text, hiding, and who clicked.
 
@@ -340,6 +348,8 @@ checks that every template converts into real blocks.
 - `tests/converter-gaps.test.ts` covers text with values anywhere, several parts in one if,
   else if chains and general chains: each round-trips exactly.
 - `tests/bugfixes.test.ts` holds regression tests for bugs found in review.
+- `tests/api-blocks.test.ts` covers respawning, the lobby, random decimals, shuffling and prop
+  animation; `tests/device-catalog.test.ts` covers the device list and events that send several values.
 - `tests/digest.test.ts` checks the Verse the blocks write against Epic's API digests
   (`scripts/data/digest/`): every type's module, the using list, value events, and each function's
   signature. After copying in a newer digest, it says what moved or changed.

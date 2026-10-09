@@ -3,7 +3,7 @@
  * @editable devices and variables, OnBegin, handlers and functions.
  */
 import { CATALOG } from '../catalog.ts';
-import { handlerParamFor, HANDLER_INPUTS } from '../data/handlers.ts';
+import { handlerInputs, handlerParamFor } from '../data/handlers.ts';
 import { hasLiteral, KEY_TYPES, parseParams, RETURN_TYPES, splitList, VALUE_TYPES } from '../data/verse-types.ts';
 import type { BlockState } from '../types.ts';
 import type { BlockBuilder } from './builder.ts';
@@ -240,19 +240,22 @@ export class DeviceParser {
    */
   private functionBlock(h: Header, nd: LineNode, text: string, statements: StatementParser, inClass = false): BlockState {
     const { name, params, effects, returns } = h;
-    const input = params.length === 1 ? params[0] : null;
-    const typed = input ? handlerParamFor(input.type) : undefined; // e.g. 'agent', 'player'
+    // Two or more inputs receive an event that sends several values: tuple(agent, int)
+    const payload = params.length === 1 ? params[0].type : params.length > 1 ? `tuple(${params.map(p => p.type).join(', ')})` : '';
+    const typed = payload ? handlerParamFor(payload) : undefined; // e.g. 'agent', 'player', 'agent_int'
     const isHandler = !inClass && returns === 'void' && effects === '' && !h.vis &&
       (typed === 'agent' || typed === 'maybe' || ((typed !== undefined || params.length === 0) && this.subscribed.has(name)));
 
     if (isHandler) {
       let lines = nd.children;
-      if (input && typed) {
-        const want = HANDLER_INPUTS[typed].name; // the names blocks use
-        if (input.name !== want) {
-          this.b.report.notes.push(`Renamed ${name}'s input from ${input.name} to ${want} (the name blocks use).`);
-          lines = renameIn(lines, input.name, want);
-        }
+      if (typed) {
+        handlerInputs(typed).forEach((want, i) => { // the names blocks use
+          const input = params[i];
+          if (input.name !== want.name) {
+            this.b.report.notes.push(`Renamed ${name}'s input from ${input.name} to ${want.name} (the name blocks use).`);
+            lines = renameIn(lines, input.name, want.name);
+          }
+        });
       }
       const body = this.b.chain(statements.parse(lines));
       return this.b.make('verse_handler', { NAME: name, PARAM: typed ?? 'none' }, body ? { DO: body } : undefined);

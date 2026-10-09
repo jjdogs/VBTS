@@ -18,9 +18,11 @@ import { COND } from './logic.ts';
 import { asStatement, f } from './shared.ts';
 
 export const SPATIAL = '/UnrealEngine.com/Temporary/SpatialMath';
+/** Keyframe animation for props (animation_controller, keyframe_delta, animation_mode). */
+export const ANIMATION = '/Fortnite.com/Devices/CreativeAnimation';
 
 /** A float input: its code (or 0.0), with a warning when an int number is plugged in. */
-function floatInput(g: VerseGenerator, b: Block, input: string, what: string): string {
+export function floatInput(g: VerseGenerator, b: Block, input: string, what: string): string {
   const target = b.getInputTargetBlock(input);
   if (target?.type === 'verse_number' && f(target, 'TYPE') === 'int') {
     g.warn(b, `${what} is a float in Verse: write ${formatFloat(target.getFieldValue('NUM'))}, not ${Math.trunc(Number(target.getFieldValue('NUM')))} (set the number block to float).`);
@@ -212,6 +214,76 @@ export function registerMovementBlocks(): void {
       if (!rot) g.need(SPATIAL, 'IdentityRotation');
       const time = floatInput(g, b, 'TIME', 'The time');
       return `${thing}.MoveTo(${pos || 'vector3{}'}, ${rot || 'IdentityRotation()'}, ${time === '0.0' && !b.getInputTargetBlock('TIME') ? '1.0' : time})\n`;
+    },
+  });
+
+  // Prop animation (CreativeAnimation): get a prop's animation controller, give it a move, play it.
+  defineBlock({
+    type: 'verse_anim_controller',
+    colour: COLORS.movement,
+    explain: {
+      title: 'Animation of a prop', doc: DOCS.failure,
+      tip: 'Prop.GetAnimationController[]: what plays keyframe animations on a prop. Can fail, so use "if it exists".',
+      text: 'Every creative_prop has an animation_controller that plays smooth, keyframed moves without waiting for them (unlike MoveTo). Getting it can fail (the prop may be gone, or have "Register with Structural Grid" on), so it goes in "if it exists": if (Animation := Platform.GetAnimationController[]):. Needs using { /Fortnite.com/Devices/CreativeAnimation }.',
+    },
+    init() {
+      this.appendValueInput('PROP').appendField('animation of');
+      this.setInputsInline(true);
+      this.setOutput(true, [FAILABLE, COND]);
+    },
+    generate(b, g) {
+      g.need(ANIMATION, 'GetAnimationController');
+      checkFailable(g, b, 'GetAnimationController[]');
+      return [`${required(g, b, 'PROP', 'the prop to animate', 'Prop')}.GetAnimationController[]`, Order.ATOMIC];
+    },
+  });
+
+  defineBlock({
+    type: 'verse_anim_set',
+    colour: COLORS.movement,
+    explain: {
+      title: 'Set a prop animation', doc: DOCS.api,
+      tip: 'Animation.SetAnimation(…): move and turn the prop by an amount over some seconds, once or back and forth.',
+      text: 'An animation is a list of keyframe moves. This block makes one: move the prop by an offset (a vector3, from where it starts), turn it by a rotation, over a number of seconds. "Back and forth" (PingPong) plays it forwards, then backwards, forever; "once" (OneShot) stops at the end. Then play it with the play block. Nothing waits, so it works in any code.',
+    },
+    init() {
+      this.appendValueInput('CTRL').appendField('animate');
+      this.appendValueInput('POS').appendField('move by');
+      this.appendValueInput('ROT').appendField('turn by');
+      this.appendValueInput('TIME').appendField('over');
+      this.appendDummyInput().appendField('seconds,')
+        .appendField(new Blockly.FieldDropdown([['back and forth', 'PingPong'], ['once', 'OneShot']]), 'MODE');
+      this.setInputsInline(true);
+      asStatement(this);
+    },
+    generate(b, g) {
+      g.need(ANIMATION, 'keyframe_delta');
+      const ctrl = required(g, b, 'CTRL', 'the animation, like Animation', 'Animation');
+      const pos = g.valueToCode(b, 'POS', Order.NONE), rot = g.valueToCode(b, 'ROT', Order.NONE);
+      if (!pos) { g.need(SPATIAL, 'vector3'); g.warn(b, 'Plug in how far to move, like a position with Z 500.0 to rise 5 metres.'); }
+      if (!rot) g.need(SPATIAL, 'IdentityRotation');
+      const time = floatInput(g, b, 'TIME', 'The time');
+      const key = `keyframe_delta{DeltaLocation := ${pos || 'vector3{}'}, DeltaRotation := ${rot || 'IdentityRotation()'}, Time := ${time === '0.0' && !b.getInputTargetBlock('TIME') ? '1.0' : time}}`;
+      return `${ctrl}.SetAnimation(array{${key}}, ?Mode := animation_mode.${f(b, 'MODE')})\n`;
+    },
+  });
+
+  defineBlock({
+    type: 'verse_anim_control',
+    colour: COLORS.movement,
+    explain: {
+      title: 'Play, pause or stop an animation', doc: DOCS.api,
+      tip: 'Animation.Play(), Pause() or Stop(). Stop also puts the prop back where it started.',
+      text: 'Play starts (or carries on) the animation set with "animate". Pause holds the prop where it is; Play carries on from there. Stop ends it and puts the prop back at its first keyframe.',
+    },
+    init() {
+      this.appendValueInput('CTRL')
+        .appendField(new Blockly.FieldDropdown([['play', 'Play'], ['pause', 'Pause'], ['stop', 'Stop']]), 'ACTION');
+      this.setInputsInline(true);
+      asStatement(this);
+    },
+    generate(b, g) {
+      return `${required(g, b, 'CTRL', 'the animation, like Animation', 'Animation')}.${f(b, 'ACTION')}()\n`;
     },
   });
 }

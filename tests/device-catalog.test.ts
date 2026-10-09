@@ -49,9 +49,10 @@ describe('device catalog', () => {
     assert.ok(cat.carryable_spawner_device, 'carryable_spawner_device');
   });
 
-  test("events that send two values aren't offered with the wrong input", () => {
-    assert.ok(!('ReleasedEvent' in cat.input_trigger_device.events), 'sends (agent, float)');
-    assert.ok(!('RespondingButtonEvent' in cat.popup_dialog_device.events), 'sends (agent, int)');
+  test('events that send two values say so (their handlers take two inputs)', () => {
+    assert.equal(cat.input_trigger_device.events.ReleasedEvent, 'tuple(agent, float)');
+    assert.equal(cat.popup_dialog_device.events.RespondingButtonEvent, 'tuple(agent, int)');
+    assert.equal(cat.vehicle_mod_box_spawner_device.events.ModAppliedEvent, 'tuple(?agent, fort_vehicle, int)');
   });
 
   test("events send what Epic's API digest declares", () => {
@@ -60,7 +61,8 @@ describe('device catalog', () => {
     assert.equal(cat.bank_vault_device.events.OpenEvent, '?agent', 'was: agent');
     assert.equal(cat.conversation_device.events.CancelEvent, 'agent', 'was: nothing');
     assert.equal(cat.disguise_device.events.ApplyDisguiseEvent, 'player');
-    assert.ok(!('OnConversationEvent' in cat.conversation_device.events), 'sends (agent, int)');
+    assert.equal(cat.conversation_device.events.OnConversationEvent, 'tuple(agent, int)');
+    assert.ok(!('ExplodeEvent' in cat.carryable_spawner_device.events), 'sends tuple(?agent, []agent): no handler input for it yet');
   });
 
   test('a device stays listed when nothing is left to offer (saved projects may use it)', () => {
@@ -145,6 +147,58 @@ jump_device := class(creative_device):
             FortChar.JumpedEvent().Subscribe(OnJoined)
 `);
     assert.ok(r.errors.some(e => e.includes('JumpedEvent')), r.errors.join('\n'));
+  });
+});
+
+describe('events that send several values', () => {
+  const src = `using { /Fortnite.com/Devices }
+using { /Fortnite.com/Characters }
+using { /Verse.org/Simulation }
+
+choice_device := class(creative_device):
+
+    @editable
+    Popup:popup_dialog_device = popup_dialog_device{}
+    @editable
+    Hold:input_trigger_device = input_trigger_device{}
+
+    OnBegin<override>()<suspends>:void =
+        Popup.RespondingButtonEvent.Subscribe(OnChoice)
+        Hold.ReleasedEvent.Subscribe(OnReleased)
+        GetPlayspace().PlayerAddedEvent().Subscribe(OnJoined)
+
+    OnChoice(Agent:agent, Value:int):void =
+        if (Value = 0):
+            Print("first button")
+
+    OnReleased(Agent:agent, Value:float):void =
+        Print("{Value}")
+
+    OnJoined(Player:player):void =
+        if (FortChar := Player.GetFortCharacter[]):
+            FortChar.CrouchedEvent().Subscribe(OnCrouched)
+
+    OnCrouched(Character:fort_character, IsOn:logic):void =
+        Print("crouch")
+`;
+
+  test('their handlers take one input per value, and convert to blocks and back', () => {
+    const r = convert(src);
+    assert.deepEqual(r.errors, []);
+    assert.ok(!r.blocks.includes('verse_raw'), 'no raw Verse blocks');
+    for (const param of ['agent_int', 'agent_float', 'character_logic']) assert.ok(r.blocks.includes(`"PARAM":"${param}"`), param);
+    assert.equal(r.code, src);
+  });
+
+  test("handler inputs get the names blocks use", () => {
+    const parsed = engine.parseVerse(src.replace('OnChoice(Agent:agent, Value:int)', 'OnChoice(Who:agent, Button:int)').replace('if (Value = 0)', 'if (Button = 0)'));
+    assert.ok(parsed.ok);
+    assert.equal(generateFrom(parsed.state).code, src);
+  });
+
+  test('a handler with the wrong number of inputs is flagged', () => {
+    const r = convert(src.replace('OnReleased(Agent:agent, Value:float):void =\n        Print("{Value}")', 'OnReleased(Agent:agent):void =\n        Print("released")'));
+    assert.ok(r.errors.some(e => e.includes('ReleasedEvent')), r.errors.join('\n'));
   });
 });
 

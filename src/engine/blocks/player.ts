@@ -7,6 +7,9 @@ import { moduleForType } from '../data/verse-types.ts';
 import { formatFloat, Order } from '../generator/verse-generator.ts';
 import { checkFailable, FAILABLE } from './data.ts';
 import { COND } from './logic.ts';
+import { SPATIAL } from './movement.ts';
+
+const PLAYER_UTILITIES = '/Fortnite.com/FortPlayerUtilities';
 import { defineBlock } from '../registry.ts';
 import { hasInScope } from '../workspace.ts';
 import { asStatement, body, checkAgent, f, Slot } from './shared.ts';
@@ -114,5 +117,58 @@ export function registerPlayerBlocks(): void {
       asStatement(this);
     },
     generate: (b, g) => `for (Player : GetPlayspace().GetPlayers()):\n${body(g, b, 'DO')}`,
+  });
+
+  // FortPlayerUtilities: respawning and sending to the lobby
+  defineBlock({
+    type: 'verse_respawn',
+    colour: COLORS.player,
+    explain: {
+      title: 'Respawn', doc: DOCS.api,
+      tip: 'Agent.Respawn(Position, Rotation): brings an agent back into the game at a spot, facing a rotation.',
+      text: 'Respawn puts an agent back into the game at a position (a vector3), facing a rotation. Use it after an elimination, or to send someone back to the start. Needs using { /Fortnite.com/FortPlayerUtilities }; the generator adds it.',
+    },
+    init() {
+      this.appendValueInput('WHO').appendField('respawn');
+      this.appendValueInput('POS').appendField('at');
+      this.appendValueInput('ROT').appendField('facing');
+      this.setInputsInline(true);
+      asStatement(this);
+    },
+    generate(b, g) {
+      g.need(PLAYER_UTILITIES, 'Respawn');
+      const who = g.valueToCode(b, 'WHO', Order.ATOMIC);
+      if (!who) g.warn(b, 'Plug in who to respawn, like Agent.');
+      const pos = g.valueToCode(b, 'POS', Order.NONE), rot = g.valueToCode(b, 'ROT', Order.NONE);
+      if (!pos) { g.need(SPATIAL, 'vector3'); g.warn(b, 'Plug in where to respawn them.'); }
+      if (!rot) g.need(SPATIAL, 'IdentityRotation');
+      return `${who || 'Agent'}.Respawn(${pos || 'vector3{}'}, ${rot || 'IdentityRotation()'})\n`;
+    },
+  });
+
+  defineBlock({
+    type: 'verse_send_to_lobby',
+    colour: COLORS.player,
+    explain: {
+      title: 'Send to the lobby', doc: DOCS.api,
+      tip: 'Player.SendToLobby(): takes a player out of the island and back to the Fortnite lobby.',
+      text: 'SendToLobby removes a player from the game and sends them back to the lobby. It needs a player, not an agent: turn the agent into one first with "if Player := player[Agent]". Needs using { /Fortnite.com/FortPlayerUtilities }.',
+    },
+    init() {
+      this.appendValueInput('WHO').appendField('send');
+      this.appendDummyInput().appendField('to the lobby');
+      this.setInputsInline(true);
+      asStatement(this);
+    },
+    generate(b, g) {
+      g.need(PLAYER_UTILITIES, 'SendToLobby');
+      const target = b.getInputTargetBlock('WHO');
+      if (target?.type === 'verse_agent_value' && f(target, 'WHO') === 'Agent') {
+        g.warn(b, 'SendToLobby needs a player, not an agent. Turn the agent into a player first: if (Player := player[Agent]), then use Player.');
+      }
+      const who = g.valueToCode(b, 'WHO', Order.ATOMIC);
+      if (!who) g.warn(b, 'Plug in the player to send, like Player.');
+      return `${who || 'Player'}.SendToLobby()\n`;
+    },
   });
 }
