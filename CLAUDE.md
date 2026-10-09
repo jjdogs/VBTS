@@ -29,7 +29,7 @@ If you change the engine's output on purpose, run `npm run golden` and review th
 - `src/engine` never touches the page; the UI only uses what `src/engine/index.ts` exports.
 - TypeScript must be type-strippable (Node runs the tests directly): no `enum`, no `namespace`.
 - New block: `defineBlock` in `src/engine/blocks/<category>.ts`, list it in `src/engine/toolbox.ts`,
-  add a converter rule in `src/engine/parser/` and a round-trip test. See README → *Common changes*.
+  add a converter rule in `src/engine/parser/` and a round-trip test. See `docs/development.md` → *Common changes*.
 - Device data comes from Epic's live Verse API reference
   (https://dev.epicgames.com/documentation/fortnite/verse-api): `scripts/fetch-verse-api.py` writes
   `scripts/data/verse-api-devices.json`, then `scripts/extract-devices.py` builds `devices.json`, taking
@@ -40,5 +40,8 @@ If you change the engine's output on purpose, run `npm run golden` and review th
 
 ## Where things are
 
-- README: how the app is organised, every feature, tests.
-- `docs/phase-5-plan.md`: the current roadmap work (5.0 done; 5.1 teams, 5.2 movement, 5.3 UI next).
+- `README.md`: the front page and the documentation index. The guides are in `docs/`:
+  `using-the-app.md` (features of the app), `blocks-and-verse.md` (what blocks cover),
+  `development.md` (file map, common changes, tests), `verse-api.md` (device data, digests,
+  weekly sync), `releasing.md`, `roadmap.md`, and `plans/phase-5.md` (done).
+- When a change adds a feature, file or test, update the guide that covers it.
