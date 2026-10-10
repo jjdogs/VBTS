@@ -77,7 +77,8 @@ export interface RawDeclaration { name: string; editable: boolean; mutable: bool
 const RAW_MEMBERS = ['verse_raw_member', 'verse_raw_member_wrap'];
 export function parseRawDeclaration(code: string): RawDeclaration | null {
   const line = code.split('\n')[0];
-  const m = line.match(/^\s*((?:@\w+\s+)*)(var\s+)?([A-Za-z_]\w*)\s*((?:<\w+>\s*)*)(\(([^)]*)\))?\s*(?:<\w+>\s*)*(?::|=)/);
+  // Parameters may hold brackets of their own: ScreenSpot:(/Verse.org/SpatialMath:)vector3
+  const m = line.match(/^\s*((?:@\w+\s+)*)(var\s+)?([A-Za-z_]\w*)\s*((?:<\w+>\s*)*)(\(((?:[^()]|\([^()]*\))*)\))?\s*(?:<\w+>\s*)*(?::|=)/);
   if (!m) return null;
   return { name: m[3], editable: /@editable\b/.test(m[1]), mutable: !!m[2], isFunction: m[5] !== undefined, params: m[6] ?? '' };
 }

@@ -103,10 +103,11 @@ test('a method result with four inputs becomes blocks', () => {
   assert.ok(parsed.ok);
   assert.deepEqual(parsed.report.raw, []);
   assert.ok(r.code.includes('Pet.Pick(1, 2, 3, 4)'));
+});
 
-  test('calling a function kept as raw Verse is not reported as missing', () => {
-    // Function blocks have no <transacts> option, so this helper stays raw Verse; calls to it are fine in UEFN.
-    const src = `using { /Fortnite.com/Devices }
+test('calling a function kept as raw Verse is not reported as missing', () => {
+  // Function blocks have no <transacts> option, so this helper stays raw Verse; calls to it are fine in UEFN.
+  const src = `using { /Fortnite.com/Devices }
 using { /Verse.org/Simulation }
 
 helper_device := class(creative_device):
@@ -125,10 +126,31 @@ helper_device := class(creative_device):
             set Result = 0.0 - X
         Result
 `;
-    const parsed = engine.parseVerse(src);
-    assert.ok(parsed.ok);
-    const r = generateFrom(parsed.state);
-    assert.deepEqual(r.warnings.filter(w => w.msg.startsWith('No function named')).map(w => w.msg), []);
-    assert.equal(r.code, src);
-  });
+  const parsed = engine.parseVerse(src);
+  assert.ok(parsed.ok);
+  const r = generateFrom(parsed.state);
+  assert.deepEqual(r.warnings.filter(w => w.msg.startsWith('No function named')).map(w => w.msg), []);
+  assert.equal(r.code, src);
+});
+
+test('a raw function whose inputs use a qualified type is still a function', () => {
+  // (/Verse.org/SpatialMath:)vector3 has brackets of its own; return inside it is fine.
+  const src = `using { /Fortnite.com/Devices }
+using { /Verse.org/Simulation }
+
+pointer_device := class(creative_device):
+
+    OnBegin<override>()<suspends>:void =
+        Print("ready")
+
+    OnPointer(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
+        if (ScreenSpot.Left < 0.0):
+            return
+        Print("pointer")
+`;
+  const parsed = engine.parseVerse(src);
+  assert.ok(parsed.ok);
+  const r = generateFrom(parsed.state);
+  assert.deepEqual(r.warnings.filter(w => w.msg.includes('return only works')).map(w => w.msg), []);
+  assert.equal(r.code, src);
 });
