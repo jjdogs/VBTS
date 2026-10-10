@@ -8,8 +8,9 @@ the Fortnite 42.30 digests, and none of it is experimental.
 **How it works.** A small hint is added to the player's screen in UI mode, which shows the mouse
 cursor and sends pointer input to Verse. While the player clicks or drags, the `PointerSelect` input
 gives the cursor's position on the screen. `DeprojectViewportToWorld` turns that into a ray from the
-camera through the cursor, and the device finds where the ray reaches the dish: that's where the
-sponge goes. Each grime spot keeps count of how much it has been rubbed.
+camera through the cursor, and the device finds where the ray crosses the flat surface that faces the
+camera through the sponge's starting spot: that's where the sponge goes, so it moves up/down and
+left/right on screen whatever angle the camera and dish are at. Each grime spot keeps count of how much it has been rubbed.
 
 **Results so far**
 
@@ -18,7 +19,8 @@ sponge goes. Each grime spot keeps count of how much it has been rubbed.
 | Draw circles, no camera | ✅ Holding fire and moving the mouse cleaned the grime |
 | Sponge follows the view, no camera | ✅ Sponge moves, cleaning works |
 | Sponge follows the view, fixed camera | ❌ The fixed camera locks the view, so the sponge can't follow it |
-| **Drag with the cursor, fixed camera** (this version) | To test |
+| Drag with the cursor, fixed camera | ✅ Pointer reaches Verse and moves the sponge, but across the floor (forward/back), not up/down |
+| **Drag with the cursor, sponge moves across the screen** (this version) | To test |
 
 ## Set up (about 10 minutes)
 
@@ -28,8 +30,9 @@ sponge goes. Each grime spot keeps count of how much it has been rubbed.
 2. **The sink**: place a counter or sink, and a **Mutator Zone** covering where the player stands
    in front of it.
 3. **The dish**: place something flat (a plate, tray or small table top) on the sink.
-4. **The sponge**: place a small prop just *above* the dish, not touching it. It keeps that height
-   while it moves; if it touches the dish it can't move.
+4. **The sponge**: place a small prop in the **middle** of the dish, just in front of it (on the
+   camera's side), not touching it. It moves across the screen from there: cursor up/down moves it
+   up/down, left/right moves it left/right, never towards or away from the camera.
 5. **Grime**: place a few small, flat, dirty-looking props on the dish in different places.
 6. **The camera**: place a **Fixed Point Camera** (Fortnite → Devices) above the dish, looking
    straight down at it. Right-click it → *Pilot* to aim it, then *Eject*.

@@ -32,7 +32,7 @@ scrub_test_device := class(creative_device):
     @editable
     GrimeLayers:[]creative_prop = array{}
 
-    # How far from the dish's centre the sponge can go (cm)
+    # How far the sponge can go from where you placed it (cm). Place it in the middle of the dish.
     @editable
     DishRadius:float = 40.0
     # How close (cm) the sponge must be to a grime spot to rub it
@@ -49,10 +49,19 @@ scrub_test_device := class(creative_device):
     var Subscribed:logic = false
     # The on-screen layer that shows the mouse cursor while at the sink
     var CursorLayer:?canvas = false
-    # Where the sponge is, relative to the dish's centre, and how high above it
-    var SpongeX:float = 0.0
-    var SpongeY:float = 0.0
-    var SpongeLift:float = 0.0
+    # Where the sponge started (the middle of where it can move)
+    var HomeX:float = 0.0
+    var HomeY:float = 0.0
+    var HomeZ:float = 0.0
+    # How far the sponge is from there now
+    var OffsetX:float = 0.0
+    var OffsetY:float = 0.0
+    var OffsetZ:float = 0.0
+    # The direction from the camera to the sponge's start. The sponge moves across the flat
+    # surface that faces the camera (screen up/down and left/right), never towards or away from it.
+    var FacingX:float = 0.0
+    var FacingY:float = 0.0
+    var FacingZ:float = 0.0
     # How much each grime spot has been rubbed (-1.0 once it's clean)
     var Rubbed:[]float = array{}
     var SpotsLeft:int = 0
@@ -60,11 +69,10 @@ scrub_test_device := class(creative_device):
     var PointerEvents:int = 0
 
     OnBegin<override>()<suspends>:void =
-        DishSpot := Dish.GetTransform().Translation
         SpongeSpot := Sponge.GetTransform().Translation
-        set SpongeX = SpongeSpot.X - DishSpot.X
-        set SpongeY = SpongeSpot.Y - DishSpot.Y
-        set SpongeLift = SpongeSpot.Z - DishSpot.Z
+        set HomeX = SpongeSpot.X
+        set HomeY = SpongeSpot.Y
+        set HomeZ = SpongeSpot.Z
         set Rubbed = for (Grime : GrimeLayers):
             0.0
         set SpotsLeft = GrimeLayers.Length
@@ -113,7 +121,7 @@ scrub_test_device := class(creative_device):
     OnPointerDrag(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3, Seconds:float):void =
         ScrubAt(Player, ScreenSpot)
 
-    # Turns the cursor's spot on the screen into a spot on the dish, and moves the sponge there
+    # Turns the cursor's spot on the screen into a spot in front of the dish, and moves the sponge there
     ScrubAt(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
         if (Inside?):
             set PointerEvents += 1
@@ -123,43 +131,58 @@ scrub_test_device := class(creative_device):
             Ray := Player.DeprojectViewportToWorld(ScreenSpot)
             From := FromVector3(Ray.Origin)
             Towards := FromVector3(Ray.Direction)
-            # …and where it reaches the sponge's height above the dish
-            DishSpot := Dish.GetTransform().Translation
-            Height := DishSpot.Z + SpongeLift
-            if (Towards.Z < 0.0):
-                Steps := (Height - From.Z) / Towards.Z
-                HitX := From.X + Towards.X * Steps
-                HitY := From.Y + Towards.Y * Steps
-                OldX := SpongeX
-                OldY := SpongeY
-                MoveSponge(HitX - DishSpot.X, HitY - DishSpot.Y)
-                Moved := Sqrt((SpongeX - OldX) * (SpongeX - OldX) + (SpongeY - OldY) * (SpongeY - OldY))
+            # …facing the camera: the direction from the camera to the sponge's start
+            set FacingX = HomeX - From.X
+            set FacingY = HomeY - From.Y
+            set FacingZ = HomeZ - From.Z
+            Facing := FacingX * FacingX + FacingY * FacingY + FacingZ * FacingZ
+            # …and where the ray crosses the flat surface through the sponge's start that faces the camera
+            Across := Towards.X * FacingX + Towards.Y * FacingY + Towards.Z * FacingZ
+            if (Across > 0.0):
+                Steps := Facing / Across
+                OldX := OffsetX
+                OldY := OffsetY
+                OldZ := OffsetZ
+                MoveSponge(From.X + Towards.X * Steps - HomeX, From.Y + Towards.Y * Steps - HomeY, From.Z + Towards.Z * Steps - HomeZ)
+                Moved := Sqrt((OffsetX - OldX) * (OffsetX - OldX) + (OffsetY - OldY) * (OffsetY - OldY) + (OffsetZ - OldZ) * (OffsetZ - OldZ))
                 if (Moved > 0.0):
                     RubGrime(Moved)
 
-    # Moves the sponge to (X, Y) from the dish's centre, kept inside the dish
-    MoveSponge(X:float, Y:float):void =
+    # Moves the sponge to (X, Y, Z) from where it started, no further than DishRadius
+    MoveSponge(X:float, Y:float, Z:float):void =
         var NewX:float = X
         var NewY:float = Y
-        FromCentre := Sqrt(X * X + Y * Y)
-        if (FromCentre > DishRadius):
-            set NewX = X * DishRadius / FromCentre
-            set NewY = Y * DishRadius / FromCentre
-        DishSpot := Dish.GetTransform().Translation
+        var NewZ:float = Z
+        FromHome := Sqrt(X * X + Y * Y + Z * Z)
+        if (FromHome > DishRadius):
+            set NewX = X * DishRadius / FromHome
+            set NewY = Y * DishRadius / FromHome
+            set NewZ = Z * DishRadius / FromHome
         # Both SpatialMath modules have a vector3, so this one says which (the one props use)
-        Target := (/UnrealEngine.com/Temporary/SpatialMath:)vector3{X := DishSpot.X + NewX, Y := DishSpot.Y + NewY, Z := DishSpot.Z + SpongeLift}
+        Target := (/UnrealEngine.com/Temporary/SpatialMath:)vector3{X := HomeX + NewX, Y := HomeY + NewY, Z := HomeZ + NewZ}
         if (Sponge.TeleportTo[Target, Sponge.GetTransform().Rotation]):
-            set SpongeX = NewX
-            set SpongeY = NewY
+            set OffsetX = NewX
+            set OffsetY = NewY
+            set OffsetZ = NewZ
         else if (not SpongeWarned?):
             set SpongeWarned = true
-            Print("SPONGE: can't move there. Raise the sponge a little above the dish.", ?Duration := 8.0)
+            Print("SPONGE: can't move there. Move the sponge a little further from the dish.", ?Duration := 8.0)
 
-    # Rubs every grime spot the sponge is over; a spot rubbed enough disappears
+    # Rubs every grime spot the sponge is over (as seen from the camera); a spot rubbed enough disappears
     RubGrime(Moved:float):void =
         SpongeSpot := Sponge.GetTransform().Translation
+        Facing := FacingX * FacingX + FacingY * FacingY + FacingZ * FacingZ
         for (Index -> Grime : GrimeLayers):
-            if (Old := Rubbed[Index], Old >= 0.0, DistanceXY(SpongeSpot, Grime.GetTransform().Translation) <= RubReach, set Rubbed[Index] = Old + Moved):
+            GrimeSpot := Grime.GetTransform().Translation
+            # From the grime to the sponge, ignoring the part towards the camera (the sponge sits in front)
+            DX := SpongeSpot.X - GrimeSpot.X
+            DY := SpongeSpot.Y - GrimeSpot.Y
+            DZ := SpongeSpot.Z - GrimeSpot.Z
+            Towards := (DX * FacingX + DY * FacingY + DZ * FacingZ) / Facing
+            SX := DX - FacingX * Towards
+            SY := DY - FacingY * Towards
+            SZ := DZ - FacingZ * Towards
+            if (Old := Rubbed[Index], Old >= 0.0, SX * SX + SY * SY + SZ * SZ <= RubReach * RubReach, set Rubbed[Index] = Old + Moved):
                 if (Old + Moved >= RubNeeded, set Rubbed[Index] = -1.0):
                     Grime.Hide()
                     set SpotsLeft -= 1
