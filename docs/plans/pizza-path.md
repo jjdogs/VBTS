@@ -107,7 +107,7 @@ What chapter 2's minigames need, proven in the [scrub test](../../prototypes/scr
 
 For chapter 1, **your own widgets** (lesson 1 onwards): a widget blueprint's type (an array of
 them, `WBP_ShopHUD{}` to make one) and setting one of its message variables
-(`set ShopHUD.Status = MakeMessage(…)`). Everything else in chapter 1 has blocks today.
+(`set ShopHUD.Coins = MakeMessage(…)`). Everything else in chapter 1 has blocks today.
 
 ## Basics: trimmed to about 15
 

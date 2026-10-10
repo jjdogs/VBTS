@@ -26,7 +26,7 @@ pizza_shop := class(creative_device):
     var Pizzas:int = 0
 
     # The shop HUD on each player's screen. WBP_ShopHUD is the widget you made in the widget
-    # editor: its message variables (ShopName and Status) are the text Verse can change.
+    # editor: its message variables (ShopName and Coins) are the text Verse can change.
     var ShopHUDs:[]WBP_ShopHUD = array{}
 
     OnBegin<override>()<suspends>:void =
@@ -54,9 +54,9 @@ pizza_shop := class(creative_device):
         for (ShopHUD : ShopHUDs):
             set ShopHUD.ShopName = MakeMessage(ShopName)
             if (Coins >= Goal):
-                set ShopHUD.Status = MakeMessage("Famous! {Pizzas} pizzas baked")
+                set ShopHUD.Coins = MakeMessage("Famous! {Pizzas} pizzas baked")
             else:
-                set ShopHUD.Status = MakeMessage("{Coins} coins")
+                set ShopHUD.Coins = MakeMessage("{Coins} coins")
 
     # Turns a string into a message (widget text needs a message)
     MakeMessage<localizes>(Text:string):message = "{Text}"

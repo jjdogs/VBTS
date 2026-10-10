@@ -31,10 +31,10 @@ each **bound** to a Text Block, set from Verse.
    each one's **Anchors** to match (top middle) so they stay put on any screen size.
 3. Style them as you like: font size, colour, an outline. You can add an **Image** behind them as a
    panel. (Placeholder text like "Shop name" and "0 coins" helps you see the layout.)
-4. Open **Window → Variables**. Add a variable `ShopName` of type **message**, and another one `Status`,
+4. Open **Window → Variables**. Add a variable `ShopName` of type **message**, and another one `Coins`,
    also **message**.
 5. Select the name Text Block. In Details, next to **Text**, click the **chain-link icon** and pick
-   `ShopName`. Do the same for the coins Text Block with `Status`.
+   `ShopName`. Do the same for the coins Text Block with `Coins`.
 6. **Compile** and **Save**.
 
 ### The shop
@@ -59,7 +59,7 @@ each **bound** to a Text Block, set from Verse.
    - *Try it*: your HUD shows, with its placeholder text.
    - *New to this?* Your widget blueprint becomes a Verse type when you build. `WBP_ShopHUD{}` makes a
      new one, like `button_device{}` does.
-3. **Fill it in.** Set each HUD's `ShopName` and `Status` (its message variables).
+3. **Fill it in.** Set each HUD's `ShopName` and `Coins` (its message variables).
    - *Try it*: your shop's name and "0 coins" show.
 4. **Bake.** Subscribe `OnPizzaBaked` to the oven button: add a pizza and `PizzaPrice` coins, then
    update the HUDs.
