@@ -101,9 +101,15 @@ scrub_test_device := class(creative_device):
             set Inside = false
             set Washer = false
             Camera.RemoveFrom(Agent)
-            if (Player := player[Agent], PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
-                PlayerUI.RemoveWidget(Layer)
-                set CursorLayer = false
+            if (Player := player[Agent]):
+                # Turn off the input that washing turned on, or the cursor stays and you can't look around
+                if (PlayerInput := GetPlayerInput[Player]):
+                    PlayerInput.RemoveInputMapping(TouchMapping)
+                    PlayerInput.RemoveInputMapping(MenuNavigationMapping)
+                    PlayerInput.RemoveInputMapping(TraversalMapping)
+                if (PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
+                    PlayerUI.RemoveWidget(Layer)
+                    set CursorLayer = false
 
     # Puts the grime back and the sponge in the middle, to wash again
     ResetDish():void =
@@ -133,19 +139,22 @@ scrub_test_device := class(creative_device):
 
     # The pointer (mouse cursor or finger) while it's pressed, and the keys that stop washing
     ListenForInput(Player:player):void =
-        if (not Subscribed?, PlayerInput := GetPlayerInput[Player]):
-            set Subscribed = true
+        if (PlayerInput := GetPlayerInput[Player]):
+            # Turned on every time washing starts, and off again in StopWashing
             PlayerInput.AddInputMapping(TouchMapping)
-            Pointer := PlayerInput.GetInputEvents(PointerSelect)
-            Pointer.BeginDetectEvent.Subscribe(OnPointerDown)
-            Pointer.DetectionOngoingEvent.Subscribe(OnPointerDrag)
-            Pointer.TriggerActivationEvent.Subscribe(OnPointerDown)
             # Esc (Back on a controller): works while the cursor is showing
             PlayerInput.AddInputMapping(MenuNavigationMapping)
-            PlayerInput.GetInputEvents(Back).TriggerActivationEvent.Subscribe(OnStopKey)
             # Space (Jump): may be blocked while the cursor is showing; Esc and Done still work
             PlayerInput.AddInputMapping(TraversalMapping)
-            PlayerInput.GetInputEvents(Jump).TriggerActivationEvent.Subscribe(OnStopKey)
+            # Subscribe only once: events only arrive while their mapping is on
+            if (not Subscribed?):
+                set Subscribed = true
+                Pointer := PlayerInput.GetInputEvents(PointerSelect)
+                Pointer.BeginDetectEvent.Subscribe(OnPointerDown)
+                Pointer.DetectionOngoingEvent.Subscribe(OnPointerDrag)
+                Pointer.TriggerActivationEvent.Subscribe(OnPointerDown)
+                PlayerInput.GetInputEvents(Back).TriggerActivationEvent.Subscribe(OnStopKey)
+                PlayerInput.GetInputEvents(Jump).TriggerActivationEvent.Subscribe(OnStopKey)
 
     OnStopKey(Player:player, Pressed:logic):void =
         StopWashing(Player)

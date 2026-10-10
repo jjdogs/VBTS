@@ -68,6 +68,8 @@ what (if anything) happens on screen when you click.
 - A **fixed camera locks the player's view**, so anything that reads `GetViewRotation` stops
   working under it. Without a camera, holding fire and turning the view works too.
 - A camera device must be **enabled** (`Enable()`) before `AddTo` does anything.
+- **Undo everything when the minigame ends**: the camera, the widget *and* the input mappings
+  (`RemoveInputMapping`). Leaving the mappings on kept the cursor stuck after leaving.
 - A prop **can't be teleported into another prop**: keep the moving prop a little in front.
 - Verse gotchas met on the way (worth warnings in Verse Blocks): a local named like an imported
   module (`UI`), `vector3` being ambiguous once both SpatialMath modules are imported, and a
