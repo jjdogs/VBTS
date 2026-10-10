@@ -7,7 +7,7 @@ Restaurant Simulator**, that grows from a small shop into a franchise. Each chap
 of that game, and each lesson ends on a version that could be published as it is; what the next
 lesson adds is an "update".
 
-Status: **chapter 1 in progress.** Lessons 1 and 2 are drafted for testing in UEFN ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md)); nothing is in the app yet.
+Status: **chapter 1 in progress.** Lessons 1 and 2 are drafted for testing in UEFN (lesson 1 now uses a widget HUD; lesson 2 will follow once it works) ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md)); nothing is in the app yet.
 
 ## Rules for every lesson
 
@@ -42,10 +42,14 @@ pizzas as you can before closing time.
   screen with your shop's name.
 - **Publishable because**: it's a complete clicker: one action, a score that goes up.
 - **New Verse**: a device with `@editable` buttons; a `var` for coins, `set` and text with `{Coins}`
-  in it. (Basics: *Wire up a button*, *Three strikes*.)
-- **In UEFN**: a counter and an oven (any props), a **Button** on the oven ("Bake"), a **HUD
-  Message** device.
-- **Choice**: the shop's name.
+  in it. (Basics: *Wire up a button*, *Three strikes*.) **New in UEFN**: a shop HUD designed in the
+  widget editor (`WBP_ShopHUD`, with message variables bound to its Text Blocks), shown and
+  updated from Verse.
+- **In UEFN**: a counter and an oven (any props), a **Button** on the oven ("Bake"), the
+  `WBP_ShopHUD` widget blueprint.
+- **Choice**: the shop's name, and how the HUD looks.
+- **Why a widget, not a HUD Message device**: the first draft's HUD Message device showed nothing,
+  and widgets are how UEFN games really build HUDs, so learners get used to the widget editor early.
 - **Next update**: customers who want something specific.
 
 ### 2. Customers have orders
@@ -101,7 +105,9 @@ What chapter 2's minigames need, proven in the [scrub test](../../prototypes/scr
 - Turn a point on the screen into the world (`DeprojectViewportToWorld`).
 - Add and remove a camera (`AddTo`, `RemoveFrom`, `Enable`).
 
-Chapter 1 needs no new blocks: it uses only blocks that exist today.
+For chapter 1, **your own widgets** (lesson 1 onwards): a widget blueprint's type (an array of
+them, `WBP_ShopHUD{}` to make one) and setting one of its message variables
+(`set ShopHUD.Status = MakeMessage(…)`). Everything else in chapter 1 has blocks today.
 
 ## Basics: trimmed to about 15
 
