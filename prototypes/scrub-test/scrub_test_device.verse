@@ -1,14 +1,13 @@
 # Scrub test: interact with the sink to start. A fixed camera looks at the dish and the mouse
-# cursor appears. Click and drag: the sponge goes wherever the cursor points on the dish.
+# cursor appears. Grab the sponge with the cursor and drag it over the dish.
 # Rub the sponge over a grime spot to clean it; when every spot is gone, the dish is clean.
-# Leave with Esc, Space, or the Done button (or it ends by itself once the dish is clean).
+# Leave with the Done button (or it ends by itself once the dish is clean).
 # Setup and what to look for: README.md next to this file.
 
 using { /Fortnite.com/Devices }
 using { /Fortnite.com/UI }  # for text_block, button_quiet
-using { /Fortnite.com/Input/Character }  # for Jump, TraversalMapping (Space)
 using { /Verse.org/Input }  # for GetPlayerInput, DeprojectViewportToWorld
-using { /Verse.org/Input/UI }  # for TouchMapping, PointerSelect (the cursor), Back, MenuNavigationMapping (Esc)
+using { /Verse.org/Input/UI }  # for TouchMapping, PointerSelect (the cursor)
 using { /Verse.org/Simulation }
 using { /Verse.org/SpatialMath }  # the pointer's position uses this vector3
 using { /UnrealEngine.com/Temporary/SpatialMath }  # props and DistanceXY use this one
@@ -37,6 +36,10 @@ scrub_test_device := class(creative_device):
     # How far the sponge can go from where you placed it (cm). Place it in the middle of the dish.
     @editable
     DishRadius:float = 40.0
+    # How close (cm) the cursor must be to the sponge to pick it up. The sponge's spot is its
+    # pivot, which may be a corner of the prop: raise this if grabbing is hard.
+    @editable
+    GrabReach:float = 25.0
     # How close (cm) the sponge must be to a grime spot to rub it
     @editable
     RubReach:float = 15.0
@@ -69,6 +72,15 @@ scrub_test_device := class(creative_device):
     # How much each grime spot has been rubbed (-1.0 once it's clean)
     var Rubbed:[]float = array{}
     var SpotsLeft:int = 0
+    # Whether the sponge is held, and where it is from the cursor while held
+    var Grabbing:logic = false
+    var GrabX:float = 0.0
+    var GrabY:float = 0.0
+    var GrabZ:float = 0.0
+    # Where the cursor last pointed (from the sponge's start)
+    var HitX:float = 0.0
+    var HitY:float = 0.0
+    var HitZ:float = 0.0
     var SpongeWarned:logic = false
     var PointerEvents:int = 0
 
@@ -95,18 +107,18 @@ scrub_test_device := class(creative_device):
             ShowControls(Player)
             ListenForInput(Player)
 
-    # Esc, Space, the Done button, or a clean dish: back to the normal view
+    # The Done button or a clean dish: back to the normal view
     StopWashing(Agent:agent):void =
         if (Inside?):
             set Inside = false
             set Washer = false
+            set Grabbing = false
             Camera.RemoveFrom(Agent)
             if (Player := player[Agent]):
-                # Turn off the input that washing turned on, or the cursor stays and you can't look around
+                # Turn off the pointer input that washing turned on. Only remove mappings you added
+                # yourself: the player's own ones (like TraversalMapping, for moving) must stay.
                 if (PlayerInput := GetPlayerInput[Player]):
                     PlayerInput.RemoveInputMapping(TouchMapping)
-                    PlayerInput.RemoveInputMapping(MenuNavigationMapping)
-                    PlayerInput.RemoveInputMapping(TraversalMapping)
                 if (PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
                     PlayerUI.RemoveWidget(Layer)
                     set CursorLayer = false
@@ -123,7 +135,7 @@ scrub_test_device := class(creative_device):
     # A hint and a Done button, added in UI mode so the mouse cursor shows and clicks reach Verse
     ShowControls(Player:player):void =
         if (PlayerUI := GetPlayerUI[Player]):
-            Hint := text_block{DefaultText := MakeMessage("Drag on the dish to scrub.  Esc or Space to stop.")}
+            Hint := text_block{DefaultText := MakeMessage("Grab the sponge and drag it over the dish to scrub.")}
             Done := button_quiet{DefaultText := MakeMessage("Done")}
             Done.OnClick().Subscribe(OnDoneClicked)
             Bottom := vector2{X := 0.5, Y := 0.9}
@@ -137,65 +149,83 @@ scrub_test_device := class(creative_device):
     OnDoneClicked(Message:widget_message):void =
         StopWashing(Message.Player)
 
-    # The pointer (mouse cursor or finger) while it's pressed, and the keys that stop washing
+    # The pointer (mouse cursor or finger): pressed, dragged, and let go
     ListenForInput(Player:player):void =
         if (PlayerInput := GetPlayerInput[Player]):
             # Turned on every time washing starts, and off again in StopWashing
             PlayerInput.AddInputMapping(TouchMapping)
-            # Esc (Back on a controller): works while the cursor is showing
-            PlayerInput.AddInputMapping(MenuNavigationMapping)
-            # Space (Jump): may be blocked while the cursor is showing; Esc and Done still work
-            PlayerInput.AddInputMapping(TraversalMapping)
             # Subscribe only once: events only arrive while their mapping is on
             if (not Subscribed?):
                 set Subscribed = true
                 Pointer := PlayerInput.GetInputEvents(PointerSelect)
                 Pointer.BeginDetectEvent.Subscribe(OnPointerDown)
                 Pointer.DetectionOngoingEvent.Subscribe(OnPointerDrag)
-                Pointer.TriggerActivationEvent.Subscribe(OnPointerDown)
-                PlayerInput.GetInputEvents(Back).TriggerActivationEvent.Subscribe(OnStopKey)
-                PlayerInput.GetInputEvents(Jump).TriggerActivationEvent.Subscribe(OnStopKey)
-
-    OnStopKey(Player:player, Pressed:logic):void =
-        StopWashing(Player)
+                Pointer.TriggerActivationEvent.Subscribe(OnPointerHeld)
+                Pointer.EndDetectEvent.Subscribe(OnPointerUp)
 
     # Once the dish is clean, a moment to enjoy it, then back to the normal view
     FinishSoon(Agent:agent)<suspends>:void =
         Sleep(1.5)
         StopWashing(Agent)
 
+    # Pressing picks the sponge up, but only if the cursor is on (or near) it
     OnPointerDown(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
-        ScrubAt(Player, ScreenSpot)
+        if (Inside?, FindCursorSpot[Player, ScreenSpot]):
+            DX := HitX - OffsetX
+            DY := HitY - OffsetY
+            DZ := HitZ - OffsetZ
+            if (DX * DX + DY * DY + DZ * DZ <= GrabReach * GrabReach):
+                set Grabbing = true
+                # Keep the sponge where it is under the cursor, wherever on it you grabbed
+                set GrabX = OffsetX - HitX
+                set GrabY = OffsetY - HitY
+                set GrabZ = OffsetZ - HitZ
+            else if (ShowDebug?):
+                Print("Missed the sponge: click on it to pick it up")
 
     OnPointerDrag(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3, Seconds:float):void =
-        ScrubAt(Player, ScreenSpot)
+        DragTo(Player, ScreenSpot)
 
-    # Turns the cursor's spot on the screen into a spot in front of the dish, and moves the sponge there
-    ScrubAt(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
-        if (Inside?):
+    OnPointerHeld(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
+        DragTo(Player, ScreenSpot)
+
+    # Letting go drops the sponge
+    OnPointerUp(Player:player, Seconds:float):void =
+        set Grabbing = false
+
+    # While the sponge is held, it follows the cursor and rubs any grime it passes over
+    DragTo(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
+        if (Inside?, Grabbing?, FindCursorSpot[Player, ScreenSpot]):
             set PointerEvents += 1
             if (ShowDebug?, Mod[PointerEvents, 20] = 1):
                 Print("pointer at ({ScreenSpot.Left}, {ScreenSpot.Up})  events {PointerEvents}  spots left {SpotsLeft}")
-            # A ray from the camera through the cursor…
-            Ray := Player.DeprojectViewportToWorld(ScreenSpot)
-            From := FromVector3(Ray.Origin)
-            Towards := FromVector3(Ray.Direction)
-            # …facing the camera: the direction from the camera to the sponge's start
-            set FacingX = HomeX - From.X
-            set FacingY = HomeY - From.Y
-            set FacingZ = HomeZ - From.Z
-            Facing := FacingX * FacingX + FacingY * FacingY + FacingZ * FacingZ
-            # …and where the ray crosses the flat surface through the sponge's start that faces the camera
-            Across := Towards.X * FacingX + Towards.Y * FacingY + Towards.Z * FacingZ
-            if (Across > 0.0):
-                Steps := Facing / Across
-                OldX := OffsetX
-                OldY := OffsetY
-                OldZ := OffsetZ
-                MoveSponge(From.X + Towards.X * Steps - HomeX, From.Y + Towards.Y * Steps - HomeY, From.Z + Towards.Z * Steps - HomeZ)
-                Moved := Sqrt((OffsetX - OldX) * (OffsetX - OldX) + (OffsetY - OldY) * (OffsetY - OldY) + (OffsetZ - OldZ) * (OffsetZ - OldZ))
-                if (Moved > 0.0):
-                    RubGrime(Moved)
+            OldX := OffsetX
+            OldY := OffsetY
+            OldZ := OffsetZ
+            MoveSponge(HitX + GrabX, HitY + GrabY, HitZ + GrabZ)
+            Moved := Sqrt((OffsetX - OldX) * (OffsetX - OldX) + (OffsetY - OldY) * (OffsetY - OldY) + (OffsetZ - OldZ) * (OffsetZ - OldZ))
+            if (Moved > 0.0):
+                RubGrime(Moved)
+
+    # Finds where the cursor points, on the flat surface through the sponge's start that faces
+    # the camera, and puts it in HitX/HitY/HitZ (from the sponge's start). Fails if it points away.
+    FindCursorSpot(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3)<transacts><decides>:void =
+        # A ray from the camera through the cursor…
+        Ray := Player.DeprojectViewportToWorld(ScreenSpot)
+        From := FromVector3(Ray.Origin)
+        Towards := FromVector3(Ray.Direction)
+        # …facing the camera: the direction from the camera to the sponge's start
+        set FacingX = HomeX - From.X
+        set FacingY = HomeY - From.Y
+        set FacingZ = HomeZ - From.Z
+        Facing := FacingX * FacingX + FacingY * FacingY + FacingZ * FacingZ
+        # …and where the ray crosses that surface
+        Across := Towards.X * FacingX + Towards.Y * FacingY + Towards.Z * FacingZ
+        Across > 0.0
+        Steps := Facing / Across
+        set HitX = From.X + Towards.X * Steps - HomeX
+        set HitY = From.Y + Towards.Y * Steps - HomeY
+        set HitZ = From.Z + Towards.Z * Steps - HomeZ
 
     # Moves the sponge to (X, Y, Z) from where it started, no further than DishRadius
     MoveSponge(X:float, Y:float, Z:float):void =
