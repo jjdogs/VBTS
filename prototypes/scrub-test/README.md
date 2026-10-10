@@ -27,8 +27,8 @@ left/right on screen whatever angle the camera and dish are at. Each grime spot 
 1. **Verse file**: in UEFN, **Verse → Verse Explorer**, right-click your project → *Add new Verse
    file to project* → *Verse Device*, name it `scrub_test_device`, and replace its contents with
    [`scrub_test_device.verse`](scrub_test_device.verse). **Verse → Build Verse Code**.
-2. **The sink**: place a counter or sink, and a **Mutator Zone** covering where the player stands
-   in front of it.
+2. **The sink**: place a counter or sink, and a **Button** device on it (Fortnite → Devices). In
+   the Button's options, set its interaction text to something like "Wash dishes".
 3. **The dish**: place something flat (a plate, tray or small table top) on the sink.
 4. **The sponge**: place a small prop in the **middle** of the dish, just in front of it (on the
    camera's side), not touching it. It moves across the screen from there: cursor up/down moves it
@@ -36,9 +36,12 @@ left/right on screen whatever angle the camera and dish are at. Each grime spot 
 5. **Grime**: place a few small, flat, dirty-looking props on the dish in different places.
 6. **The camera**: place a **Fixed Point Camera** (Fortnite → Devices) above the dish, looking
    straight down at it. Right-click it → *Pilot* to aim it, then *Eject*.
-7. **The device**: drag `scrub_test_device` into the level. In its Details panel set **SinkZone**,
+7. **The device**: drag `scrub_test_device` into the level. In its Details panel set **SinkButton**,
    **Camera**, **Dish**, **Sponge**, and add the grime props to **GrimeLayers** (+, then pick each).
-8. **Launch Session**, walk into the zone, then click and drag on the dish.
+8. **Launch Session**, interact with the sink button (E), then click and drag on the dish.
+
+**Leaving**: press **Esc**, press **Space**, or click **Done** (top right). It also ends by itself a
+moment after the dish is sparkling clean. Interacting again on a clean dish puts the grime back.
 
 ## What to try, and what to tell me
 
@@ -49,6 +52,7 @@ left/right on screen whatever angle the camera and dish are at. Each grime spot 
 | 3. Sponge | Does the sponge go to where the cursor is on the dish? Is it under the cursor, or off to one side? |
 | 4. Cleaning | Rub over a grime spot: does it disappear after a while? Does "Sparkling clean!" appear at the end? |
 | 5. Feel | Try **RubNeeded** (50 to 300) and **DishRadius**. Too much rubbing, too little? |
+| 6. Leaving | Do **Esc**, **Space** and the **Done** button each take you back to the normal view? (Space may not work while the cursor is showing; tell me which ones do.) Does it end by itself when the dish is clean? |
 
 If `pointer at` never appears when you click, the pointer input isn't reaching Verse: tell me, and
 what (if anything) happens on screen when you click.

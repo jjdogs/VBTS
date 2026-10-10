@@ -1,12 +1,14 @@
-# Scrub test: at the sink, a fixed camera looks down at the dish and the mouse cursor appears.
-# Click and drag: the sponge goes wherever the cursor points on the dish.
+# Scrub test: interact with the sink to start. A fixed camera looks at the dish and the mouse
+# cursor appears. Click and drag: the sponge goes wherever the cursor points on the dish.
 # Rub the sponge over a grime spot to clean it; when every spot is gone, the dish is clean.
+# Leave with Esc, Space, or the Done button (or it ends by itself once the dish is clean).
 # Setup and what to look for: README.md next to this file.
 
 using { /Fortnite.com/Devices }
-using { /Fortnite.com/UI }  # for text_block
+using { /Fortnite.com/UI }  # for text_block, button_quiet
+using { /Fortnite.com/Input/Character }  # for Jump, TraversalMapping (Space)
 using { /Verse.org/Input }  # for GetPlayerInput, DeprojectViewportToWorld
-using { /Verse.org/Input/UI }  # for TouchMapping, PointerSelect (the cursor while clicking)
+using { /Verse.org/Input/UI }  # for TouchMapping, PointerSelect (the cursor), Back, MenuNavigationMapping (Esc)
 using { /Verse.org/Simulation }
 using { /Verse.org/SpatialMath }  # the pointer's position uses this vector3
 using { /UnrealEngine.com/Temporary/SpatialMath }  # props and DistanceXY use this one
@@ -14,9 +16,9 @@ using { /UnrealEngine.com/Temporary/UI }  # for GetPlayerUI, canvas, player_ui_s
 
 scrub_test_device := class(creative_device):
 
-    # Where the player stands to wash (a Mutator Zone in front of the sink)
+    # A Button on the sink: interact with it to start washing (set its text to e.g. "Wash dishes")
     @editable
-    SinkZone:mutator_zone_device = mutator_zone_device{}
+    SinkButton:button_device = button_device{}
 
     # A Fixed Point Camera looking down at the dish (aim it with right-click → Pilot)
     @editable
@@ -47,6 +49,8 @@ scrub_test_device := class(creative_device):
 
     var Inside:logic = false
     var Subscribed:logic = false
+    # Who is washing (to end the minigame for them when the dish is clean)
+    var Washer:?agent = false
     # The on-screen layer that shows the mouse cursor while at the sink
     var CursorLayer:?canvas = false
     # Where the sponge started (the middle of where it can move)
@@ -76,37 +80,59 @@ scrub_test_device := class(creative_device):
         set Rubbed = for (Grime : GrimeLayers):
             0.0
         set SpotsLeft = GrimeLayers.Length
-        SinkZone.AgentEntersEvent.Subscribe(OnEnterSink)
-        SinkZone.AgentExitsEvent.Subscribe(OnExitSink)
+        SinkButton.InteractedWithEvent.Subscribe(StartWashing)
 
-    OnEnterSink(Agent:agent):void =
-        set Inside = true
-        # A camera only works while it's enabled (its "enabled at game start" option may be off)
-        Camera.Enable()
-        Camera.AddTo(Agent)
-        if (Player := player[Agent]):
-            ShowCursor(Player)
-            ListenForPointer(Player)
-        Print("At the sink: click and drag on the dish to scrub")
+    # Interacting with the sink starts the minigame
+    StartWashing(Agent:agent):void =
+        if (not Inside?, Player := player[Agent]):
+            set Inside = true
+            set Washer = option{Agent}
+            if (SpotsLeft = 0):
+                ResetDish()
+            # A camera only works while it's enabled (its "enabled at game start" option may be off)
+            Camera.Enable()
+            Camera.AddTo(Agent)
+            ShowControls(Player)
+            ListenForInput(Player)
 
-    OnExitSink(Agent:agent):void =
-        set Inside = false
-        Camera.RemoveFrom(Agent)
-        if (Player := player[Agent], PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
-            PlayerUI.RemoveWidget(Layer)
-            set CursorLayer = false
+    # Esc, Space, the Done button, or a clean dish: back to the normal view
+    StopWashing(Agent:agent):void =
+        if (Inside?):
+            set Inside = false
+            set Washer = false
+            Camera.RemoveFrom(Agent)
+            if (Player := player[Agent], PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
+                PlayerUI.RemoveWidget(Layer)
+                set CursorLayer = false
 
-    # A small hint on screen, added in UI mode so the mouse cursor shows and clicks reach Verse
-    ShowCursor(Player:player):void =
+    # Puts the grime back and the sponge in the middle, to wash again
+    ResetDish():void =
+        for (Grime : GrimeLayers):
+            Grime.Show()
+        set Rubbed = for (Grime : GrimeLayers):
+            0.0
+        set SpotsLeft = GrimeLayers.Length
+        MoveSponge(0.0, 0.0, 0.0)
+
+    # A hint and a Done button, added in UI mode so the mouse cursor shows and clicks reach Verse
+    ShowControls(Player:player):void =
         if (PlayerUI := GetPlayerUI[Player]):
-            Hint := text_block{DefaultText := MakeMessage("Drag on the dish to scrub. Walk away to stop.")}
-            Spot := vector2{X := 0.5, Y := 0.9}
-            Layer := canvas{Slots := array{canvas_slot{Anchors := anchors{Minimum := Spot, Maximum := Spot}, Alignment := vector2{X := 0.5, Y := 0.5}, SizeToContent := true, Widget := Hint}}}
+            Hint := text_block{DefaultText := MakeMessage("Drag on the dish to scrub.  Esc or Space to stop.")}
+            Done := button_quiet{DefaultText := MakeMessage("Done")}
+            Done.OnClick().Subscribe(OnDoneClicked)
+            Bottom := vector2{X := 0.5, Y := 0.9}
+            TopRight := vector2{X := 0.95, Y := 0.08}
+            Layer := canvas{Slots := array{
+                canvas_slot{Anchors := anchors{Minimum := Bottom, Maximum := Bottom}, Alignment := vector2{X := 0.5, Y := 0.5}, SizeToContent := true, Widget := Hint},
+                canvas_slot{Anchors := anchors{Minimum := TopRight, Maximum := TopRight}, Alignment := vector2{X := 1.0, Y := 0.0}, SizeToContent := true, Widget := Done}}}
             PlayerUI.AddWidget(Layer, player_ui_slot{InputMode := ui_input_mode.All})
             set CursorLayer = option{Layer}
 
-    # The pointer (mouse cursor or finger) while it's pressed: where it is on the screen
-    ListenForPointer(Player:player):void =
+    OnDoneClicked(Message:widget_message):void =
+        StopWashing(Message.Player)
+
+    # The pointer (mouse cursor or finger) while it's pressed, and the keys that stop washing
+    ListenForInput(Player:player):void =
         if (not Subscribed?, PlayerInput := GetPlayerInput[Player]):
             set Subscribed = true
             PlayerInput.AddInputMapping(TouchMapping)
@@ -114,6 +140,20 @@ scrub_test_device := class(creative_device):
             Pointer.BeginDetectEvent.Subscribe(OnPointerDown)
             Pointer.DetectionOngoingEvent.Subscribe(OnPointerDrag)
             Pointer.TriggerActivationEvent.Subscribe(OnPointerDown)
+            # Esc (Back on a controller): works while the cursor is showing
+            PlayerInput.AddInputMapping(MenuNavigationMapping)
+            PlayerInput.GetInputEvents(Back).TriggerActivationEvent.Subscribe(OnStopKey)
+            # Space (Jump): may be blocked while the cursor is showing; Esc and Done still work
+            PlayerInput.AddInputMapping(TraversalMapping)
+            PlayerInput.GetInputEvents(Jump).TriggerActivationEvent.Subscribe(OnStopKey)
+
+    OnStopKey(Player:player, Pressed:logic):void =
+        StopWashing(Player)
+
+    # Once the dish is clean, a moment to enjoy it, then back to the normal view
+    FinishSoon(Agent:agent)<suspends>:void =
+        Sleep(1.5)
+        StopWashing(Agent)
 
     OnPointerDown(Player:player, ScreenSpot:(/Verse.org/SpatialMath:)vector3):void =
         ScrubAt(Player, ScreenSpot)
@@ -188,6 +228,8 @@ scrub_test_device := class(creative_device):
                     set SpotsLeft -= 1
                     if (SpotsLeft = 0):
                         Print("Sparkling clean!")
+                        if (Agent := Washer?):
+                            spawn{FinishSoon(Agent)}
                     else:
                         Print("Spot clean! {SpotsLeft} to go")
 
