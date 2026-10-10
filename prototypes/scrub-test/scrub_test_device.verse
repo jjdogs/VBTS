@@ -8,7 +8,8 @@ using { /Fortnite.com/UI }  # for text_block
 using { /Verse.org/Input }  # for GetPlayerInput, DeprojectViewportToWorld
 using { /Verse.org/Input/UI }  # for TouchMapping, PointerSelect (the cursor while clicking)
 using { /Verse.org/Simulation }
-using { /UnrealEngine.com/Temporary/SpatialMath }
+using { /Verse.org/SpatialMath }  # the pointer's position uses this vector3
+using { /UnrealEngine.com/Temporary/SpatialMath }  # props and DistanceXY use this one
 using { /UnrealEngine.com/Temporary/UI }  # for GetPlayerUI, canvas, player_ui_slot
 
 scrub_test_device := class(creative_device):
@@ -83,17 +84,17 @@ scrub_test_device := class(creative_device):
     OnExitSink(Agent:agent):void =
         set Inside = false
         Camera.RemoveFrom(Agent)
-        if (Player := player[Agent], UI := GetPlayerUI[Player], Layer := CursorLayer?):
-            UI.RemoveWidget(Layer)
+        if (Player := player[Agent], PlayerUI := GetPlayerUI[Player], Layer := CursorLayer?):
+            PlayerUI.RemoveWidget(Layer)
             set CursorLayer = false
 
     # A small hint on screen, added in UI mode so the mouse cursor shows and clicks reach Verse
     ShowCursor(Player:player):void =
-        if (UI := GetPlayerUI[Player]):
+        if (PlayerUI := GetPlayerUI[Player]):
             Hint := text_block{DefaultText := MakeMessage("Drag on the dish to scrub. Walk away to stop.")}
             Spot := vector2{X := 0.5, Y := 0.9}
             Layer := canvas{Slots := array{canvas_slot{Anchors := anchors{Minimum := Spot, Maximum := Spot}, Alignment := vector2{X := 0.5, Y := 0.5}, SizeToContent := true, Widget := Hint}}}
-            UI.AddWidget(Layer, player_ui_slot{InputMode := ui_input_mode.All})
+            PlayerUI.AddWidget(Layer, player_ui_slot{InputMode := ui_input_mode.All})
             set CursorLayer = option{Layer}
 
     # The pointer (mouse cursor or finger) while it's pressed: where it is on the screen
@@ -145,7 +146,8 @@ scrub_test_device := class(creative_device):
             set NewX = X * DishRadius / FromCentre
             set NewY = Y * DishRadius / FromCentre
         DishSpot := Dish.GetTransform().Translation
-        Target := vector3{X := DishSpot.X + NewX, Y := DishSpot.Y + NewY, Z := DishSpot.Z + SpongeLift}
+        # Both SpatialMath modules have a vector3, so this one says which (the one props use)
+        Target := (/UnrealEngine.com/Temporary/SpatialMath:)vector3{X := DishSpot.X + NewX, Y := DishSpot.Y + NewY, Z := DishSpot.Z + SpongeLift}
         if (Sponge.TeleportTo[Target, Sponge.GetTransform().Rotation]):
             set SpongeX = NewX
             set SpongeY = NewY
