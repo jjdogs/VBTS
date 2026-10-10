@@ -44,6 +44,6 @@ If you change the engine's output on purpose, run `npm run golden` and review th
   `using-the-app.md` (features of the app), `blocks-and-verse.md` (what blocks cover),
   `development.md` (file map, common changes, tests), `verse-api.md` (device data, digests,
   weekly sync), `releasing.md`, `roadmap.md` (done phases and the planned order: 7 lessons for
-  the newest blocks, 8 waiting / Await, 9 saving progress, 10 props, 11 more UI), and
-  `plans/phase-5.md` (done).
+  the newest blocks, 8 waiting / Await, 9 saving progress, 10 props, 11 more UI), `plans/phase-5.md` (done), and
+  `plans/pizza-path.md` (the Pizza path: lesson contract, chapter 1, later chapters).
 - When a change adds a feature, file or test, update the guide that covers it.

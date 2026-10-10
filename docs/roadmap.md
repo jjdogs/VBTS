@@ -20,6 +20,13 @@ blocks conversion, plain-English warnings, tests, and **lessons and a template**
 Today: 203 devices, 26 lessons, 4 templates (pop-up target gallery, team elimination,
 moving-platform parkour, shop menu).
 
+## Learning: the Pizza path (planning)
+
+A second path after Basics: one **Pizza Restaurant Simulator** that grows from a small shop to a
+franchise, chapter by chapter, with prop minigames. Every lesson ends on a publishable game. Chapter
+1 is planned in [plans/pizza-path.md](plans/pizza-path.md); the phases below supply the blocks later
+chapters need.
+
 ## Next
 
 In the suggested order. Each is sized so it can be released on its own.
