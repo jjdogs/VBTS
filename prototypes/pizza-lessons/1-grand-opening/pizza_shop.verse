@@ -25,9 +25,10 @@ pizza_shop := class(creative_device):
 
     var Pizzas:int = 0
 
-    # The shop HUD on each player's screen. WBP_ShopHUD is the widget you made in the widget
-    # editor: its message variables (ShopName and Coins) are the text Verse can change.
-    var ShopHUDs:[]WBP_ShopHUD = array{}
+    # The shop HUD on each player's screen: WBP_ShopHUD is the widget you made in the widget
+    # editor. It's in the UI folder, so Verse calls it UI.WBP_ShopHUD. Its message variables
+    # (ShopName and Coins) are the text Verse can change.
+    var ShopHUDs:[]UI.WBP_ShopHUD = array{}
 
     OnBegin<override>()<suspends>:void =
         Print("Welcome to {ShopName}!")
@@ -38,7 +39,7 @@ pizza_shop := class(creative_device):
     # Puts a new shop HUD on this player's screen
     ShowShopHUD(Player:player):void =
         if (PlayerUI := GetPlayerUI[Player]):
-            ShopHUD := WBP_ShopHUD{}
+            ShopHUD := UI.WBP_ShopHUD{}
             PlayerUI.AddWidget(ShopHUD)
             set ShopHUDs += array{ShopHUD}
         UpdateShopHUDs()

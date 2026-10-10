@@ -23,9 +23,10 @@ each **bound** to a Text Block, set from Verse.
 
 ### The shop HUD (the widget editor)
 
-1. In the **Content Browser**, open your project's top folder (the one with your Verse files). Right-click
-   → **User Interface → Widget Blueprint** → **User Widget**. Name it exactly `WBP_ShopHUD`.
-   - *Keep it in the top folder.* If you put it in a folder, Verse calls it `FolderName.WBP_ShopHUD`.
+1. In the **Content Browser**, make a folder called `UI` in your project's Content folder. In it,
+   right-click → **User Interface → Widget Blueprint** → **User Widget**. Name it exactly `WBP_ShopHUD`.
+   - *The folder is part of its Verse name*: in `UI`, Verse calls it `UI.WBP_ShopHUD`. (In another
+     folder it's `FolderName.WBP_ShopHUD`; the build error says "Did you mean …" with the right name.)
 2. Double-click it. Drag a **Canvas Panel** in, then two **Text Blocks** onto the canvas: one for the
    shop's name (big) and one under it for the coins. Put them where you like, e.g. top middle, and set
    each one's **Anchors** to match (top middle) so they stay put on any screen size.
@@ -54,10 +55,10 @@ each **bound** to a Text Block, set from Verse.
 1. **Say hello.** `Print("Welcome to {ShopName}!")` in `OnBegin`.
    - *Try it*: the welcome shows at the top left when the game starts. (If it doesn't, the device
      isn't running: check it's in the level and the build worked.)
-2. **Show your HUD.** For each player, create a `WBP_ShopHUD{}` and add it to their screen with
+2. **Show your HUD.** For each player, create a `UI.WBP_ShopHUD{}` and add it to their screen with
    `GetPlayerUI` and `AddWidget`. Keep it in the `ShopHUDs` array to change it later.
    - *Try it*: your HUD shows, with its placeholder text.
-   - *New to this?* Your widget blueprint becomes a Verse type when you build. `WBP_ShopHUD{}` makes a
+   - *New to this?* Your widget blueprint becomes a Verse type when you build. `UI.WBP_ShopHUD{}` makes a
      new one, like `button_device{}` does.
 3. **Fill it in.** Set each HUD's `ShopName` and `Coins` (its message variables).
    - *Try it*: your shop's name and "0 coins" show.
@@ -71,7 +72,7 @@ each **bound** to a Text Block, set from Verse.
 
 | Test | Look for |
 |---|---|
-| 1. Build | Does it build? If `WBP_ShopHUD` is "unknown", check the widget's name and folder, then send me the error. |
+| 1. Build | Does it build? If `UI.WBP_ShopHUD` is "unknown", check the widget's name and folder (the error's "Did you mean" gives the right name). |
 | 2. Start | Does "Welcome to …" show at the top left? Does your HUD show, with your shop's name and "0 coins"? |
 | 3. Bake | Holding E at the oven: do the coins go up by 5 each time? |
 | 4. Goal | After 20 pizzas, does it say Famous? |
