@@ -7,7 +7,7 @@ Restaurant Simulator**, that grows from a small shop into a franchise. Each chap
 of that game, and each lesson ends on a version that could be published as it is; what the next
 lesson adds is an "update".
 
-Status: **planning chapter 1.** Nothing here is built yet.
+Status: **chapter 1 in progress.** Lesson 1 is drafted for testing in UEFN ([prototypes/pizza-lessons/](../../prototypes/pizza-lessons/1-grand-opening/README.md)); nothing is in the app yet.
 
 ## Rules for every lesson
 
