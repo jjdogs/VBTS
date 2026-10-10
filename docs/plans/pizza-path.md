@@ -7,7 +7,7 @@ Restaurant Simulator**, that grows from a small shop into a franchise. Each chap
 of that game, and each lesson ends on a version that could be published as it is; what the next
 lesson adds is an "update".
 
-Status: **chapter 1 in progress.** Lesson 1 is drafted for testing in UEFN ([prototypes/pizza-lessons/](../../prototypes/pizza-lessons/1-grand-opening/README.md)); nothing is in the app yet.
+Status: **chapter 1 in progress.** Lessons 1 and 2 are drafted for testing in UEFN ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md)); nothing is in the app yet.
 
 ## Rules for every lesson
 
@@ -51,12 +51,13 @@ pizzas as you can before closing time.
 ### 2. Customers have orders
 
 - **You'll have**: a customer order appears ("Pepperoni, please!"). Topping buttons add toppings;
-  **Serve** checks the pizza. Right: coins and a tip. Wrong: no coins, and the order stays.
+  baking at the oven serves it. Right: coins and a tip. Wrong: no coins, and the order stays.
 - **Publishable because**: it's a matching game with a goal for every order.
 - **New Verse**: an array of toppings and a random pick from it; comparing and `if`/`else`.
   (Basics: *Lists of things*, *Target timer*.)
-- **In UEFN**: one **Button** per topping, a **Serve** button.
-- **Choice**: the toppings (3 to 5) and what each menu pizza is called.
+- **In UEFN**: one **Button** per topping (3); the oven's Button now serves.
+- **Choice**: the three toppings. (Menu names, like "The Classic", come in a later lesson: one
+  more array to keep in step would make this one too big.)
 - **Next update**: you can see the pizza you're building.
 
 ### 3. Build the Pizza
