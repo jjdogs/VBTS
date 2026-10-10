@@ -23,7 +23,7 @@ left/right on screen whatever angle the camera and dish are at. Each grime spot 
 | Drag with the cursor, fixed camera | ✅ Pointer reaches Verse and moves the sponge, but across the floor (forward/back), not up/down |
 | Drag with the cursor, sponge moves across the screen | ✅ Works: the sponge follows the cursor up/down and left/right, and cleaning works |
 | Leaving | ❌ Cursor stuck after leaving; then, after removing the mappings, you could look but not move |
-| **Grab the sponge to drag it, Done to leave** (this version) | Not tested yet |
+| **Grab the sponge to drag it, Done to leave** (this version) | ✅ Works: grab and drag, leaving with Done, and moving again afterwards. **Done: this is the dish-washing pattern.** |
 
 ## Set up (about 10 minutes)
 
