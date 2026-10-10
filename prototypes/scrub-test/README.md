@@ -51,9 +51,17 @@ again in the device's Details panel. If it shows a real position but the view st
 open the camera's own Details panel and look for a priority option (raise it) or options about which
 players it applies to, and tell me what's there.
 
-If the view switches to the camera but `view turned` stays at 0, the fixed camera stops the mouse
-from turning the view. Then untick **UseCamera** and try again: the sponge then follows your own
-view (look down at the dish first).
+**With the camera on, the mouse doesn't move the sponge** (tested): the fixed camera locks the
+player's view, so the mouse no longer turns it. Two ways round it; the debug line shows `mouse …`
+and `walk …` so you can see which one is working:
+
+1. **Walking** (on by default, **MoveByWalking**): hold left click and walk (WASD or the stick). The
+   sponge moves the way you walk; your character stays on its spot. Let go and walk away to leave.
+   Tune **WalkSensitivity** (0.2 to 1.0).
+2. **Mouse, through Third Person Controls**: place a **Third Person Controls** device, set it as
+   **Controls** on `scrub_test_device` and tick **UseControls**. In its own Details panel, look for
+   a setting that makes the character face or aim at the mouse cursor, and turn it on. If the
+   `mouse` number goes above 0 while you move the mouse, the mouse works with the camera.
 
 **If it doesn't build**, copy the whole error list from the Output Log and send it to me.
 

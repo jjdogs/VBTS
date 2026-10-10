@@ -22,6 +22,18 @@ scrub_test_device := class(creative_device):
     Camera:gameplay_camera_fixed_point_device = gameplay_camera_fixed_point_device{}
     @editable
     UseCamera:logic = true
+    # Optional: Third Person Controls, used with the camera (look for a setting that makes the
+    # character aim at the mouse cursor). Turn on UseControls to try it.
+    @editable
+    Controls:gameplay_controls_third_person_device = gameplay_controls_third_person_device{}
+    @editable
+    UseControls:logic = false
+    # Walking (WASD / stick) while holding left click moves the sponge; the character stays put
+    @editable
+    MoveByWalking:logic = true
+    # How far the sponge moves for each cm the character tries to walk
+    @editable
+    WalkSensitivity:float = 0.5
     # How far the camera drifts with the sponge (0.2 = a fifth of the sponge's movement, 0.0 = still)
     @editable
     CameraFollow:float = 0.2
@@ -110,15 +122,20 @@ scrub_test_device := class(creative_device):
             Camera.AddTo(Agent)
             if (ShowDebug?):
                 Print("Camera added to you")
+        if (UseControls?):
+            Controls.Enable()
+            Controls.AddTo(Agent)
         ListenForFire(Agent)
         spawn{ScrubLoop(Agent)}
-        Print("At the sink: hold left click and move the mouse to move the sponge")
+        Print("At the sink: hold left click, then move the mouse or walk (WASD) to move the sponge")
 
     OnExitSink(Agent:agent):void =
         set Inside = false
         set Holding = false
         if (UseCamera?):
             Camera.RemoveFrom(Agent)
+        if (UseControls?):
+            Controls.RemoveFrom(Agent)
 
     # Holding detection: the fire button's input events (they need a player)
     ListenForFire(Agent:agent):void =
@@ -154,14 +171,28 @@ scrub_test_device := class(creative_device):
         var LastPitch:float = 0.0
         var HasLast:logic = false
         var Frames:int = 0
+        # Where the character stands while scrubbing (walking moves the sponge, not the character)
+        var StandSpot:vector3 = vector3{}
         loop:
             Sleep(0.0)
             if (not Inside?):
                 break
             if (FortChar := Agent.GetFortCharacter[], Angles := FortChar.GetViewRotation().GetYawPitchRollDegrees(), Yaw := Angles[0], Pitch := Angles[1]):
+                Here := FortChar.GetTransform().Translation
                 if (HasLast?, Holding?):
-                    var Across:float = WrapDegrees(Yaw - LastYaw) * Sensitivity
-                    var Along:float = (Pitch - LastPitch) * Sensitivity
+                    # Mouse: how far the view (aim) turned
+                    LookAcross := WrapDegrees(Yaw - LastYaw) * Sensitivity
+                    LookAlong := (Pitch - LastPitch) * Sensitivity
+                    # Walking: how far the character tried to walk since last frame, then put it back
+                    var WalkX:float = 0.0
+                    var WalkY:float = 0.0
+                    if (MoveByWalking?):
+                        set WalkX = (Here.X - StandSpot.X) * WalkSensitivity
+                        set WalkY = (Here.Y - StandSpot.Y) * WalkSensitivity
+                        if (not FortChar.TeleportTo[StandSpot, FortChar.GetTransform().Rotation]):
+                            set StandSpot = Here
+                    var Across:float = LookAcross + RightX * WalkX + RightY * WalkY
+                    var Along:float = LookAlong + UpX * WalkX + UpY * WalkY
                     if (InvertLeftRight?):
                         set Across = 0.0 - Across
                     if (InvertUpDown?):
@@ -172,7 +203,10 @@ scrub_test_device := class(creative_device):
                         RubGrime(Moved)
                     set Frames += 1
                     if (ShowDebug?, Mod[Frames, 30] = 0):
-                        Print("view turned {Moved / Sensitivity}°  sponge at ({SpongeX}, {SpongeY})  spots left {SpotsLeft}")
+                        Print("mouse {Sqrt(LookAcross * LookAcross + LookAlong * LookAlong)}  walk {Sqrt(WalkX * WalkX + WalkY * WalkY)}  spots left {SpotsLeft}")
+                else:
+                    # Not scrubbing: the character can walk (out of the zone to stop)
+                    set StandSpot = Here
                 if (UseCamera?):
                     DriftCamera()
                 set LastYaw = Yaw
