@@ -27,7 +27,7 @@ pizza_shop := class(creative_device):
 
     # The shop HUD on each player's screen: WBP_ShopHUD is the widget you made in the widget
     # editor. It's in the UI folder, so Verse calls it UI.WBP_ShopHUD. Its message variables
-    # (ShopName and Coins) are the text Verse can change.
+    # (ShopName, Pizzas and Coins) are the text Verse can change.
     var ShopHUDs:[]UI.WBP_ShopHUD = array{}
 
     OnBegin<override>()<suspends>:void =
@@ -50,14 +50,15 @@ pizza_shop := class(creative_device):
         set Coins += PizzaPrice
         UpdateShopHUDs()
 
-    # Writes the shop's name and coins into every shop HUD
+    # Writes the shop's name, pizzas baked and coins into every shop HUD
     UpdateShopHUDs():void =
         for (ShopHUD : ShopHUDs):
-            set ShopHUD.ShopName = MakeMessage(ShopName)
             if (Coins >= Goal):
-                set ShopHUD.Coins = MakeMessage("Famous! {Pizzas} pizzas baked")
+                set ShopHUD.ShopName = MakeMessage("{ShopName} is famous!")
             else:
-                set ShopHUD.Coins = MakeMessage("{Coins} coins")
+                set ShopHUD.ShopName = MakeMessage(ShopName)
+            set ShopHUD.Pizzas = MakeMessage("{Pizzas} pizzas baked")
+            set ShopHUD.Coins = MakeMessage("{Coins} coins")
 
     # Turns a string into a message (widget text needs a message)
     MakeMessage<localizes>(Text:string):message = "{Text}"

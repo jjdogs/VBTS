@@ -27,15 +27,15 @@ each **bound** to a Text Block, set from Verse.
    right-click → **User Interface → Widget Blueprint** → **User Widget**. Name it exactly `WBP_ShopHUD`.
    - *The folder is part of its Verse name*: in `UI`, Verse calls it `UI.WBP_ShopHUD`. (In another
      folder it's `FolderName.WBP_ShopHUD`; the build error says "Did you mean …" with the right name.)
-2. Double-click it. Drag a **Canvas Panel** in, then two **Text Blocks** onto the canvas: one for the
-   shop's name (big) and one under it for the coins. Put them where you like, e.g. top middle, and set
+2. Double-click it. Drag a **Canvas Panel** in, then three **Text Blocks** onto the canvas: one for the
+   shop's name (big), and under it one for the pizzas baked and one for the coins. Put them where you like, e.g. top middle, and set
    each one's **Anchors** to match (top middle) so they stay put on any screen size.
 3. Style them as you like: font size, colour, an outline. You can add an **Image** behind them as a
-   panel. (Placeholder text like "Shop name" and "0 coins" helps you see the layout.)
-4. Open **Window → Variables**. Add a variable `ShopName` of type **message**, and another one `Coins`,
-   also **message**.
+   panel. (Placeholder text like "Shop name", "0 pizzas baked" and "0 coins" helps you see the layout.)
+4. Open **Window → Variables**. Add three variables, all of type **message**: `ShopName`, `Pizzas`
+   and `Coins`.
 5. Select the name Text Block. In Details, next to **Text**, click the **chain-link icon** and pick
-   `ShopName`. Do the same for the coins Text Block with `Coins`.
+   `ShopName`. Do the same for the other two: `Pizzas` and `Coins`.
 6. **Compile** and **Save**.
 
 ### The shop
@@ -60,22 +60,22 @@ each **bound** to a Text Block, set from Verse.
    - *Try it*: your HUD shows, with its placeholder text.
    - *New to this?* Your widget blueprint becomes a Verse type when you build. `UI.WBP_ShopHUD{}` makes a
      new one, like `button_device{}` does.
-3. **Fill it in.** Set each HUD's `ShopName` and `Coins` (its message variables).
-   - *Try it*: your shop's name and "0 coins" show.
+3. **Fill it in.** Set each HUD's `ShopName`, `Pizzas` and `Coins` (its message variables).
+   - *Try it*: your shop's name, "0 pizzas baked" and "0 coins" show.
 4. **Bake.** Subscribe `OnPizzaBaked` to the oven button: add a pizza and `PizzaPrice` coins, then
    update the HUDs.
-   - *Try it*: holding E at the oven adds 5 coins each time.
-5. **Get famous.** With `if (Coins >= Goal)`, show "Famous!" instead of the coins.
-   - *Try it*: after 20 pizzas, the HUD says Famous!
+   - *Try it*: holding E at the oven adds a pizza and 5 coins each time.
+5. **Get famous.** With `if (Coins >= Goal)`, the shop's name becomes "{ShopName} is famous!".
+   - *Try it*: after 20 pizzas, the HUD says your shop is famous.
 
 ## What to test, and tell me
 
 | Test | Look for |
 |---|---|
 | 1. Build | Does it build? If `UI.WBP_ShopHUD` is "unknown", check the widget's name and folder (the error's "Did you mean" gives the right name). |
-| 2. Start | Does "Welcome to …" show at the top left? Does your HUD show, with your shop's name and "0 coins"? |
-| 3. Bake | Holding E at the oven: do the coins go up by 5 each time? |
-| 4. Goal | After 20 pizzas, does it say Famous? |
+| 2. Start | Does "Welcome to …" show at the top left? Does your HUD show your shop's name, "0 pizzas baked" and "0 coins"? |
+| 3. Bake | Holding E at the oven: does it add 1 pizza and 5 coins each time? |
+| 4. Goal | After 20 pizzas, does the name change to "… is famous!"? |
 | 5. Feel | Is it fun for a minute? Is 1.5 s of holding right? |
 | 6. Widget steps | Were the widget editor steps clear? Anything missing or named differently in your UEFN? |
 
