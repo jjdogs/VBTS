@@ -20,7 +20,7 @@ left/right on screen whatever angle the camera and dish are at. Each grime spot 
 | Sponge follows the view, no camera | ✅ Sponge moves, cleaning works |
 | Sponge follows the view, fixed camera | ❌ The fixed camera locks the view, so the sponge can't follow it |
 | Drag with the cursor, fixed camera | ✅ Pointer reaches Verse and moves the sponge, but across the floor (forward/back), not up/down |
-| **Drag with the cursor, sponge moves across the screen** (this version) | To test |
+| **Drag with the cursor, sponge moves across the screen** (this version) | ✅ Works: the sponge follows the cursor up/down and left/right, and cleaning works |
 
 ## Set up (about 10 minutes)
 
@@ -55,7 +55,21 @@ what (if anything) happens on screen when you click.
 
 **If it doesn't build**, copy the whole error list from the Output Log and send it to me.
 
-## What it decides
+## What we learned
+
+- **Close-up minigames work.** A fixed camera on the work, the mouse cursor shown (a widget added
+  with `InputMode := ui_input_mode.All`), and `PointerSelect` + `DeprojectViewportToWorld` let the
+  player drag a prop exactly under the cursor. This is the pattern for the Pizza path's prop
+  minigames (scrubbing, spreading sauce, placing toppings, stirring).
+- A **fixed camera locks the player's view**, so anything that reads `GetViewRotation` stops
+  working under it. Without a camera, holding fire and turning the view works too.
+- A camera device must be **enabled** (`Enable()`) before `AddTo` does anything.
+- A prop **can't be teleported into another prop**: keep the moving prop a little in front.
+- Verse gotchas met on the way (worth warnings in Verse Blocks): a local named like an imported
+  module (`UI`), `vector3` being ambiguous once both SpatialMath modules are imported, and a
+  function without `<transacts>` used inside an `if` condition.
+
+## What it decided
 
 - Whether prop minigames can use a close-up camera with the mouse cursor (drag to act): scrubbing,
   spreading sauce, placing toppings, stirring dough.
