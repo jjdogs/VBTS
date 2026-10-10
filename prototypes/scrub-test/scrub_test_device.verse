@@ -91,6 +91,12 @@ scrub_test_device := class(creative_device):
         set SpongeStartY = SpongeY
         set CameraHome = Camera.GetTransform().Translation
         set CameraTurn = Camera.GetTransform().Rotation
+        if (UseCamera?):
+            # A camera only works while it's enabled (its "enabled at game start" option may be off)
+            Camera.Enable()
+            if (ShowDebug?):
+                # (0, 0, 0) means the Camera slot isn't linked to the camera you placed
+                Print("Camera found at ({CameraHome.X}, {CameraHome.Y}, {CameraHome.Z})", ?Duration := 10.0)
         set Rubbed = for (Grime : GrimeLayers):
             0.0
         set SpotsLeft = GrimeLayers.Length
@@ -100,7 +106,10 @@ scrub_test_device := class(creative_device):
     OnEnterSink(Agent:agent):void =
         set Inside = true
         if (UseCamera?):
+            Camera.Enable()
             Camera.AddTo(Agent)
+            if (ShowDebug?):
+                Print("Camera added to you")
         ListenForFire(Agent)
         spawn{ScrubLoop(Agent)}
         Print("At the sink: hold left click and move the mouse to move the sponge")

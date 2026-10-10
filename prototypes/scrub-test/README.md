@@ -45,6 +45,12 @@ camera wasn't tested properly yet; this version needs it.
 | 5. Camera drift | Does the camera ease along with the sponge, leaning a little towards wherever the sponge is? Try **CameraFollow** (0.1 to 0.4) and **CameraSmoothing** (0.05 to 0.5). Set CameraFollow to 0.0 to compare with a still camera. |
 | 6. Feel | Try **Sensitivity** (1 to 6) and **RubNeeded** (50 to 300). Too fast, too slow, too much rubbing? |
 
+**If the view doesn't switch to the camera:** when the game starts, the device prints "Camera found
+at (…)". If that says (0, 0, 0), the **Camera** slot isn't linked to the camera you placed: pick it
+again in the device's Details panel. If it shows a real position but the view still doesn't switch,
+open the camera's own Details panel and look for a priority option (raise it) or options about which
+players it applies to, and tell me what's there.
+
 If the view switches to the camera but `view turned` stays at 0, the fixed camera stops the mouse
 from turning the view. Then untick **UseCamera** and try again: the sponge then follows your own
 view (look down at the dish first).
