@@ -1,6 +1,6 @@
-# Scrub test: a camera looks at the dish; holding left click turns the sponge into a cursor.
-# Move the mouse while holding and the sponge moves across the dish (up = away from you), and the
-# camera drifts a little with it, like your head following your hand.
+# Scrub test: at the sink, a first-person camera looks at the dish. Holding left click turns the
+# sponge into a cursor: move the mouse and the sponge moves across the dish (up = away from you).
+# Without left click, the mouse looks around as usual.
 # Rub the sponge over a grime spot to clean it; when every spot is gone, the dish is clean.
 # Setup and what to look for: README.md next to this file.
 
@@ -17,29 +17,11 @@ scrub_test_device := class(creative_device):
     @editable
     SinkZone:mutator_zone_device = mutator_zone_device{}
 
-    # A fixed camera looking at the dish. Turn UseCamera off to use the player's own view.
+    # A First Person Camera: the player sees through their own eyes and can look around
     @editable
-    Camera:gameplay_camera_fixed_point_device = gameplay_camera_fixed_point_device{}
+    Camera:gameplay_camera_first_person_device = gameplay_camera_first_person_device{}
     @editable
     UseCamera:logic = true
-    # Optional: Third Person Controls, used with the camera (look for a setting that makes the
-    # character aim at the mouse cursor). Turn on UseControls to try it.
-    @editable
-    Controls:gameplay_controls_third_person_device = gameplay_controls_third_person_device{}
-    @editable
-    UseControls:logic = false
-    # Walking (WASD / stick) while holding left click moves the sponge; the character stays put
-    @editable
-    MoveByWalking:logic = true
-    # How far the sponge moves for each cm the character tries to walk
-    @editable
-    WalkSensitivity:float = 0.5
-    # How far the camera drifts with the sponge (0.2 = a fifth of the sponge's movement, 0.0 = still)
-    @editable
-    CameraFollow:float = 0.2
-    # How softly the camera catches up (0.05 = slow and floaty, 0.5 = snappy)
-    @editable
-    CameraSmoothing:float = 0.15
 
     # The dish: the sponge stays on it
     @editable
@@ -83,15 +65,6 @@ scrub_test_device := class(creative_device):
     var Rubbed:[]float = array{}
     var SpotsLeft:int = 0
     var SpongeWarned:logic = false
-    # Where the camera started, and how far it has drifted from there
-    var CameraHome:vector3 = vector3{}
-    var CameraTurn:rotation = IdentityRotation()
-    var CameraDriftX:float = 0.0
-    var CameraDriftY:float = 0.0
-    var CameraWarned:logic = false
-    # Where the sponge started (the camera drifts relative to this)
-    var SpongeStartX:float = 0.0
-    var SpongeStartY:float = 0.0
 
     OnBegin<override>()<suspends>:void =
         DishSpot := Dish.GetTransform().Translation
@@ -99,16 +72,6 @@ scrub_test_device := class(creative_device):
         set SpongeX = SpongeSpot.X - DishSpot.X
         set SpongeY = SpongeSpot.Y - DishSpot.Y
         set SpongeLift = SpongeSpot.Z - DishSpot.Z
-        set SpongeStartX = SpongeX
-        set SpongeStartY = SpongeY
-        set CameraHome = Camera.GetTransform().Translation
-        set CameraTurn = Camera.GetTransform().Rotation
-        if (UseCamera?):
-            # A camera only works while it's enabled (its "enabled at game start" option may be off)
-            Camera.Enable()
-            if (ShowDebug?):
-                # (0, 0, 0) means the Camera slot isn't linked to the camera you placed
-                Print("Camera found at ({CameraHome.X}, {CameraHome.Y}, {CameraHome.Z})", ?Duration := 10.0)
         set Rubbed = for (Grime : GrimeLayers):
             0.0
         set SpotsLeft = GrimeLayers.Length
@@ -118,24 +81,20 @@ scrub_test_device := class(creative_device):
     OnEnterSink(Agent:agent):void =
         set Inside = true
         if (UseCamera?):
+            # A camera only works while it's enabled (its "enabled at game start" option may be off)
             Camera.Enable()
             Camera.AddTo(Agent)
             if (ShowDebug?):
-                Print("Camera added to you")
-        if (UseControls?):
-            Controls.Enable()
-            Controls.AddTo(Agent)
+                Print("First person camera added to you")
         ListenForFire(Agent)
         spawn{ScrubLoop(Agent)}
-        Print("At the sink: hold left click, then move the mouse or walk (WASD) to move the sponge")
+        Print("At the sink: look at the dish, hold left click and move the mouse to scrub")
 
     OnExitSink(Agent:agent):void =
         set Inside = false
         set Holding = false
         if (UseCamera?):
             Camera.RemoveFrom(Agent)
-        if (UseControls?):
-            Controls.RemoveFrom(Agent)
 
     # Holding detection: the fire button's input events (they need a player)
     ListenForFire(Agent:agent):void =
@@ -154,61 +113,39 @@ scrub_test_device := class(creative_device):
 
     # Every frame: how far did the view turn? While holding, move the sponge that much.
     ScrubLoop(Agent:agent)<suspends>:void =
-        # "Up" and "right" on the screen, as directions across the dish: from the camera's
-        # direction, or the player's own view when there's no camera
-        var FacingYaw:float = 0.0
-        if (UseCamera?, CameraAngles := Camera.GetTransform().Rotation.GetYawPitchRollDegrees(), CameraYaw := CameraAngles[0]):
-            set FacingYaw = CameraYaw
-        else if (FortChar := Agent.GetFortCharacter[], ViewAngles := FortChar.GetViewRotation().GetYawPitchRollDegrees(), ViewYaw := ViewAngles[0]):
-            set FacingYaw = ViewYaw
-        Radians := FacingYaw * PiFloat / 180.0
-        UpX := Cos(Radians)
-        UpY := Sin(Radians)
-        RightX := 0.0 - Sin(Radians)
-        RightY := Cos(Radians)
-
         var LastYaw:float = 0.0
         var LastPitch:float = 0.0
         var HasLast:logic = false
         var Frames:int = 0
-        # Where the character stands while scrubbing (walking moves the sponge, not the character)
-        var StandSpot:vector3 = vector3{}
+        # "Up" on the screen as a direction across the dish, from the way the player faces
+        # when they start holding left click ("right" is a quarter turn from it)
+        var UpX:float = 1.0
+        var UpY:float = 0.0
         loop:
             Sleep(0.0)
             if (not Inside?):
                 break
             if (FortChar := Agent.GetFortCharacter[], Angles := FortChar.GetViewRotation().GetYawPitchRollDegrees(), Yaw := Angles[0], Pitch := Angles[1]):
-                Here := FortChar.GetTransform().Translation
                 if (HasLast?, Holding?):
-                    # Mouse: how far the view (aim) turned
-                    LookAcross := WrapDegrees(Yaw - LastYaw) * Sensitivity
-                    LookAlong := (Pitch - LastPitch) * Sensitivity
-                    # Walking: how far the character tried to walk since last frame, then put it back
-                    var WalkX:float = 0.0
-                    var WalkY:float = 0.0
-                    if (MoveByWalking?):
-                        set WalkX = (Here.X - StandSpot.X) * WalkSensitivity
-                        set WalkY = (Here.Y - StandSpot.Y) * WalkSensitivity
-                        if (not FortChar.TeleportTo[StandSpot, FortChar.GetTransform().Rotation]):
-                            set StandSpot = Here
-                    var Across:float = LookAcross + RightX * WalkX + RightY * WalkY
-                    var Along:float = LookAlong + UpX * WalkX + UpY * WalkY
+                    var Across:float = WrapDegrees(Yaw - LastYaw) * Sensitivity
+                    var Along:float = (Pitch - LastPitch) * Sensitivity
                     if (InvertLeftRight?):
                         set Across = 0.0 - Across
                     if (InvertUpDown?):
                         set Along = 0.0 - Along
                     Moved := Sqrt(Across * Across + Along * Along)
                     if (Moved > 0.0):
-                        MoveSponge(SpongeX + RightX * Across + UpX * Along, SpongeY + RightY * Across + UpY * Along)
+                        # Right is (-UpY, UpX)
+                        MoveSponge(SpongeX - UpY * Across + UpX * Along, SpongeY + UpX * Across + UpY * Along)
                         RubGrime(Moved)
                     set Frames += 1
                     if (ShowDebug?, Mod[Frames, 30] = 0):
-                        Print("mouse {Sqrt(LookAcross * LookAcross + LookAlong * LookAlong)}  walk {Sqrt(WalkX * WalkX + WalkY * WalkY)}  spots left {SpotsLeft}")
+                        Print("view turned {Moved / Sensitivity}°  spots left {SpotsLeft}")
                 else:
-                    # Not scrubbing: the character can walk (out of the zone to stop)
-                    set StandSpot = Here
-                if (UseCamera?):
-                    DriftCamera()
+                    # Not scrubbing: remember which way the player faces
+                    Radians := Yaw * PiFloat / 180.0
+                    set UpX = Cos(Radians)
+                    set UpY = Sin(Radians)
                 set LastYaw = Yaw
                 set LastPitch = Pitch
                 set HasLast = true
@@ -229,16 +166,6 @@ scrub_test_device := class(creative_device):
         else if (not SpongeWarned?):
             set SpongeWarned = true
             Print("SPONGE: can't move there. Raise the sponge a little above the dish.", ?Duration := 8.0)
-
-    # Eases the camera towards a point a little way along the sponge's movement
-    DriftCamera():void =
-        set CameraDriftX += ((SpongeX - SpongeStartX) * CameraFollow - CameraDriftX) * CameraSmoothing
-        set CameraDriftY += ((SpongeY - SpongeStartY) * CameraFollow - CameraDriftY) * CameraSmoothing
-        Target := vector3{X := CameraHome.X + CameraDriftX, Y := CameraHome.Y + CameraDriftY, Z := CameraHome.Z}
-        if (not Camera.TeleportTo[Target, CameraTurn]):
-            if (not CameraWarned?):
-                set CameraWarned = true
-                Print("CAMERA: can't move. Make sure nothing is right next to it.", ?Duration := 8.0)
 
     # Rubs every grime spot the sponge is over; a spot rubbed enough disappears
     RubGrime(Moved:float):void =
