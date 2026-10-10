@@ -7,7 +7,7 @@ Restaurant Simulator**, that grows from a small shop into a franchise. Each chap
 of that game, and each lesson ends on a version that could be published as it is; what the next
 lesson adds is an "update".
 
-Status: **chapter 1 in progress.** Lessons 1 and 2 are drafted for testing in UEFN (lesson 1 works in UEFN, with a widget HUD; lesson 2 now uses the same widget) ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md)); nothing is in the app yet.
+Status: **chapter 1 in progress.** Lessons 1–3 are drafted for testing in UEFN (lesson 1 works in UEFN, with a widget HUD) ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md), [lesson 3](../../prototypes/pizza-lessons/3-build-the-pizza/README.md)); nothing is in the app yet.
 
 ## Rules for every lesson
 
@@ -85,6 +85,11 @@ pizzas as you can before closing time.
   timer runs out". (Basics: *Take a breath*, *Target timer*.)
 - **In UEFN**: a **Timer** device for closing time, an **End Game** device (or a scoreboard).
 - **Next update** (chapter 2): coins that buy upgrades, and coins that are still there next time.
+
+**Design pass (before chapter 1 goes into the app).** The drafts settle how each lesson plays,
+not how it looks. Once all 4 work in UEFN, decide the look: the order ticket (maybe its own
+widget, with the topping's picture), a finished shop HUD for the template, the pizza props, and how
+much of the look each lesson leaves to the learner.
 
 **Chapter 1 release** = these 4 lessons and a **Little Shop** template (the finished lesson 4).
 
