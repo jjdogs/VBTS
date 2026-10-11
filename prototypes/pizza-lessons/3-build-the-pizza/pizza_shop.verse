@@ -43,14 +43,15 @@ pizza_shop := class(creative_device):
     @editable
     CheeseProp:creative_prop = creative_prop{}
 
+    # Each topping can be several props (every slice of pepperoni): add them all to its list
     @editable
-    PepperoniProp:creative_prop = creative_prop{}
+    PepperoniProps:[]creative_prop = array{}
 
     @editable
-    MushroomProp:creative_prop = creative_prop{}
+    MushroomProps:[]creative_prop = array{}
 
     @editable
-    PineappleProp:creative_prop = creative_prop{}
+    PineappleProps:[]creative_prop = array{}
 
     # Your choices: your shop's name and your toppings
     ShopName:string = "Slice of Heaven"
@@ -111,9 +112,9 @@ pizza_shop := class(creative_device):
     NewPizza():void =
         SauceProp.Hide()
         CheeseProp.Hide()
-        PepperoniProp.Hide()
-        MushroomProp.Hide()
-        PineappleProp.Hide()
+        HideAll(PepperoniProps)
+        HideAll(MushroomProps)
+        HideAll(PineappleProps)
         DoughProp.Show()
         set OnPizza = ""
         set Stage = pizza_stage.NeedsSauce
@@ -137,20 +138,21 @@ pizza_shop := class(creative_device):
         else:
             ShowStep("The cheese is already on!")
 
-    # Each topping button calls AddTopping with its topping and its prop
+    # Each topping button calls AddTopping with its topping and its props
     OnPepperoni(Agent:agent):void =
-        AddTopping("Pepperoni", PepperoniProp)
+        AddTopping("Pepperoni", PepperoniProps)
 
     OnMushroom(Agent:agent):void =
-        AddTopping("Mushroom", MushroomProp)
+        AddTopping("Mushroom", MushroomProps)
 
     OnPineapple(Agent:agent):void =
-        AddTopping("Pineapple", PineappleProp)
+        AddTopping("Pineapple", PineappleProps)
 
     # A topping goes on last, once the cheese is on
-    AddTopping(Topping:string, Prop:creative_prop):void =
+    AddTopping(Topping:string, Props:[]creative_prop):void =
         if (Stage = pizza_stage.NeedsTopping):
-            Prop.Show()
+            for (Prop : Props):
+                Prop.Show()
             set OnPizza = Topping
             set Stage = pizza_stage.Ready
             ShowStep("Ready! Bake it in the oven")
@@ -158,6 +160,11 @@ pizza_shop := class(creative_device):
             ShowStep("It already has a topping. Bake it!")
         else:
             ShowStep("Sauce and cheese first!")
+
+    # Hides every prop in a list (all the slices of one topping)
+    HideAll(Props:[]creative_prop):void =
+        for (Prop : Props):
+            Prop.Hide()
 
     # Baking serves the pizza, if it's finished: the right one earns coins and a tip
     OnPizzaBaked(Agent:agent):void =

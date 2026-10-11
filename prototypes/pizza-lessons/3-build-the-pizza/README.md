@@ -26,17 +26,19 @@ Start from your lesson 2 level.
    - **Dough**: something flat and round (a plate or a round tile works).
    - **Sauce**: something flat and red, just on top of the dough.
    - **Cheese**: something flat and yellow, on top of the sauce.
-   - **Pepperoni, Mushroom, Pineapple**: one small prop each, on top of the cheese.
+   - **Pepperoni, Mushroom, Pineapple**: on top of the cheese. Each topping can be **several props**
+     (every slice of pepperoni), or just one.
 
    They can overlap: only the right ones show at a time. (Placeholder props are fine; the look
-   comes later.)
+   comes later.) Attaching props to a parent doesn't group them for Verse: `Hide()` only hides the
+   prop it's called on, so every piece goes in the topping's list (step 5).
 3. **Two more buttons**: a **Button** for `Add sauce` and one for `Add cheese`, next to the topping
    buttons. **Interaction Time** `0`.
 4. **Verse**: replace the contents of `pizza_shop` with `pizza_shop.verse` (keep your shop's name),
    then **Build Verse Code**.
-5. **The device**: in `pizza_shop`'s Details, link **SauceButton**, **CheeseButton**, and the six
-   props: **DoughProp**, **SauceProp**, **CheeseProp**, **PepperoniProp**, **MushroomProp**,
-   **PineappleProp**.
+5. **The device**: in `pizza_shop`'s Details, link **SauceButton**, **CheeseButton**, **DoughProp**,
+   **SauceProp** and **CheeseProp**. **PepperoniProps**, **MushroomProps** and **PineappleProps** are
+   lists: click **+** once for each piece of that topping, and pick the piece.
 6. **Launch Session**.
 
 ## Steps (each one testable)
@@ -45,7 +47,8 @@ Start from your lesson 2 level.
    and `var Stage:pizza_stage = pizza_stage.NeedsSauce`.
    - *New to this?* An enum is a short list of named choices. A variable of that type is always
      exactly one of them, so the pizza can't be "half sauced".
-2. **A fresh pizza.** Add the six props and a `NewPizza()` function: hide every part but the dough,
+2. **A fresh pizza.** Add the props (a list for each topping) and a `NewPizza()` function: hide
+   every part but the dough (`HideAll` hides every prop in a topping's list),
    set `Stage` back to `NeedsSauce`, and show "Next: add the sauce". `NewOrder()` calls it.
    - *Try it*: at the start only the dough shows.
    - *New to this?* `Prop.Hide()` and `Prop.Show()` make a prop disappear and come back. It's
@@ -53,8 +56,9 @@ Start from your lesson 2 level.
 3. **Sauce, then cheese.** `OnSauce`: if `Stage = pizza_stage.NeedsSauce`, show the sauce and move
    to `NeedsCheese`. `OnCheese` does the same for the cheese. Otherwise, say what's wrong.
    - *Try it*: cheese before sauce says "Sauce first, then cheese!".
-4. **One topping function.** `AddTopping(Topping:string, Prop:creative_prop)` puts any topping on,
-   once the cheese is on. Each topping button just calls it with its own topping and prop.
+4. **One topping function.** `AddTopping(Topping:string, Props:[]creative_prop)` shows every piece of
+   any topping, once the cheese is on. Each topping button just calls it with its own topping and
+   props.
    - *Try it*: the topping appears, and the HUD says "Ready! Bake it in the oven".
 5. **Bake only a finished pizza.** In `OnPizzaBaked`, if `Stage <> pizza_stage.Ready`, say it isn't
    finished. The right pizza earns coins and brings a new order; the wrong one starts the pizza
@@ -64,7 +68,7 @@ Start from your lesson 2 level.
 
 | Test | Look for |
 |---|---|
-| 1. Start | Only the dough shows, and the HUD says "Next: add the sauce"? |
+| 1. Start | Only the dough shows (every topping piece hidden), and the HUD says "Next: add the sauce"? |
 | 2. In order | Sauce, cheese, topping: each prop appears and the next step shows? |
 | 3. Out of order | Cheese or a topping too early, or baking too early: a helpful message, and nothing changes? |
 | 4. Serve | Right pizza: coins, and a fresh dough for the next order. Wrong topping: the complaint, and a fresh dough for the same order? |
