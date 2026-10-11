@@ -7,7 +7,7 @@ Restaurant Simulator**, that grows from a small shop into a franchise. Each chap
 of that game, and each lesson ends on a version that could be published as it is; what the next
 lesson adds is an "update".
 
-Status: **chapter 1 in progress.** Lessons 1–3 are drafted for testing in UEFN (lesson 1 works in UEFN, with a widget HUD) ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md), [lesson 3](../../prototypes/pizza-lessons/3-build-the-pizza/README.md)); nothing is in the app yet.
+Status: **chapter 1 in progress.** Lessons 1–4 are drafted; lessons 1–3 work in UEFN (with a widget HUD) ([lesson 1](../../prototypes/pizza-lessons/1-grand-opening/README.md), [lesson 2](../../prototypes/pizza-lessons/2-customer-orders/README.md), [lesson 3](../../prototypes/pizza-lessons/3-build-the-pizza/README.md), [lesson 4](../../prototypes/pizza-lessons/4-rush-hour/README.md)); nothing is in the app yet.
 
 ## Rules for every lesson
 
@@ -76,14 +76,15 @@ pizzas as you can before closing time.
 
 ### 4. Rush hour
 
-- **You'll have**: a round. The shop opens, orders come in faster and faster, each one with a
-  timer; closing time ends the round and shows how many pizzas you served. Play again from the
-  start.
+- **You'll have**: a round. Press Open to start a day; customers get less patient with every pizza
+  and leave if you're too slow; closing time ends the day with your score and your best day. Press
+  Open to play again.
 - **Publishable because**: it now has a start, rising difficulty and an end screen: a full
   arcade round.
-- **New Verse**: `spawn`, `loop` and `Sleep` for the order clock; `race` for "served before the
-  timer runs out". (Basics: *Take a breath*, *Target timer*.)
-- **In UEFN**: a **Timer** device for closing time, an **End Game** device (or a scoreboard).
+- **New Verse**: `spawn`, and a `loop` with `Sleep` and `break` for the clock; `Enable` / `Disable`
+  on the kitchen's buttons. (Basics: *Take a breath*, *Target timer*.) Not `race`: waiting for
+  "served" needs Await, which has no blocks yet (roadmap phase 8).
+- **In UEFN**: an **Open** button by the door, and a `Clock` text on the shop HUD.
 - **Next update** (chapter 2): coins that buy upgrades, and coins that are still there next time.
 
 **Design pass (before chapter 1 goes into the app).** The drafts settle how each lesson plays,
