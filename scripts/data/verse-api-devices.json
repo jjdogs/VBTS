@@ -1523,6 +1523,34 @@
    "TeleportTo<public>(Transform:transform)<transacts><decides><predicts><dictates>:void"
   ]
  },
+ "day_sequence_device": {
+  "module": "/Fortnite.com/Devices",
+  "parent": "creative_device_base",
+  "doc": "Controls the lighting and atmosphere of your island over time.",
+  "events": {},
+  "functions": [
+   "AddTag<override><native><final>(Tag:tag)<transacts><predicts><dictates>:tag_key",
+   "ContainsAllTags<override><native><final>(tag_types:[]castable_subtype(tag))<computes><decides><reads><dictates>:void",
+   "ContainsAnyTag<override><native><final>(tag_types:[]castable_subtype(tag))<computes><decides><reads><dictates>:void",
+   "ContainsTag<override><native><final>(tag_type:castable_subtype(tag))<computes><decides><reads><dictates>:void",
+   "Disable<override>()<transacts><predicts><dictates><no_rollback>:void",
+   "Enable<override>()<transacts><predicts><dictates><no_rollback>:void",
+   "FadeIn<public>()<transacts><predicts><dictates><no_rollback>:void",
+   "FadeOut<public>()<transacts><predicts><dictates><no_rollback>:void",
+   "GetGlobalTransform<override>()<transacts><predicts><dictates>:transform",
+   "GetTransform<override>()<transacts><predicts><dictates>:transform",
+   "IsEnabled<override>()<transacts><decides><predicts><dictates>:void",
+   "MoveTo<public>(Position:vector3, Rotation:rotation, OverTime:float)<transacts><suspends><predicts><dictates><no_rollback>:move_to_result",
+   "MoveTo<public>(Transform:transform, OverTime:float)<transacts><suspends><predicts><dictates><no_rollback>:move_to_result",
+   "RemoveAllTags<override><native><final>(tag_type:castable_subtype(tag))<transacts><decides><predicts><dictates>:void",
+   "RemoveAllTagsExcept<override><native><final>(tag_type:castable_subtype(tag))<transacts><decides><predicts><dictates>:void",
+   "RemoveAllTagsExcept<override><native><final>(tag_types:[]castable_subtype(tag))<transacts><decides><predicts><dictates>:void",
+   "RemoveTag<override><native><final>(Key:tag_key)<transacts><decides><predicts><dictates>:void",
+   "SetGlobalTransform<public>(NewGlobalTransform:transform)<transacts><predicts><dictates>:void",
+   "TeleportTo<public>(Position:vector3, Rotation:rotation)<transacts><decides><predicts><dictates>:void",
+   "TeleportTo<public>(Transform:transform)<transacts><decides><predicts><dictates>:void"
+  ]
+ },
  "disguise_device": {
   "module": "/Fortnite.com/Devices",
   "parent": "creative_device_base",
